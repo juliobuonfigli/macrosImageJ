@@ -1,0 +1,17 @@
+var x=78965;
+t=1;
+var y=1;
+for(i=1; i<6; i++)
+	{
+	x=78965;
+	for(k=0; k<t; k++)
+		x=sqrt(x);
+	y=y*x;
+	t=1;
+	for(j=0; j<i; j++)
+		t=t*2;
+	t=t+1;
+	}
+d=sqrt(y);
+
+print(d);

@@ -1,0 +1,2250 @@
+
+/*
+TCSSJ2
+Julio Buonfigli
+*/
+
+
+macro "Triple Colocalization [q]" 
+{	
+
+
+//SENTENCIAS INTRODUCTORIAS
+{
+
+
+
+requires("1.29p");              //muestra un mensaje si la versión de imagej usada no es compatible
+
+id1=getImageID();          //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+
+ Dialog.create("TCSS");    //genero ventana de inicio                                                      
+  Dialog.addChoice("Red:", figura);         
+  Dialog.addChoice("Green:", figura);          
+  Dialog.addChoice("Blue:", figura);    
+  Dialog.addChoice("Mask:", figura);  
+  Dialog.addCheckbox("Pearson and Mandres coefficients", true);
+  Dialog.addCheckbox("Manders statistical significance", true); 
+  Dialog.addCheckbox("Intersection coefficients", true);
+  Dialog.addCheckbox("Intersection statistical significance", true); 
+  Dialog.addNumber("Number of generated images:", 30); 
+  Dialog.addChoice("Significance level:", newArray(0.01, 0.05)); 
+  Dialog.addCheckbox("Mask threshold", false);
+  Dialog.addCheckbox("Objects threshold", false);
+  Dialog.addCheckbox("Show examples of random images", false);
+  
+       Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	azul=Dialog.getChoice();
+   	mascara=Dialog.getChoice();
+   	pearson=Dialog.getCheckbox();
+	generadasP=Dialog.getCheckbox();
+	interseccion=Dialog.getCheckbox();
+	generadasI=Dialog.getCheckbox();
+	numGeneradas=Dialog.getNumber();
+	nivel=Dialog.getChoice();
+	intOR=Dialog.getCheckbox();
+   	signalThreshold=Dialog.getCheckbox();
+	imagenAleatoria=Dialog.getCheckbox();
+	
+
+if(pearson==false && interseccion==false)
+	exit("Select at list one coefficients checkbox");   
+
+setBatchMode(true);
+
+selectWindow(mascara);
+run("Select None");
+
+selectWindow(rojo);
+run("8-bit");
+selectWindow(verde);
+run("8-bit");
+selectWindow(azul);
+run("8-bit");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+if(nivel==0.05)                                        //correlaciono z con sus valores de significancia
+	zCola=-1.64486;
+	else
+	zCola=-2.32635;
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==255)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+function sumarPixInt(ventana)                     //Declaro una función que suma intensidades de todos los pixeles
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		suma=suma+a[i];
+		i++;
+		}
+	}
+return suma;
+}
+	
+imageCalculator("AND create", azul, mascara);                       //opero imagenes con la máscara
+rename("azulAndMascara");
+imageCalculator("AND create", verde, mascara);  
+rename("verdeAndMascara");
+imageCalculator("AND create", rojo, mascara);   
+rename("rojoAndMascara");
+
+
+if(intOR==true || signalThreshold==true)
+{
+Dialog.create("Threshold");      
+if(intOR==true){
+ Dialog.addMessage("Mask Threshold");                               
+ Dialog.addNumber("Red:", 0); 
+  Dialog.addNumber("Green:", 0); 
+  Dialog.addNumber("Blue:", 0); 
+ 	 }
+if(signalThreshold==true){
+                                                                                                                                 
+ Dialog.addMessage("Signal Threshold");                               
+ Dialog.addNumber("Red:", 20); 
+  Dialog.addNumber("Green:", 20); 
+  Dialog.addNumber("Blue:", 20); 
+
+}
+
+Dialog.show();
+if(intOR==true){
+	MMUR=Dialog.getNumber();
+	MMUV=Dialog.getNumber();
+	MMUA=Dialog.getNumber();}
+if(signalThreshold==true){	
+	MUR=Dialog.getNumber();
+	MUV=Dialog.getNumber();
+	MUA=Dialog.getNumber();}
+}
+  
+
+
+if(intOR==true)                              // genera masacar circunscripta
+	{
+	selectWindow("rojoAndMascara");           
+	setThreshold(MMUR, 255);
+	run("Convert to Mask");
+	unosMascaraRoja=contarUnos("rojoAndMascara");               
+	selectWindow("verdeAndMascara");      
+	setThreshold(MMUV, 255);
+	run("Convert to Mask");
+	unosMascaraVerde=contarUnos("verdeAndMascara");
+	selectWindow("azulAndMascara");      
+	setThreshold(MMUA, 255);
+	run("Convert to Mask");
+	unosMascaraAzul=contarUnos("azulAndMascara");
+	selectWindow(mascara);
+        Mascara=getTitle();
+	imageCalculator("OR create", "rojoAndMascara", "verdeAndMascara"); 
+        rename("RorV");
+        imageCalculator("OR create", "azulAndMascara", "RorV"); 
+	setThreshold(1, 255);
+	run("Convert to Mask");
+	rename("CircumscribedMask");
+	mascara=getTitle();
+	selectWindow("rojoAndMascara");           
+	close();
+	selectWindow("verdeAndMascara"); 	
+	close();
+	selectWindow("azulAndMascara"); 	
+	close();
+	selectWindow("RorV"); 	
+	close();
+	imageCalculator("AND create", verde, mascara);     //opero imágenes con la máscara
+	rename("verdeAndMascara");
+	imageCalculator("AND create", rojo, mascara);   
+	rename("rojoAndMascara");
+	imageCalculator("AND create", azul, mascara);   
+	rename("azulAndMascara");
+	}
+
+
+
+function contarCeros(ventana)                     //Declaro una función que cuenta ceros
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==0)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+selectWindow(mascara);                                      //vectorizo la mascara	   
+  masc = newArray(w*h);
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		masc[i] = getPixel(x,y);
+		i++;
+		}
+	}
+
+unosMascara=contarUnos(mascara);                        //cuento unos y ceros en la mascara
+cerosMascara=contarCeros(mascara);
+
+if(unosMascara+cerosMascara!=w*h)
+	exit("Make the mask binary before running the application");
+
+}
+
+//CALCULO DE COEFICIENTE DE PEARSON
+{
+
+selectWindow("rojoAndMascara");	           //vectorizo cada canal
+  r = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Pearson coefficients...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			r[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+selectWindow("verdeAndMascara");	
+  v = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Pearson coefficients...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			v[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+selectWindow("azulAndMascara");	
+  az = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Pearson coefficients...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			az[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+if(pearson==true)
+{
+
+
+sumRojo=sumarPixInt("rojoAndMascara");                   
+sumVerde=sumarPixInt("verdeAndMascara");
+sumAzul=sumarPixInt("azulAndMascara");
+pr=sumRojo/unosMascara;                                    //calculo promedios de intensidad para cada imagen 
+pv=sumVerde/unosMascara;
+pa=sumAzul/unosMascara;
+
+   numVA=0;                        //inicializo variables de coeficiente de pearson
+   numRA=0; 
+   nunRV=0;
+   denR=0;
+   denV=0;
+   denA=0;
+
+for(i=0; i<unosMascara; i++)                                                                                //calculo todas las series                
+	{
+	showStatus("Calculating Pearson coefficients...");
+	denR=denR+(r[i]-pr)*(r[i]-pr);                                                                 //Pearson                                          
+	denV=denV+(v[i]-pv)*(v[i]-pv);
+	denA=denA+(az[i]-pa)*(az[i]-pa);
+	numVA=numVA+(v[i]-pv)*(az[i]-pa);
+	numRA=numRA+(r[i]-pr)*(az[i]-pa);
+	numRV=numRV+(r[i]-pr)*(v[i]-pv);
+	}
+
+denRV=sqrt(denR*denV);                             //calculo coeficientes de Pearson
+denRA=sqrt(denR*denA);
+denVA=sqrt(denA*denV);
+
+PrRV=numRV/denRV;                                     
+PrRA=numRA/denRA;
+PrVA=numVA/denVA;
+
+showStatus("");
+
+}}
+
+
+// FIJANDO EL UMBRAL DE SEÑAL
+{
+if(signalThreshold==false)
+{
+if(intOR==false)
+{
+unosMascaraRoja=unosMascara;
+unosMascaraVerde=unosMascara;
+unosMascaraAzul=unosMascara;
+//MMUR=1;
+//MMUV=1;
+//MMUA=1;
+}
+MUR=255;
+do { 
+showStatus("Finding the signal threshold...");
+MUR--;
+sR=0;
+for(i=0; i<unosMascara; i++) {
+if(r[i]>MUR)
+sR++;  }}
+while(sR<unosMascara/2 && MUR>=1)
+
+//print(unosMascaraRoja);
+//print(MUR);
+//print(sR);
+
+MUV=255;
+do { 
+showStatus("Finding the signal threshold...");
+MUV--;
+sV=0;
+for(i=0; i<unosMascara; i++) {
+if(v[i]>MUV)
+sV++;  }}
+while(sV<unosMascara/2 && MUV>=1)
+
+//print(unosMascaraVerde);
+//print(MUV);
+
+MUA=255;
+do { 
+showStatus("Finding the signal threshold...");
+MUA--;
+sA=0;
+for(i=0; i<unosMascara; i++) {
+if(az[i]>MUA)
+sA++;  }}
+while(sA<unosMascara/2 && MUA>=1)
+
+//print(unosMascaraAzul);
+//print(MUA);
+
+}
+for(i=0; i<unosMascara; i++)
+	{
+	showStatus("Finding the signal threshold...");
+	if(r[i]<MUR)
+		r[i]=0;
+	if(v[i]<MUV)
+		v[i]=0;
+	if(az[i]<MUA)
+		az[i]=0;
+	}
+}
+
+
+
+
+//CALCULO DE COEFICIENTE DE MANDERS
+{
+if(pearson==true)
+{
+sumRojo=0;                    
+sumVerde=0;
+sumAzul=0;
+ 
+for(i=0; i<unosMascara; i++)
+	{
+	showStatus("Calculating Manders coefficients...");
+	sumRojo=sumRojo+r[i];                    
+	sumVerde=sumVerde+v[i];
+	sumAzul=sumAzul+az[i];
+	}
+ 
+numMRt=0;                     //inicializo variables de coeficiente de Manders
+numMVt=0;
+numMAt=0;
+numMRv=0;
+numMVr=0;
+numMRa=0;
+numMAr=0;
+numMVa=0;
+numMAv=0; 
+ 
+
+for(i=0; i<unosMascara; i++)                                                                                //calculo todas las series                
+	{
+	showStatus("Calculating Manders coefficients...");
+	if(r[i]*v[i]*az[i] != 0)                                                                              //Manders
+		{
+		numMRt=numMRt+r[i];
+		numMVt=numMVt+v[i];
+		numMAt=numMAt+az[i];
+		}
+	if(r[i]*v[i] != 0)
+		{
+		numMRv=numMRv+r[i];
+		numMVr=numMVr+v[i];
+		}	
+	if(r[i]*az[i] != 0)
+		{
+		numMRa=numMRa+r[i];
+		numMAr=numMAr+az[i];
+		}	
+	if(az[i]*v[i] != 0)
+		{
+		numMAv=numMAv+az[i];
+		numMVa=numMVa+v[i];
+		}	
+	}
+
+MRt=numMRt/sumRojo;                                   //calculo coeficientes de Manders
+MVt=numMVt/sumVerde;
+MAt=numMAt/sumAzul;
+MRv=numMRv/sumRojo;
+MVr=numMVr/sumVerde;
+MRa=numMRa/sumRojo;
+MAr=numMAr/sumAzul;
+MVa=numMVa/sumVerde;
+MAv=numMAv/sumAzul;
+
+showStatus("");
+
+}}
+
+
+ 
+// SIGNIFICANCIA ESTADÍSTICA DE MANDERS
+{
+if(generadasP==true && pearson==true)
+{
+
+rMRt=newArray(numGeneradas);                           //Defino arreglos para cada indice de colocalización
+rMVt=newArray(numGeneradas);
+rMAt=newArray(numGeneradas);
+rMRv=newArray(numGeneradas);
+rMVr=newArray(numGeneradas);
+rMRa=newArray(numGeneradas);
+rMAr=newArray(numGeneradas);
+rMVa=newArray(numGeneradas);
+rMAv=newArray(numGeneradas);
+
+rnumMRt=newArray(numGeneradas);                      //inicializo variables de coeficiente de Manders
+rnumMVt=newArray(numGeneradas);  
+rnumMAt=newArray(numGeneradas);  
+rnumMRv=newArray(numGeneradas);  
+rnumMVr=newArray(numGeneradas);  
+rnumMRa=newArray(numGeneradas);  
+rnumMAr=newArray(numGeneradas);  
+rnumMVa=newArray(numGeneradas);  
+rnumMAv=newArray(numGeneradas);  
+
+Mrvvr=MRv+MVr;                                            //variables útiles en condicionales de triple colocalización            
+Marra=MRa+MAr;
+Mvaav=MVa+MAv;
+
+
+for(s=0; s<numGeneradas; s++)                                        //rulo para generar tantas imágenes aleatorias para cada fluoróforo como se cargue en el diálogo de entrada
+{
+showStatus("Manders statistical significance: "+s); 
+
+random("seed", round(random*w*h*10));
+	
+	u=newArray(unosMascara+1);                                                                //desordeno aleatoriamente cada vector
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	rd=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			rd[i]=r[e];
+			u[e]=false;
+			i++;
+			}
+		}
+	
+                                                                
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	vd=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			vd[i]=v[e];
+			u[e]=false;
+			i++;
+			}
+		}
+
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	ad=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			ad[i]=az[e];
+			u[e]=false;
+			i++;
+			}
+		}
+
+	
+	for(i=0; i<unosMascara; i++)                                     //calculo doble colocalizacion de imagenes generadas                
+	{
+	if(rd[i]*vd[i] != 0)
+		{
+		rnumMRv[s]=rnumMRv[s]+rd[i];
+		rnumMVr[s]=rnumMVr[s]+vd[i];
+		}	
+	if(rd[i]*ad[i] != 0)
+		{
+		rnumMRa[s]=rnumMRa[s]+rd[i];
+		rnumMAr[s]=rnumMAr[s]+ad[i];
+		}	
+	if(ad[i]*vd[i] != 0)
+		{
+		rnumMAv[s]=rnumMAv[s]+ad[i];
+		rnumMVa[s]=rnumMVa[s]+vd[i];
+		}	
+	}
+
+if(Mrvvr==Mvaav && Mrvvr==Marra)
+{
+for(i=0; i<unosMascara; i++) 
+	{
+	if(r[i]*v[i]*ad[i] != 0)                                                                              
+		{
+		rnumMRt[s]=rnumMRt[s]+r[i];
+		rnumMVt[s]=rnumMVt[s]+v[i];
+		rnumMAt[s]=rnumMAt[s]+ad[i];
+		}
+	}
+}
+    else
+	{
+	if(Mrvvr>=Mvaav && Mrvvr>=Marra)                                //busco el canal que menos colocaliza y calculo triple colo
+		{													
+		for(i=0; i<unosMascara; i++) 
+			{
+			if(r[i]*v[i]*ad[i] != 0)                                                                              
+				{
+				rnumMRt[s]=rnumMRt[s]+r[i];
+				rnumMVt[s]=rnumMVt[s]+v[i];
+				rnumMAt[s]=rnumMAt[s]+ad[i];
+				}
+			}
+		}
+	if(Mvaav>=Mrvvr && Mvaav>=Marra)
+		{
+		for(i=0; i<unosMascara; i++) 
+			{													
+			if(rd[i]*v[i]*az[i] != 0)                                                                              
+				{
+				rnumMRt[s]=rnumMRt[s]+rd[i];
+				rnumMVt[s]=rnumMVt[s]+v[i];
+				rnumMAt[s]=rnumMAt[s]+az[i];
+				}
+			}
+		}
+	if(Marra>=Mvaav &&  Marra>=Mrvvr)
+		{
+		for(i=0; i<unosMascara; i++) 
+			{											
+			if(r[i]*vd[i]*az[i] != 0)                                                                            
+				{
+				rnumMRt[s]=rnumMRt[s]+r[i];
+				rnumMVt[s]=rnumMVt[s]+vd[i];
+				rnumMAt[s]=rnumMAt[s]+az[i];
+				}
+			}
+		}
+	}
+	
+rMRt[s]=rnumMRt[s]/sumRojo;                                   //calculo coeficientes de Manders
+rMVt[s]=rnumMVt[s]/sumVerde;
+rMAt[s]=rnumMAt[s]/sumAzul;
+rMRv[s]=rnumMRv[s]/sumRojo;
+rMVr[s]=rnumMVr[s]/sumVerde;
+rMRa[s]=rnumMRa[s]/sumRojo;
+rMAr[s]=rnumMAr[s]/sumAzul;
+rMVa[s]=rnumMVa[s]/sumVerde;
+rMAv[s]=rnumMAv[s]/sumAzul;	
+
+
+}
+
+showStatus("Manders statistical significance: "+s); 
+wait(1000);
+
+sumMRt=0;                          //inicializo variables de suma para promedios
+sumMVt=0;
+sumMAt=0;
+sumMRv=0;
+sumMVr=0;
+sumMRa=0;
+sumMAr=0;
+sumMVa=0;
+sumMAv=0;
+
+
+for(i=0; i<numGeneradas; i++)         //media
+	{	
+	sumMRt=sumMRt+rMRt[i];
+	sumMVt=sumMVt+rMVt[i];
+	sumMAt=sumMAt+rMAt[i];
+	sumMRv=sumMRv+rMRv[i];
+	sumMVr=sumMVr+rMVr[i];
+	sumMRa=sumMRa+rMRa[i];
+	sumMAr=sumMAr+rMAr[i];
+	sumMVa=sumMVa+rMVa[i];
+	sumMAv=sumMAv+rMAv[i];
+	}
+
+promMRt=sumMRt/numGeneradas;                                 
+promMVt=sumMVt/numGeneradas; 
+promMAt=sumMAt/numGeneradas; 
+promMRv=sumMRv/numGeneradas; 
+promMVr=sumMVr/numGeneradas; 
+promMRa=sumMRa/numGeneradas;
+promMAr=sumMAr/numGeneradas; 
+promMVa=sumMVa/numGeneradas; 
+promMAv=sumMAv/numGeneradas; 
+  
+for(i=0; i<numGeneradas; i++)                                  //desviación estandar                  
+	{	
+	sum2MRt=sum2MRt+(rMRt[i]-promMRt)*(rMRt[i]-promMRt);
+	sum2MVt=sum2MVt+(rMVt[i]-promMVt)*(rMVt[i]-promMVt);
+	sum2MAt=sum2MAt+(rMAt[i]-promMAt)*(rMAt[i]-promMAt);
+	sum2MRv=sum2MRv+(rMRv[i]-promMRv)*(rMRv[i]-promMRv);
+	sum2MVr=sum2MVr+(rMVr[i]-promMVr)*(rMVr[i]-promMVr);
+	sum2MRa=sum2MRa+(rMRa[i]-promMRa)*(rMRa[i]-promMRa);
+	sum2MAr=sum2MAr+(rMAr[i]-promMAr)*(rMAr[i]-promMAr);
+	sum2MVa=sum2MVa+(rMVa[i]-promMVa)*(rMVa[i]-promMVa);
+	sum2MAv=sum2MAv+(rMAv[i]-promMAv)*(rMAv[i]-promMAv);
+	}
+
+devestMRt=sqrt(sum2MRt/numGeneradas);                                    
+devestMVt=sqrt(sum2MVt/numGeneradas); 
+devestMAt=sqrt(sum2MAt/numGeneradas); 
+devestMRv=sqrt(sum2MRv/numGeneradas); 
+devestMVr=sqrt(sum2MVr/numGeneradas); 
+devestMRa=sqrt(sum2MRa/numGeneradas);
+devestMAr=sqrt(sum2MAr/numGeneradas); 
+devestMVa=sqrt(sum2MVa/numGeneradas); 
+devestMAv=sqrt(sum2MAv/numGeneradas); 
+
+xmMRt=zCola*devestMRt+promMRt;                                   
+xmMVt=zCola*devestMVt+promMVt;
+xmMAt=zCola*devestMAt+promMAt;
+xmMRv=zCola*devestMRv+promMRv;
+xmMVr=zCola*devestMVr+promMVr;
+xmMRa=zCola*devestMRa+promMRa;
+xmMAr=zCola*devestMAr+promMAr;
+xmMVa=zCola*devestMVa+promMVa;
+xmMAv=zCola*devestMAv+promMAv;
+
+xMRt=abs(zCola)*devestMRt+promMRt;                                   
+xMVt=abs(zCola)*devestMVt+promMVt;
+xMAt=abs(zCola)*devestMAt+promMAt;
+xMRv=abs(zCola)*devestMRv+promMRv;
+xMVr=abs(zCola)*devestMVr+promMVr;
+xMRa=abs(zCola)*devestMRa+promMRa;
+xMAr=abs(zCola)*devestMAr+promMAr;
+xMVa=abs(zCola)*devestMVa+promMVa;
+xMAv=abs(zCola)*devestMAv+promMAv;
+
+if(MRt<xmMRt)
+	SSMrt="SE";
+	else
+	{
+	if(MRt>xMRt)
+		SSMrt="SC";
+		else
+		SSMrt="NS";
+	}
+
+if(MVt<xmMVt)
+	SSMvt="SE";
+	else
+	{	
+	if(MVt>xMVt)
+		SSMvt="SC";
+		else
+		SSMvt="NS";
+	}
+
+if(MAt<xmMAt)
+	SSMat="SE";
+	else
+	{
+	if(MAt>xMAt)
+		SSMat="SC";
+		else
+		SSMat="NS";
+	}
+
+if(MVr<xmMVr)
+	SSMvr="SE";
+	else
+	{
+	if(MVr>xMVr)
+		SSMvr="SC";
+		else
+		SSMvr="NS";
+	}
+
+if(MRv<xmMRv)
+	SSMrv="SE";
+	else
+	{
+	if(MRv>xMRv)
+		SSMrv="SC";
+		else
+		SSMrv="NS";
+	}
+
+if(MRa<xmMRa)
+	SSMra="SE";
+	else
+	{
+	if(MRa>xMRa)
+		SSMra="SC";
+		else
+		SSMra="NS";
+	}
+
+if(MAr<xmMAr)
+	SSMar="SE";
+	else
+	{
+	if(MAr>xMAr)
+		SSMar="SC";
+		else
+		SSMar="NS";
+	}
+
+if(MVa<xmMVa)
+	SSMva="SE";
+	else
+	{
+	if(MVa>xMVa)
+		SSMva="SC";
+		else
+		SSMva="NS";
+	}
+
+if(MAv<xmMAv)
+	SSMav="SE";
+	else
+	{
+	if(MAv>xMAv)
+		SSMav="SC";
+		else
+		SSMav="NS";
+	}
+
+}
+}
+
+// COLOCALIZACIÓN DE INTERSECCIÓN    
+{
+
+if(interseccion==true)
+{
+
+selectWindow("rojoAndMascara");           
+setThreshold(MUR, 255);
+run("Convert to Mask");
+selectWindow("verdeAndMascara");      
+setThreshold(MUV, 255);
+run("Convert to Mask");
+selectWindow("azulAndMascara");   
+setThreshold(MUA, 255);
+run("Convert to Mask");
+
+
+showStatus("Calculating intersection percentages...");
+
+imageCalculator("OR create", "rojoAndMascara", "verdeAndMascara");    //Calculo la superficie cubierta total dentro de la máscara
+rename("rojoOrVerde");
+imageCalculator("OR create", "rojoOrVerde", "azulAndMascara");       //esto esta tambien al principio puedo ver como eliminarlo          
+rename("OR");
+
+showStatus("Calculating intersection percentages...");
+
+cerosRojos=contarCeros("rojoAndMascara");                     //cuento ceros en cada canal
+cerosVerdes=contarCeros("verdeAndMascara");
+cerosAzules=contarCeros("azulAndMascara");
+
+showStatus("Calculating intersection percentages...");
+
+cerosRandRojos=cerosRojos-cerosMascara;                       // calculo la cantidad de ceros dentro de la máscara para cada color
+cerosRandVerdes=cerosVerdes-cerosMascara;
+cerosRandAzules=cerosAzules-cerosMascara;
+
+showStatus("Calculating intersection percentages...");
+
+imageCalculator("AND create", "rojoAndMascara", "verdeAndMascara");     //opero para obtener doble colocalización
+rename("rojoAndVerde");
+imageCalculator("AND create", "azulAndMascara", "rojoAndMascara");  
+rename("rojoAndAzul");
+imageCalculator("AND create", "verdeAndMascara", "azulAndMascara");  
+rename("verdeAndAzul");
+
+imageCalculator("AND create", "rojoAndVerde", "azulAndMascara");     //obtengo triple colocalización
+rename("TripleColocalizacion");
+
+unosRvam=contarUnos("TripleColocalizacion");             // cuento pixeles de triple colo
+
+showStatus("Calculating intersection percentages...");
+
+unosRojos=contarUnos("rojoAndMascara");                     //cuento unos en cada canal
+unosVerdes=contarUnos("verdeAndMascara");
+unosAzules=contarUnos("azulAndMascara");
+
+showStatus("Calculating intersection percentages...");
+
+unosRV=contarUnos("rojoAndVerde");                       //cuento unos de doble colo
+unosRA=contarUnos("rojoAndAzul");
+unosVA=contarUnos("verdeAndAzul");
+
+showStatus("Calculating intersection percentages...");
+
+unosRvamOr=contarUnos("OR");                           //cuento unos en el triple OR
+
+rv=(unosRV/unosRojos)*100;                            //calculo coeficientes de colocalización
+vr=(unosRV/unosVerdes)*100;
+ra=(unosRA/unosRojos)*100;
+ar=(unosRA/unosAzules)*100;
+va=(unosVA/unosVerdes)*100;
+av=(unosVA/unosAzules)*100;
+rvasc=(unosRvam/unosRvamOr)*100;
+rvaenr=(unosRvam/unosRojos)*100;
+rvaenv=(unosRvam/unosVerdes)*100;
+rvaena=(unosRvam/unosAzules)*100;
+
+showStatus("Calculating intersection percentages...");
+
+selectWindow("TripleColocalizacion");         //cierro imágenes para que no interfieran con futuras corridas
+close();
+selectWindow("rojoOrVerde");
+close();
+selectWindow("OR");
+close();
+
+}
+}
+
+// SIGNIFICANCIA ESTADÍSTICA INTERSECCIÓN
+{
+if(generadasI==true && interseccion==true)
+{
+
+selectWindow("rojoAndMascara");	      //vectorizo cada canal
+  rI = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Intersection statistical significance...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			rI[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+	
+selectWindow("verdeAndMascara");	
+  vI = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Intersection statistical significance...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			vI[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+selectWindow("azulAndMascara");	      //vectorizo cada canal
+  aI = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Intersection statistical significance...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			aI[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+rrv=newArray(numGeneradas);                           //Defino arreglos para cada indice de colocalización
+rvr=newArray(numGeneradas);
+rra=newArray(numGeneradas);
+rar=newArray(numGeneradas);
+rva=newArray(numGeneradas);
+rav=newArray(numGeneradas);
+rrvasc=newArray(numGeneradas);
+rrvaenr=newArray(numGeneradas);
+rrvaenv=newArray(numGeneradas);
+rrvaena=newArray(numGeneradas);
+
+
+rvvr=rv+vr;                                            //variables útiles en condicionales de triple colocalización            
+arra=ra+ar;
+vaav=va+av;
+
+
+for(s=0; s<numGeneradas; s++)                        //rulo para generar tantas imágenes aleatorias para cada fluoróforo como se cargue en el diálogo de entrada
+	{
+showStatus("Intersection statistical significance: "+s);
+
+random("seed", round(random*unosRvamOr*10));
+
+
+rdI=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+	{
+	if(random<unosRojos/unosMascara)
+		rdI[i]=255;
+		else
+		rdI[i]=0;
+	}
+
+vdI=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+	{
+	if(random<unosVerdes/unosMascara)
+		vdI[i]=255;
+		else
+		vdI[i]=0;
+	}
+
+adI=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+	{
+	if(random<unosAzules/unosMascara)
+		adI[i]=255;
+		else
+		adI[i]=0;
+	}
+
+RandunosRV=0;
+for(i=0; i<unosMascara; i++)
+	{
+	if(rdI[i]*vdI[i]!=0)	
+		RandunosRV++;
+	}
+
+RandunosRA=0;
+for(i=0; i<unosMascara; i++)
+	{
+	if(rdI[i]*adI[i]!=0)	
+		RandunosRA++;
+	}
+
+RandunosVA=0;
+for(i=0; i<unosMascara; i++)
+	{
+	if(adI[i]*vdI[i]!=0)	
+		RandunosVA++;
+	}
+
+RandunosRvam=0;
+					
+		for(i=0; i<unosMascara; i++)
+			{
+			if(rdI[i]*vdI[i]*adI[i]!=0)	
+			RandunosRvam++;
+			}
+		
+
+	
+// la superficie cubierta total aleatoria es la misma que la del ensayo
+// igual que el total de unos para cada color son los del ensayo
+
+
+	rrv[s]=(RandunosRV/unosRojos)*100;                            //calculo coeficientes de colocalización
+	rvr[s]=(RandunosRV/unosVerdes)*100;
+	rra[s]=(RandunosRA/unosRojos)*100;
+	rar[s]=(RandunosRA/unosAzules)*100;
+	rva[s]=(RandunosVA/unosVerdes)*100;
+	rav[s]=(RandunosVA/unosAzules)*100;	
+	rrvasc[s]=(RandunosRvam/unosRvamOr)*100;
+	rrvaenr[s]=(RandunosRvam/unosRojos)*100;
+	rrvaenv[s]=(RandunosRvam/unosVerdes)*100;
+	rrvaena[s]=(RandunosRvam/unosAzules)*100;
+
+print(rrvasc[s]);
+
+}
+
+showStatus("Intersection statistical significance: "+s);
+wait(1000);
+
+sumRrv=0;                          //inicializo variables de suma para promedios
+sumRvr=0;
+sumRra=0;
+sumRvr=0;
+sumRar=0;
+sumRva=0;
+sumRav=0;
+sumRrvasc=0;
+sumRrvaenr=0;
+sumRrvaenv=0;
+sumRrvaena=0;
+
+
+for(i=0; i<numGeneradas; i++)         //sumo
+	{	
+	sumRrv=sumRrv+rrv[i];
+	sumRvr=sumRvr+rvr[i];
+	sumRra=sumRra+rra[i];
+	sumRar=sumRar+rar[i];
+	sumRva=sumRva+rva[i];
+	sumRav=sumRav+rav[i];
+	sumRrvasc=sumRrvasc+rrvasc[i];
+	sumRrvaenr=sumRrvaenr+rrvaenr[i];
+	sumRrvaenv=sumRrvaenv+rrvaenv[i];
+	sumRrvaena=sumRrvaena+rrvaena[i];
+	}
+	
+promRrv=sumRrv/numGeneradas;                                    //promedio
+promRvr=sumRvr/numGeneradas; 
+promRra=sumRra/numGeneradas; 
+promRar=sumRar/numGeneradas; 
+promRva=sumRva/numGeneradas; 
+promRav=sumRav/numGeneradas;
+promRrvasc=sumRrvasc/numGeneradas; 
+promRrvaenr=sumRrvaenr/numGeneradas; 
+promRrvaenv=sumRrvaenv/numGeneradas; 
+promRrvaena=sumRrvaena/numGeneradas; 
+
+for(i=0; i<numGeneradas; i++)                                  //desviación estandar                  
+	{	
+	sum2Rrv=sum2Rrv+(rrv[i]-promRrv)*(rrv[i]-promRrv);
+	sum2Rvr=sum2Rvr+(rvr[i]-promRvr)*(rvr[i]-promRvr);
+	sum2Rra=sum2Rra+(rra[i]-promRra)*(rra[i]-promRra);
+	sum2Rar=sum2Rar+(rar[i]-promRar)*(rar[i]-promRar);
+	sum2Rva=sum2Rva+(rva[i]-promRva)*(rva[i]-promRva);
+	sum2Rav=sum2Rav+(rav[i]-promRav)*(rav[i]-promRav);
+	sum2Rrvasc=sum2Rrvasc+(rrvasc[i]-promRrvasc)*(rrvasc[i]-promRrvasc);
+	sum2Rrvaenr=sum2Rrvaenr+(rrvaenr[i]-promRrvaenr)*(rrvaenr[i]-promRrvaenr);
+	sum2Rrvaenv=sum2Rrvaenv+(rrvaenv[i]-promRrvaenv)*(rrvaenv[i]-promRrvaenv);
+	sum2Rrvaena=sum2Rrvaena+(rrvaena[i]-promRrvaena)*(rrvaena[i]-promRrvaena);
+	}
+
+devestRrv=sqrt(sum2Rrv/numGeneradas); 
+devestRvr=sqrt(sum2Rvr/numGeneradas); 
+devestRra=sqrt(sum2Rra/numGeneradas); 
+devestRar=sqrt(sum2Rar/numGeneradas); 
+devestRva=sqrt(sum2Rva/numGeneradas); 
+devestRav=sqrt(sum2Rav/numGeneradas); 
+devestRrvasc=sqrt(sum2Rrvasc/numGeneradas); 
+devestRrvaenr=sqrt(sum2Rrvaenr/numGeneradas); 
+devestRrvaenv=sqrt(sum2Rrvaenv/numGeneradas); 
+devestRrvaena=sqrt(sum2Rrvaena/numGeneradas); 
+
+xmRrv=zCola*devestRrv+promRrv;
+xmRvr=zCola*devestRvr+promRvr;
+xmRra=zCola*devestRra+promRra;
+xmRar=zCola*devestRar+promRar;
+xmRva=zCola*devestRva+promRva;
+xmRav=zCola*devestRav+promRav;
+xmRrvasc=zCola*devestRrvasc+promRrvasc;
+xmRrvaenr=zCola*devestRrvaenr+promRrvaenr;
+xmRrvaenv=zCola*devestRrvaenv+promRrvaenv;
+xmRrvaena=zCola*devestRrvaena+promRrvaena;
+
+xRrv=abs(zCola)*devestRrv+promRrv;
+xRvr=abs(zCola)*devestRvr+promRvr;
+xRra=abs(zCola)*devestRra+promRra;
+xRar=abs(zCola)*devestRar+promRar;
+xRva=abs(zCola)*devestRva+promRva;
+xRav=abs(zCola)*devestRav+promRav;
+xRrvasc=abs(zCola)*devestRrvasc+promRrvasc;
+xRrvaenr=abs(zCola)*devestRrvaenr+promRrvaenr;
+xRrvaenv=abs(zCola)*devestRrvaenv+promRrvaenv;
+xRrvaena=abs(zCola)*devestRrvaena+promRrvaena;
+
+if(rvasc<xmRrvasc)
+	SSIst="SE";
+	else
+	{
+	if(rvasc>xRrvasc)
+		SSIst="SC";
+		else
+		SSIst="NS";
+	}
+
+if(rvaenr<xmRrvaenr)
+	SSItenr="SE";
+	else
+	{
+	if(rvaenr>xRrvaenr)
+		SSItenr="SC";
+		else
+		SSItenr="NS";
+	}
+
+if(rvaenv<xmRrvaenv)
+	SSItenv="SE";
+	else
+	{
+	if(rvaenv>xRrvaenv)
+		SSItenv="SC";
+		else
+		SSItenv="NS";
+	}
+
+if(rvaena<xmRrvaena)
+	SSItena="SE";
+	else
+	{
+	if(rvaena>xRrvaena)
+		SSItena="SC";
+		else
+		SSItena="NS";
+	}
+
+if(rv<xmRrv)
+	SSIrv="SE";
+	else
+	{
+	if(rv>xRrv)
+		SSIrv="SC";
+		else
+		SSIrv="NS";
+	}
+
+if(vr<xmRvr)
+	SSIvr="SE";
+	else
+	{
+	if(vr>xRvr)
+		SSIvr="SC";
+		else
+		SSIvr="NS";
+	}
+
+if(ra<xmRra)
+	SSIra="SE";
+	else
+	{
+	if(ra>xRra)
+		SSIra="SC";
+		else
+		SSIra="NS";
+	}
+
+if(ar<xmRar)
+	SSIar="SE";
+	else
+	{
+	if(ar>xRar)
+		SSIar="SC";
+		else
+		SSIar="NS";
+	}
+
+if(va<xmRva)
+	SSIva="SE";
+	else
+	{
+	if(va>xRva)
+		SSIva="SC";
+		else
+		SSIva="NS";
+	}
+
+if(av<xmRav)
+	SSIav="SE";
+	else
+	{
+	if(av>xRav)
+		SSIav="SC";
+		else
+		SSIav="NS";
+	}
+
+}
+}
+
+//RESULTADOS
+{
+
+if(interseccion==true)
+{
+selectWindow("rojoAndVerde");               //cierro imágenes para que no interfieran con futuras corridas de la aplicación
+close();
+selectWindow("rojoAndAzul");
+close();
+selectWindow("verdeAndAzul");
+close();
+}
+
+if(interseccion==false)
+{
+rv="  ******";      
+vr="  ******"; 
+ra="  ******"; 
+ar="  ******";
+va="  ******";
+av="  ******"; 
+rvasc="  ******"; 
+rvaenr="  ******"; 
+rvaenv="  ******";
+rvaena="  ******";
+}
+
+if(pearson==false)
+{
+PrRV="  ******";                                                  //variables que no se calculan
+PrRA="  ******";
+PrVA="  ******";
+MRt=" ******";		                                       
+MVt=" ******";	
+MAt=" ******";
+MRv=" ******";
+MVr=" ******";
+MRa=" ******";
+MAr=" ******";
+MVa=" ******";
+MAv=" ******";
+}
+
+if(generadasI==false || interseccion==false)
+{
+promRrv="  ******";      
+promRvr="  ******"; 
+promRra="  ******"; 
+promRar="  ******";
+promRva="  ******";
+promRav="  ******"; 
+promRrvasc="  ******"; 
+promRrvaenr="  ******"; 
+promRrvaenv="  ******";
+promRrvaena="  ******";
+SSIst=" ******";
+SSItenr=" ******";
+SSItenv=" ******";
+SSItena=" ******";
+SSIrv=" ******";
+SSIvr=" ******";
+SSIra=" ******";
+SSIar=" ******";
+SSIva=" ******";
+SSIav=" ******";
+
+}
+if(generadasP==false || pearson==false)
+{
+             
+SSMrt=" ******";
+SSMvt=" ******";
+SSMat=" ******";
+SSMvr=" ******";
+SSMrv=" ******";
+SSMra=" ******";
+SSMar=" ******";
+SSMva=" ******";
+SSMav=" ******";
+promMRt=" ******";                            
+promMVt=" ******";
+promMAt=" ******";
+promMRv="  ******";
+promMVr="  ******";
+promMRa="  ******";
+promMAr="  ******";
+promMVa="  ******";
+promMAv="  ******";
+}
+
+if(intOR==false)
+{
+MMUR="  ******";
+MMUV="  ******";
+MMUA="  ******";
+}
+
+if(generadasP==false && generadasI==false)
+{numGeneradas=" ******";
+nivel=" ******";}
+
+titulo1 = "Results";                                            //genero cuadro que muestra resultados
+titulo2 = "["+titulo1+"]";
+  f = titulo2;
+ if (isOpen(titulo1))
+    print(f, "\\Clear");
+ else
+run("Table...", "name="+titulo1+" width=250 height=600");
+print(f, "\\Headings:for\t% intersection\t% randomizations\t  Significance \tPearson\tManders\trandomizations\t  Significance");
+print(f, "Double colocalization");
+print(f, " Red in green"+"\t  "+rv+"\t  "+promRrv+"\t  "+SSIrv+"\t  "+PrRV+"\t  "+MRv+"\t  "+promMRv+"\t  "+SSMrv);
+print(f, " Green in red"+"\t  "+vr+"\t  "+promRvr+"\t  "+SSIvr+"\t  "+PrRV+"\t  "+MVr+"\t  "+promMVr+"\t  "+SSMvr);
+print(f, " Red in blue"+"\t  "+ra+"\t  "+promRra+"\t  "+SSIra+"\t  "+PrRA+"\t  "+MRa+"\t  "+promMRa+"\t  "+SSMra);
+print(f, " Blue in red"+"\t  "+ar+"\t  "+promRar+"\t  "+SSIar+"\t  "+PrRA+"\t  "+MAr+"\t  "+promMAr+"\t  "+SSMar);
+print(f, " Green in blue"+"\t  "+va+"\t  "+promRva+"\t  "+SSIva+"\t  "+PrVA+"\t  "+MVa+"\t  "+promMVa+"\t  "+SSMva);
+print(f, " Blue in green"+"\t  "+av+"\t  "+promRav+"\t  "+SSIav+"\t  "+PrVA+"\t  "+MAv+"\t  "+promMAv+"\t  "+SSMav);
+print(f, "Triple colocalization");
+print(f, " General"+"\t  "+rvasc+"\t  "+promRrvasc+"\t  "+SSIst+"\t  ******"+"\t  ******"+ " \t   ******"+ " \t   ******"+ " \t   ******");
+print(f, " By red"+"\t  "+rvaenr+"\t  "+promRrvaenr+"\t  "+SSItenr+"\t  ******"+"\t  "+MRt+"\t  "+promMRt+"\t  "+SSMrt);
+print(f, " By green"+"\t  "+rvaenv+"\t  "+promRrvaenv+"\t  "+SSItenv+"\t  ******"+"\t  "+MVt+"\t  "+promMVt+"\t  "+SSMvt);
+print(f, " By blue"+"\t  "+rvaena+"\t  "+promRrvaena+"\t  "+SSItena+"\t  ******"+"\t  "+MAt+"\t  "+promMAt+"\t  "+SSMat);
+print(f, "");
+print(f, "");
+print(f, "");
+print(f, "");
+print(f, "\t "+"Mask threshold"+"\t "+"Signal threshold      //     "+"\t "+"Generated images:"+"\t"+numGeneradas+"\t"+"Significance level:"+"\t"+nivel);
+print(f, "Red channel"+"\t      "+MMUR+"\t "+MUR);
+print(f, "Green channel"+"\t      "+MMUV+"\t "+MUV);
+print(f, "Blue channel"+"\t      "+MMUA+"\t "+MUA);
+print(f, "");
+
+setBatchMode("exit and display"); 
+
+// Resultados gráficos
+
+
+run("Merge Channels...", "c1=[rojoAndMascara] c2=[verdeAndMascara] c3=[azulAndMascara] create");    //Genero imagen de triple colocalización
+rename("Colocalization");
+updateDisplay();
+
+if(imagenAleatoria==true)
+{
+if(interseccion==true && generadasI==true)
+{
+
+selectWindow(mascara);                                         //genero una imagen aleatoria para el canal rojo
+run("Duplicate...", "title=RandomIntersection");
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+       		f=random;
+		if(f<=cerosRandRojos/unosMascara)
+		setPixel(x, y, 0);
+		}
+	}
+run("Red");
+updateDisplay();
+}	
+
+
+if(pearson==true && generadasP==true)
+{                                     
+	
+selectWindow(mascara);
+run("Duplicate...", "title=RandomManders");       // genero imagen aleatoria para coeficiente de Manders 
+i=0;
+mas=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			setPixel(x, y, rd[i]);
+			i++;
+			}
+		mas++;
+		}
+	}                                      
+run("Green");
+updateDisplay();
+}}}}
+
+//fin TRIPLE
+
+
+
+
+
+macro "Double Colocalization [r]" 
+{
+
+// SENTENCIAS INTRODUCTORIAS
+{
+
+requires("1.29p");                      //muestra un mensaje si la versión de imagej usada no es compatible
+
+id1=getImageID();                        //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+
+ Dialog.create("TCSS");    //genero ventana de inicio                                                      
+  Dialog.addChoice("Red:", figura);         
+  Dialog.addChoice("Green:", figura);          
+  Dialog.addChoice("Mask:", figura);  
+  Dialog.addCheckbox("Pearson and Mandres coefficients", true);
+  Dialog.addCheckbox("Manders statistical significance", false); 
+  Dialog.addCheckbox("Intersection coefficients", true);
+  Dialog.addCheckbox("Intersection statistical significance", false); 
+  Dialog.addNumber("Number of generated images:", 30); 
+  Dialog.addChoice("Significance level:", newArray(0.01, 0.05)); 
+  Dialog.addCheckbox("Mask threshold", false);
+  Dialog.addCheckbox("Objects threshold", false);
+  Dialog.addCheckbox("Show examples of random images", false);
+  
+       Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	mascara=Dialog.getChoice();
+   	pearson=Dialog.getCheckbox();
+	generadasP=Dialog.getCheckbox();
+	interseccion=Dialog.getCheckbox();
+	generadasI=Dialog.getCheckbox();
+	numGeneradas=Dialog.getNumber();
+	nivel=Dialog.getChoice();
+	intOR=Dialog.getCheckbox();
+   	signalThreshold=Dialog.getCheckbox();
+	imagenAleatoria=Dialog.getCheckbox();
+
+if(pearson==false && interseccion==false)
+	exit("Select at list one coefficients checkbox");   
+if(numGeneradas>1000)
+	exit("The number of generated images must be between 5 and 1000");   
+
+setBatchMode(true);
+	
+selectWindow(mascara);
+run("Select None");
+
+selectWindow(rojo);
+run("8-bit");
+selectWindow(verde);
+run("8-bit");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+if(nivel==0.05)                                    //correlaciono z con sus valores de significancia
+	zCola=-1.64486;
+	else
+	zCola=-2.32635;
+
+
+function sumarPixInt(ventana)                     //Declaro una función que suma intensidades de todos los pixeles
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		suma=suma+a[i];
+		i++;
+		}
+	}
+return suma;
+}
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==255)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+unosMascara=contarUnos(mascara);
+
+
+
+imageCalculator("AND create", verde, mascara);     //opero imágenes con la máscara
+rename("verdeAndMascara");
+imageCalculator("AND create", rojo, mascara);   
+rename("rojoAndMascara");
+
+
+if(intOR==true || signalThreshold==true)
+{
+Dialog.create("Threshold");      
+if(intOR==true){
+ Dialog.addMessage("Mask Threshold");                               
+ Dialog.addNumber("Red:", 0); 
+  Dialog.addNumber("Green:", 0); 
+   	 }
+if(signalThreshold==true){
+                                                                                                                                 
+ Dialog.addMessage("Signal Threshold");                               
+ Dialog.addNumber("Red:", 20); 
+  Dialog.addNumber("Green:", 20); 
+}
+Dialog.show();
+if(intOR==true){
+	MMUR=Dialog.getNumber();
+	MMUV=Dialog.getNumber();
+	}
+if(signalThreshold==true){	
+	MUR=Dialog.getNumber();
+	MUV=Dialog.getNumber();
+	}
+}
+
+
+if(intOR==true)                              // genera masacar circunscripta
+	{
+	selectWindow("rojoAndMascara");           
+	setThreshold(MMUR, 255);
+	run("Convert to Mask");
+	unosMascaraRoja=contarUnos("rojoAndMascara");               
+	selectWindow("verdeAndMascara");      
+	setThreshold(MMUV, 255);
+	run("Convert to Mask");
+	unosMascaraVerde=contarUnos("verdeAndMascara");
+	selectWindow(mascara);
+        Mascara=getTitle();
+	imageCalculator("OR create", "rojoAndMascara", "verdeAndMascara"); 
+        setThreshold(1, 255);
+	run("Convert to Mask");
+	rename("CircumscribedMask");
+	mascara=getTitle();
+	selectWindow("rojoAndMascara");           
+	close();
+	selectWindow("verdeAndMascara"); 	
+	close();
+	imageCalculator("AND create", verde, mascara);     //opero imágenes con la máscara
+	rename("verdeAndMascara");
+	imageCalculator("AND create", rojo, mascara);   
+	rename("rojoAndMascara");
+	}
+
+
+function contarCeros(ventana)                     //Declaro una función que cuenta ceros
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==0)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+selectWindow(mascara);	           //vectorizo la máscara
+  masc = newArray(w*h);
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		masc[i] = getPixel(x,y);
+		i++;
+		}
+	}
+
+unosMascara=contarUnos(mascara);                        //cuento unos y ceros en la mascara
+cerosMascara=contarCeros(mascara);
+
+if(unosMascara+cerosMascara!=w*h)                                     
+	exit("Make the mask binary before running the application");
+
+} 
+
+// CALCULO COEFICIENTE DE PEARSON
+{
+
+
+selectWindow("rojoAndMascara");	                     //vectorizo cada canal
+  r = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Pearson coefficient...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			r[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+	
+
+selectWindow("verdeAndMascara");	
+  v = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Pearson coefficient...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			v[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+
+if(pearson==true)
+{
+sumRojo=sumarPixInt("rojoAndMascara");                     //sumo intensidades en cada imagen
+sumVerde=sumarPixInt("verdeAndMascara");
+pr=sumRojo/unosMascara;                                    //calculo promedios de intensidad para cada imagen 
+pv=sumVerde/unosMascara;
+
+
+   numRV=0;
+   denR=0;
+   denV=0;
+
+for(i=0; i<unosMascara; i++)                                     //calculo todas las series                
+	{
+	showStatus("Calculating Pearson coefficient...");
+	denR=denR+(r[i]-pr)*(r[i]-pr);                                                                 //Pearson                                          
+	denV=denV+(v[i]-pv)*(v[i]-pv);
+	numRV=numRV+(r[i]-pr)*(v[i]-pv);
+	}
+
+denRV=sqrt(denR*denV);                             //calculo coeficientes de Pearson
+
+PrRV=numRV/denRV;                                     
+
+showStatus("");
+
+}
+}
+
+// FIJANDO EL UMBRAL DE SEÑAL
+{
+if(signalThreshold==false)
+{
+
+MUR=255;
+do { 
+showStatus("Finding the signal threshold...");
+MUR--;
+sR=0;
+for(i=0; i<unosMascara; i++) {
+if(r[i]>=MUR)
+sR++;  }}
+while(sR<unosMascara/2 && MUR>=0)
+if(sR>unosMascara*0.6){
+do{
+showStatus("Finding the signal threshold...");
+MUR++;
+sR=0;
+for(i=0; i<unosMascara; i++) {
+if(r[i]>=MUR)
+sR++;  }}
+while(sR>unosMascara*0.6)}
+
+MUV=255;
+do { 
+showStatus("Finding the signal threshold...");
+MUV--;
+sV=0;
+for(i=0; i<unosMascara; i++) {
+if(v[i]>=MUV)
+sV++;  }}
+while(sV<unosMascara/2 && MUV>=0)
+if(sV>unosMascara*0.6){
+do { 
+showStatus("Finding the signal threshold...");
+MUV++;
+sV=0;
+for(i=0; i<unosMascara; i++) {
+if(v[i]>=MUV)
+sV++;  }}
+while(sV>unosMascara*0.6)}
+
+
+}
+for(i=0; i<unosMascara; i++)
+	{
+	showStatus("Finding the signal threshold...");
+	if(r[i]<MUR)
+		r[i]=0;
+	if(v[i]<MUV)
+		v[i]=0;
+	}
+}
+
+
+
+
+// CALCULO COEFICIENTE DE MANDERS
+{
+if(pearson==true)
+{
+
+sumRojo=0;                    
+sumVerde=0;
+ 
+for(i=0; i<unosMascara; i++)
+	{
+	showStatus("Calculating Manders coefficients...");
+	sumRojo=sumRojo+r[i];                    
+	sumVerde=sumVerde+v[i];
+	}
+ 
+numMRv=0;
+numMVr=0;
+ 
+
+for(i=0; i<unosMascara; i++)                                     //calculo todas las series                
+	{
+	showStatus("Calculating Manders coefficients...");
+	if(r[i]*v[i] != 0)
+		{
+		numMRv=numMRv+r[i];
+		numMVr=numMVr+v[i];
+		}	
+	
+	}
+
+MRv=numMRv/sumRojo;
+MVr=numMVr/sumVerde;
+
+}
+}
+
+// SIGNIFICANCIA ESTADÍSTICA DE MANDERS
+{
+
+if(generadasP==true && pearson==true)
+{
+
+showStatus("Manders statistical significance...");
+
+rMRv=newArray(numGeneradas);
+rMVr=newArray(numGeneradas);
+
+rnumMRv=newArray(numGeneradas);  
+rnumMVr=newArray(numGeneradas);  
+
+random("seed", round(random*unosMascara*10));
+
+
+for(s=0; s<numGeneradas; s++)                 //rulo para generar tantas imágenes aleatorias para cada fluoróforo como se cargue en el diálogo de entrada
+	{
+ 
+	showStatus("Manders statistical significance: "+s);                                                                                  
+
+	
+	
+	u=newArray(unosMascara+1);                                                                //desordeno aleatoriamente el vector rojo
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	rd=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			rd[i]=r[e];
+			u[e]=false;
+			i++;
+			}
+		}
+
+	                                                         
+	for(i=0; i<unosMascara; i++)                                     //calculo doble colocalizacion de imagenes generadas                
+		{
+		if(rd[i]*v[i] != 0)
+			{
+			rnumMRv[s]=rnumMRv[s]+rd[i];
+			rnumMVr[s]=rnumMVr[s]+v[i];
+			}	
+		}
+
+	rMRv[s]=rnumMRv[s]/sumRojo;
+	rMVr[s]=rnumMVr[s]/sumVerde;
+
+//print(rMRv[s]);
+
+
+	}
+
+
+//ACA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
+
+
+showStatus("Manders statistical significance: "+s); 
+wait(1000);
+
+sumMRv=0;
+sumMVr=0;
+
+for(i=0; i<numGeneradas; i++)         //sumo
+	{	
+	sumMRv=sumMRv+rMRv[i];
+	sumMVr=sumMVr+rMVr[i];
+	}
+
+promMRv=sumMRv/numGeneradas; 
+promMVr=sumMVr/numGeneradas; 
+
+for(i=0; i<numGeneradas; i++)                                  //desviación estandar                  
+	{	
+	sum2MRv=sum2MRv+(rMRv[i]-promMRv)*(rMRv[i]-promMRv);
+	sum2MVr=sum2MVr+(rMVr[i]-promMVr)*(rMVr[i]-promMVr);
+	}
+
+devestMRv=sqrt(sum2MRv/numGeneradas); 
+devestMVr=sqrt(sum2MVr/numGeneradas); 
+	
+xmMRv=zCola*devestMRv+promMRv;
+xmMVr=zCola*devestMVr+promMVr;
+
+xMRv=abs(zCola)*devestMRv+promMRv;
+xMVr=abs(zCola)*devestMVr+promMVr;
+
+if(MVr<xmMVr)
+	SSMvr="SE";
+	else
+	{
+	if(MVr>xMVr)
+		SSMvr="SC";
+		else
+		SSMvr="NS";
+	}
+
+if(MRv<xmMRv)
+	SSMrv="SE";
+	else
+	{
+	if(MRv>xMRv)
+		SSMrv="SC";
+		else
+		SSMrv="NS";
+	}
+
+}
+}
+
+// COLOCALIZACIÓN DE INTERSECCIÓN        
+{
+
+
+if(interseccion==true)
+{
+showStatus("Calculating intersection percentages...");
+
+   	selectWindow("rojoAndMascara");           
+	setThreshold(MUR, 255);
+	run("Convert to Mask");
+	selectWindow("verdeAndMascara");      
+	setThreshold(MUV, 255);
+	run("Convert to Mask");
+	
+
+cerosRojos=contarCeros("rojoAndMascara");                     //cuento ceros en cada canal
+cerosVerdes=contarCeros("verdeAndMascara");
+
+cerosRandRojos=cerosRojos-cerosMascara;                       // calculo la cantidad de ceros dentro de la máscara para cada color
+cerosRandVerdes=cerosVerdes-cerosMascara;
+
+imageCalculator("AND create", "rojoAndMascara", "verdeAndMascara");     //opero para obtener doble colocalización
+rename("rojoAndVerde");
+
+unosRojos=contarUnos("rojoAndMascara");                     //cuento unos en cada canal
+unosVerdes=contarUnos("verdeAndMascara");
+
+unosRV=contarUnos("rojoAndVerde");                       //cuento unos de doble colo
+
+rv=(unosRV/unosRojos)*100;                               //calculo coeficientes de colocalización
+vr=(unosRV/unosVerdes)*100;
+supTot=(unosRV/(unosRojos+unosVerdes-unosRV))*100;
+}
+}
+
+// SIGNIFICANCIA ESTADÍSTICA INTERSECCIÓN
+{
+if(generadasI==true && interseccion==true)
+{
+
+selectWindow("verdeAndMascara");	        //vectorizo el canal verde
+  vI = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Intersection statistical significance...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			vI[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+rrv=newArray(numGeneradas);                           //Defino arreglos para cada indice de colocalización
+rvr=newArray(numGeneradas);
+rSupTot=newArray(numGeneradas);   
+
+random("seed", round(random*unosRojos*10));
+
+
+for(s=0; s<numGeneradas; s++)                        //rulo para generar tantas imágenes aleatorias para cada fluoróforo como se cargue en el diálogo de entrada
+	{
+	showStatus("Intersection statistical significance: "+s);
+
+	
+rdI=newArray(unosMascara);                                   //vector generado
+for(i=0; i<unosMascara; i++)
+	{
+	if(random<unosRojos/unosMascara)
+		rdI[i]=255;
+		else
+		rdI[i]=0;
+	}
+		
+RandunosRV=0;
+for(i=0; i<unosMascara; i++)                                                   //colo entre vector generado y verde
+	{
+	if(rdI[i]*vI[i]!=0)	
+		RandunosRV++;
+	}
+
+// la superficie cubierta total aleatoria es la misma que la del ensayo
+// igual que el total de unos para cada color son los del ensayo
+
+	rrv[s]=(RandunosRV/unosRojos)*100;                                     //calculo coeficientes de colocalización
+	rvr[s]=(RandunosRV/unosVerdes)*100;
+	rSupTot[s]=(RandunosRV/(unosRojos+unosVerdes-RandunosRV))*100;
+
+print(rSupTot[s]);		
+}
+
+
+showStatus("Intersection statistical significance: "+s);
+wait(1000);
+
+sumRrv=0;                          //inicializo variables de suma para promedios
+sumRvr=0;
+sumSupTot=0;
+
+for(i=0; i<numGeneradas; i++)         //sumo
+	{	
+	sumRrv=sumRrv+rrv[i];
+	sumRvr=sumRvr+rvr[i];
+	sumSupTot=sumSupTot+rSupTot[i];
+	}
+	
+promRrv=sumRrv/numGeneradas;                                    //promedio
+promRvr=sumRvr/numGeneradas; 
+promSupTot=sumSupTot/numGeneradas;   
+
+for(i=0; i<numGeneradas; i++)                                  //desviación estandar                  
+	{	
+	sum2Rrv=sum2Rrv+(rrv[i]-promRrv)*(rrv[i]-promRrv);
+	sum2Rvr=sum2Rvr+(rvr[i]-promRvr)*(rvr[i]-promRvr);
+	sum2SupTot=sum2SupTot+(rSupTot[i]-promSupTot)*(rSupTot[i]-promSupTot);
+	}
+
+devestRrv=sqrt(sum2Rrv/numGeneradas); 
+devestRvr=sqrt(sum2Rvr/numGeneradas); 
+devestSupTot=sqrt(sum2SupTot/numGeneradas); 
+
+xmRrv=zCola*devestRrv+promRrv;
+xmRvr=zCola*devestRvr+promRvr;
+xmSupTot=zCola*devestSupTot+promSupTot;
+
+xRrv=abs(zCola)*devestRrv+promRrv;
+xRvr=abs(zCola)*devestRvr+promRvr;
+xSupTot=abs(zCola)*devestSupTot+promSupTot;
+
+
+if(supTot<xmSupTot)
+	SSst="SE";
+	else
+	{
+	if(supTot>xSupTot)
+		SSst="SC";
+		else
+		SSst="NS";
+	}
+
+
+if(rv<xmRrv)
+	SSIrv="SE";
+	else
+	{
+	if(rv>xRrv)
+		SSIrv="SC";
+		else
+		SSIrv="NS";
+	}
+
+if(vr<xmRvr)
+	SSIvr="SE";
+	else
+	{
+	if(vr>xRvr)
+		SSIvr="SC";
+		else
+		SSIvr="NS";
+	}
+
+
+}
+}
+
+//RESULTADOS
+{
+if(interseccion==true)
+{
+selectWindow("rojoAndVerde");               //cierro imágenes para que no interfieran con futuras corridas de la aplicación
+close();
+}
+
+if(interseccion==false)
+{
+rv="  ******";      
+vr="  ******"; 
+supTot="  ******"; 
+}
+
+if(pearson==false)
+{
+PrRV="  ******";                                                  //variables que no se calculan
+MRv=" ******";
+MVr=" ******";
+}
+
+if(generadasI==false || interseccion==false)
+{
+promRrv="  ******";      
+promRvr="  ******"; 
+promSupTot="  ******"; 
+SSIrv="  ******";
+SSIvr="  ******";
+SSst="  ******";
+}
+if(generadasP==false || pearson==false)
+{
+SSMrv="  ******";
+SSMvr="  ******";
+promMRv="  ******";
+promMVr="  ******";
+}
+if(intOR==false)
+{
+MMUR="  ******";
+MMUV="  ******";
+}
+if(generadasP==false && generadasI==false)
+{numGeneradas=" ******";
+nivel=" ******";}
+
+
+titulo1 = "Results";                                            //genero cuadro que muestra resultados
+titulo2 = "["+titulo1+"]";
+  f = titulo2;
+ if (isOpen(titulo1))
+    print(f, "\\Clear");
+ else
+run("Table...", "name="+titulo1+" width=250 height=600");
+print(f, "\\Headings:for\t% intersection\t% randomizations\t  Significance\tPearson\tManders\trandomizations\t  Significance");
+print(f, " Red in green"+"\t  "+rv+"\t  "+promRrv+"\t  "+SSIrv+"\t  "+PrRV+"\t  "+MRv+"\t  "+promMRv+"\t  "+SSMrv);
+print(f, " Green in red"+"\t  "+vr+"\t  "+promRvr+"\t  "+SSIvr+"\t  "+PrRV+"\t  "+MVr+"\t  "+promMVr+"\t  "+SSMvr);
+print(f, " General"+"\t  "+supTot+"\t  "+promSupTot+"\t  "+SSst+"\t    ******"+"\t   ******"+"\t    ******"+"\t   ******");
+print(f, "");
+print(f, "");
+print(f, "");
+print(f, "");
+print(f, "\t "+"Mask threshold"+"\t "+"Signal threshold      //     "+"\t "+"Generated images:"+"\t"+numGeneradas+"\t"+"Significance level:"+"\t"+nivel);
+print(f, "Red channel"+"\t    "+MMUR+"\t "+MUR);
+print(f, "Green channel"+"\t    "+MMUV+"\t "+MUV);
+print(f, "");
+
+// Resultados gráficos
+ 
+setBatchMode("exit and display"); 
+
+run("Merge Channels...", "c1=[rojoAndMascara] c2=[verdeAndMascara] create");    //Genero imagen de triple colocalización
+rename("Colocalization");
+updateDisplay();
+
+
+if(imagenAleatoria==true)
+{
+if(interseccion==true && generadasI==true)
+{
+
+selectWindow(mascara);                                                          //muestro ejemplo de imagen aleatoria
+run("Duplicate...", "title=RandomIntersection");
+for(y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		 	f=random;
+		if(f<=cerosRandRojos/unosMascara)
+			setPixel(x, y, 0);
+		}
+	}
+run("Red");
+updateDisplay();
+}
+
+if(pearson==true && generadasP==true)
+{                                     
+	
+selectWindow(mascara);
+run("Duplicate...", "title=RandomManders");       // genero imagen aleatoria para coeficiente de Manders 
+i=0;
+mas=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			setPixel(x, y, rd[i]);
+			i++;
+			}
+		mas++;
+		}
+	}                                      
+run("Green");
+updateDisplay();
+
+}  //cierra aleatoria de manders 
+}  //cierra imagen aleatoria
+}  //cierra resultados
+}  //cierra macro
+
+//FIN
+
+

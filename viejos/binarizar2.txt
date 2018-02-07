@@ -1,0 +1,133 @@
+//binarizar y contar pixels
+
+selectWindow("Mask");
+rename("mascara");
+selectWindow("Result of Image0008.oif - C=1-1");
+rename("canal");
+
+w = getWidth;                                 
+h = getHeight;
+
+coe=0.05;
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		sumador++;
+	}
+return sumador;
+}
+
+
+unosMascara=contarUnos("mascara");                        //cuento unos en la mascara
+//unosMascara=40*40;
+
+
+t=255;
+selectWindow("canal");       //binariza el canal rojo según el porcentage cargado    
+unos=0;
+
+while(unos<coe*unosMascara)
+{
+unos = 0; 
+for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{
+		a = getPixel(x,y);
+		if(a==255)
+			unos++;
+		}
+	}
+
+t--;
+for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{
+		a = getPixel(x,y);
+		if(a==t && unos<coe*unosMascara)
+			{
+			setPixel(x, y, 255);
+			unos++;
+			}
+		}
+	}
+updateDisplay();
+
+}
+
+
+for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{
+		a = getPixel(x,y);
+		if(a!=255)
+			setPixel(x, y, 0);
+		}
+	}
+updateDisplay();
+
+/*
+t=255;
+selectWindow("canal");       //binariza el canal rojo según el porcentage cargado    
+
+unos=0;
+   
+do
+{
+t--;
+for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{
+		a = getPixel(x,y);
+		if(a==255)
+			unos++;
+			else
+			{
+			if(a==t && unos<=coe*unosMascara) 
+				{
+				setPixel(x, y, 255);
+				unos++;
+				}
+			}
+		}
+	}
+updateDisplay();
+}
+while(unos<=coe*unosMascara);
+
+for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{
+		a = getPixel(x,y);
+		if(a!=255)
+			setPixel(x, y, 0);
+		}
+	}
+updateDisplay();
+*/
+unosCanal=contarUnos("canal");
+
+print("unosMascara*coe: "+unosMascara*coe);
+print("unosCanal: "+unosCanal);
+print("unos: "+unos);
+
+
+
+
+

@@ -1,0 +1,24 @@
+ 
+selectWindow("01b.tif (red)");
+rojo = getImageInfo();
+print(rojo);
+selectWindow("01b.tif (green)");
+verde = getImageID();
+print(verde);
+selectWindow("01b.tif (blue)");
+azul = getImageID();
+print(azul);
+selectWindow("Mask");
+mascara = getImageID();
+print(mascara);
+selectWindow("Result of 01b.tif (red)");
+rojoconverde = getImageID();
+print(rojoconverde);
+selectWindow("Result of 01b.tif (blue)");
+azulconmascara = getImageID();
+print(azulconmascara);
+selectWindow("Result of Result of 01b.tif (red)");
+colocalizacion = getImageID();
+print(colocalizacion);
+
+

@@ -1,0 +1,81 @@
+selectWindow("Mask");                            //genero la primera imagen aleatoria
+run("Duplicate...", "title=random1");
+idr1 = getImageID();		
+selectImage(idr1);
+imagenr1 = getTitle();
+
+x=0;
+while(x<100)
+{
+xr=random*512;
+yr=random*512;
+z=getPixel(xr, yr);
+if(z==255)
+{
+setPixel(xr, yr, 0);
+x++;
+}
+}
+updateDisplay();
+
+selectWindow("Mask");                            //genero la segunda imagen aleatoria
+run("Duplicate...", "title=random2");
+idr2 = getImageID();		
+selectImage(idr2);
+imagenr2 = getTitle();
+
+x=0;
+while(x<200)
+{
+xr=random*512;
+yr=random*512;
+z=getPixel(xr, yr);
+if(z==255)
+{
+setPixel(xr, yr, 0);
+x++;
+}
+}
+updateDisplay();
+
+selectWindow("Mask");                            //genero la tercera imagen aleatoria
+run("Duplicate...", "title=random3");
+idr3 = getImageID();		
+selectImage(idr3);
+imagenr3 = getTitle();
+
+x=0;
+while(x<300)
+{
+xr=random*512;
+yr=random*512;
+z=getPixel(xr, yr);
+if(z==255)
+{
+setPixel(xr, yr, 0);
+x++;
+}
+}
+
+updateDisplay();
+selectWindow("Mask");                            //genero la cuarta imagen aleatoria
+run("Duplicate...", "title=random4");
+idr4 = getImageID();		
+selectImage(idr4);
+imagenr4 = getTitle();
+
+x=0;
+while(x<1500)
+{
+xr=random*512;
+yr=random*512;
+z=getPixel(xr, yr);
+if(z==255)
+{
+setPixel(xr, yr, 0);
+x++;
+}
+}
+
+
+updateDisplay();

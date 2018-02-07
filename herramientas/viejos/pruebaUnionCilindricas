@@ -1,0 +1,55 @@
+
+w=31; 
+h=31;
+slice=90;
+
+function VECTORIZAR(imagenAvectorizar, w, h)                      
+{
+selectWindow(imagenAvectorizar);
+vector=newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		vector[i] = getPixel(x,y);
+		i++;
+		}
+	}
+return vector;
+}
+
+b=newArray(31*31);
+c=newArray(31*31);
+a=newArray(31*31);
+
+b=VECTORIZAR("1", 31, 31);
+c=VECTORIZAR("2", 31, 31);
+
+for(j=0; j<slice; j++)
+	{
+	for(k=0; k<31*31; k++)	
+		a[k]=b[k]*c[k]/255;
+	selectWindow("2");
+	run("Rotate... ", "angle=j grid=1 interpolation=None");
+	c=VECTORIZAR("2", 31, 31);
+	
+	
+corte=1000+j;
+newImage(corte, "8-bit random", w, h, 1);
+selectWindow(corte);
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, a[i]);
+		i++;
+		}
+	} 
+ 
+}
+run("Images to Stack", "method=[Copy (center)] name=Stack title=10 use");
+        
+
+

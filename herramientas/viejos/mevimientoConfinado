@@ -1,0 +1,94 @@
+
+newImage("Confinado", "8-bit black", 200, 200, 45);
+
+x1=100; x2=150; x3=40; x4=78; x5=165; x6=100; x7=36; x8=32; y1=70; y2=36; y3=26; y4=89; y5=123; y6=150; y7=120; y8=60;
+
+setPixel(x1, y1, 255);
+setPixel(x2, y2, 255);
+setPixel(x3, y3, 255);
+setPixel(x4, y4, 255);
+setPixel(x5, y5,  255);
+setPixel(x6, y6, 255);
+setPixel(x7, y7, 255);
+setPixel(x8, y8,  255);
+
+pi=3.1416;
+pa=4;
+random("seed", 6895909090693098);
+
+for(i=2; i<46; i++)
+{
+
+setSlice(i);
+
+if(i%2==0)
+randangle1=random*2*pi;
+else
+randangle1=randangle1+pi;
+y1=y1+sin(randangle1)*pa;
+x1=x1+cos(randangle1)*pa;
+
+if(i%2==0)
+randangle2=random*2*pi;
+else
+randangle2=randangle2+pi;
+y2=y2+sin(randangle2)*pa;
+x2=x2+cos(randangle2)*pa;
+
+if(i%2==0)
+randangle3=random*2*pi;
+else
+randangle3=randangle3+pi;
+y3=y3+sin(randangle3)*pa;
+x3=x3+cos(randangle3)*pa;
+
+if(i%2==0)
+randangle4=random*2*pi;
+else
+randangle4=randangle4+pi;
+y4=y4+sin(randangle4)*pa;
+x4=x4+cos(randangle4)*pa;
+
+if(i%2==0)
+randangle5=random*2*pi;
+else
+randangle5=randangle5+pi;
+y5=y5+sin(randangle5)*pa;
+x5=x5+cos(randangle5)*pa;
+
+if(i%2==0)
+randangle6=random*2*pi;
+else
+randangle6=randangle6+pi;
+y6=y6+sin(randangle6)*pa;
+x6=x6+cos(randangle6)*pa;
+
+if(i%2==0)
+randangle7=random*2*pi;
+else
+randangle7=randangle7+pi;
+y7=y7+sin(randangle7)*pa;
+x7=x7+cos(randangle7)*pa;
+
+if(i%2==0)
+randangle8=random*2*pi;
+else
+randangle8=randangle8+pi;
+y8=y8+sin(randangle8)*pa;
+x8=x8+cos(randangle8)*pa;
+
+setPixel(x1, y1, 255);
+setPixel(x2, y2, 255);
+setPixel(x3, y3, 255);
+setPixel(x4, y4, 255);
+setPixel(x5, y5,  255);
+setPixel(x6, y6, 255);
+setPixel(x7, y7, 255);
+setPixel(x8, y8, 255);
+
+
+//print(x1+"   "+x2+"   "+x3+"   "+x4+"   "+x5);
+//print(y1+"   "+y2+"   "+y3+"   "+y4+"   "+y5);
+
+}
+

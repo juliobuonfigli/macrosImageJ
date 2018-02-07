@@ -1,0 +1,276 @@
+/*BINARIZACIÓN AUTOMÁTICA*/
+
+// CARGA DE DATOS
+
+id1=getImageID();          //identificación de IDs
+tamano=0;
+figura=newArray(12);
+for(i=id1-1000; i<id1+1000; i++)
+	{
+	if(isOpen(i))
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+  Dialog.create("SETC");    //genero ventana de inicio
+                                                                    
+  Dialog.addChoice("Rojo:", figura);         
+  Dialog.addChoice("Verde:", figura);          
+  Dialog.addChoice("Azul:", figura);    
+  Dialog.addChoice("Máscara:", figura);    
+  Dialog.addCheckbox("Binarización según intensidad promedio", true);
+  Dialog.addCheckbox("Binarización porcentual", true);
+  Dialog.addNumber("Rojo: ", 5); 
+  Dialog.addNumber("Verde: ", 5); 
+  Dialog.addNumber("Azul: ", 5); 
+  
+        Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	azul=Dialog.getChoice();
+   	mascara=Dialog.getChoice();
+   	bin1=Dialog.getCheckbox();
+	bin2=Dialog.getCheckbox();
+   	porR=Dialog.getNumber();
+	porV=Dialog.getNumber();
+	porA=Dialog.getNumber();
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+
+function sumarPixInt(ventana)                     //Declaro una función que suma intensidades de todos los pixeles
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	suma=suma+a[i];
+	}
+return suma;
+}
+
+imageCalculator("AND create", rojo, mascara);    //opero imagenes con la máscara
+rename("rojoAndMascara");
+imageCalculator("AND create", verde, mascara);  
+rename("verdeAndMascara");
+imageCalculator("AND create", azul, mascara);  
+rename("azulAndMascara");
+
+sumRojo=sumarPixInt("rojoAndMascara");                     //sumo intensidades en cada imagen
+sumVerde=sumarPixInt("verdeAndMascara");
+sumAzul=sumarPixInt("azulAndMascara");
+
+selectWindow(mascara);       //Cuento la cantidad pixeles de la seleccion (o máscara)
+   a = newArray(w*h);
+   i = 0;
+   unosMascara = 0;
+     
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		unosMascara++;
+	}
+
+
+if(bin2==true)
+{
+
+coeR=porR/100;
+coeV=porV/100;
+coeA=porA/100;
+
+
+t=255;
+selectWindow("rojoAndMascara");    
+do
+{
+unos = 0;    
+t--;
+for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{
+		a = getPixel(x,y);
+		if(a!=255)
+			{
+			if(a==t)
+				setPixel(x, y, 255);
+			}
+			else
+			unos++;
+		}
+	}
+}
+while(unos<coeR*unosMascara);
+
+for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{
+		a = getPixel(x,y);
+		if(a!=255)
+			setPixel(x, y, 0);
+		}
+	}
+updateDisplay();
+
+
+t=255;
+selectWindow("verdeAndMascara");    
+do
+{
+unos = 0;    
+t--;
+for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{
+		a = getPixel(x,y);
+		if(a!=255)
+			{
+			if(a==t)
+				setPixel(x, y, 255);
+				
+			}
+			else
+			unos++;
+		}
+	}
+}
+while(unos<coeV*unosMascara);
+
+for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{
+		a = getPixel(x,y);
+		if(a!=255)
+			setPixel(x, y, 0);
+		}
+	}
+updateDisplay();
+
+
+
+t=255;
+selectWindow("azulAndMascara");    
+do
+{
+unos = 0;    
+t--;
+for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{
+		a = getPixel(x,y);
+		if(a!=255)
+			{
+			if(a==t)
+				setPixel(x, y, 255);
+			}
+			else
+			unos++;
+		}
+	}
+}
+while(unos<coeA*unosMascara);
+
+for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{
+		a = getPixel(x,y);
+		if(a!=255)
+			setPixel(x, y, 0);
+		}
+	}
+updateDisplay();
+
+}
+
+if(bin1==true)
+{
+
+pr=sumRojo/unosMascara;                                    //calculo promedios de intensidad para cada imagen 
+pv=sumVerde/unosMascara;
+pa=sumAzul/unosMascara;                   // o deberia ser sobre (w*h)
+
+
+selectWindow("rojoAndMascara");    
+i = 0;
+ for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{	
+		a = getPixel(x,y);
+		if(a>pr*3)
+			setPixel(x, y, 255);
+			else
+			setPixel(x, y, 0);
+		}
+
+	}
+
+updateDisplay();
+
+
+selectWindow("verdeAndMascara");    
+i = 0;
+ for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{	
+		a = getPixel(x,y);
+		if(a>pv*3)
+			setPixel(x, y, 255);
+			else
+			setPixel(x, y, 0);
+		}
+
+	}
+
+updateDisplay();
+
+
+selectWindow("azulAndMascara");    
+i = 0;
+ for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{	
+		a = getPixel(x,y);
+		if(a>pa*3)
+			setPixel(x, y, 255);
+			else
+			setPixel(x, y, 0);
+		}
+
+	}
+
+updateDisplay();
+
+}
+
+/*
+print(unosMascara);
+print(pr);
+print(NUR);
+print(pr2);
+print(NUR2);
+*/

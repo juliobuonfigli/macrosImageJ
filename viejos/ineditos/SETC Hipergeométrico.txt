@@ -1,0 +1,296 @@
+
+/*
+SETC (Significancia Estadística de la Triple Colocalización)
+Julio Buonfigli
+Hipergeométrico
+
+*/
+
+macro "SSTC" {
+
+
+if(isOpen("rojoAndMascara"))
+	{
+	selectWindow("rojoAndMascara");
+	close();
+	}
+if(isOpen("verdeAndMascara"))
+	{
+	selectWindow("verdeAndMascara");
+	close();
+	}
+if(isOpen("azulAndMascara"))
+	{
+	selectWindow("azulAndMascara");
+	close();
+	}
+
+requires("1.29p");              //muestra un mensaje si la versión de imagej usada no es compatible
+
+id1=getImageID();          //identificación de IDs
+tamano=0;
+figura=newArray(nImages*2);
+for(i=id1-800; i<id1+800; i++)
+	{
+	if(isOpen(i))
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+
+
+  Dialog.create("SETC");    //genero ventana de inicio
+                                                                    
+  Dialog.addChoice("Rojo:", figura);         
+  Dialog.addChoice("Verde:", figura);          
+  Dialog.addChoice("Máscara:", figura);  
+  
+       Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	mascara=Dialog.getChoice();
+
+
+
+selectWindow(mascara);
+run("Select None");
+
+selectWindow(rojo);
+run("8-bit");
+selectWindow(verde);
+run("8-bit");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+imageCalculator("AND create", verde, mascara);     //opero imágenes con la máscara
+rename("verdeAndMascara");
+imageCalculator("AND create", rojo, mascara);   
+rename("rojoAndMascara");
+
+setBatchMode(true);
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		sumador++;
+	}
+return sumador;
+}
+
+
+unosMascara=contarUnos(mascara);                        //cuento unos y ceros en la mascara
+
+selectWindow("rojoAndMascara");
+run("Make Binary");
+selectWindow("verdeAndMascara");                                                             
+run("Make Binary");
+
+
+// COLOCALIZACIÓN DE INTERSECCIÓN        
+
+showStatus("Calculando porcentage de colocalización de intersección...");
+
+imageCalculator("AND create", "rojoAndMascara", "verdeAndMascara");     //opero para obtener doble colocalización
+rename("rojoAndVerde");
+
+unosRojos=contarUnos("rojoAndMascara");                     //cuento unos en cada canal
+unosVerdes=contarUnos("verdeAndMascara");
+
+unosRV=contarUnos("rojoAndVerde");                       //cuento unos de doble colo
+
+rv=(unosRV/unosRojos)*100;                            //calculo coeficientes de colocalización
+vr=(unosRV/unosVerdes)*100;
+supTot=(unosRV/(unosRojos+unosVerdes-unosRV))*100;
+
+
+
+//PROBABILIDAD DE ERROR
+
+
+showStatus("calculando probabilidad de error...");
+
+selectWindow("rojoAndMascara");
+run("Duplicate...", "rojoAndMascaraP");
+rename("rojoAndMascaraP");
+run("Erode");
+if(w>80)
+run("Size...", "width=30 height=30 constrain average interpolation=Bilinear");
+run("Make Binary");
+selectWindow("verdeAndMascara");
+run("Duplicate...", "verdeAndMascaraP");
+rename("verdeAndMascaraP");
+run("Erode");
+if(w>30)
+run("Size...", "width=30 height=30 constrain average interpolation=Bilinear");
+run("Make Binary");
+selectWindow(mascara);
+run("Duplicate...", "mascaraP");
+rename("mascaraP");
+if(w>30)
+run("Size...", "width=30 height=30 constrain average interpolation=Bilinear");
+run("Make Binary");
+
+imageCalculator("AND create", "rojoAndMascaraP", "verdeAndMascaraP");     //opero para obtener doble colocalización
+rename("rojoAndVerdeP");
+
+unosRojosP=contarUnos("rojoAndMascaraP");                     //cuento unos en cada canal
+unosVerdesP=contarUnos("verdeAndMascaraP");
+unosMascaraP=contarUnos("mascaraP");                       //cuento unos de doble colo
+unosRVP=contarUnos("rojoAndVerdeP"); 
+
+if(unosRojosP<unosVerdesP)
+elMenor=unosRojosP;
+else
+elMenor=unosVerdesP;
+
+RVP=newArray(elMenor+1);
+
+mascaraMenosRojos=unosMascaraP-unosRojosP;
+mascaraMenosVerdes=unosMascaraP-unosVerdesP;
+
+unosRojosFac=1;
+for(i=1;i<=unosRojosP;i++)
+unosRojosFac=unosRojosFac*i;
+
+unosVerdesFac=1;
+for(i=1;i<=unosVerdesP;i++)
+unosVerdesFac=unosVerdesFac*i;
+
+unosMascaraFac=1;
+for(i=1;i<=unosMascaraP;i++)
+unosMascaraFac=unosMascaraFac*i;
+
+mascaraMenosRojosFac=1;
+for(i=1;i<=mascaraMenosRojos;i++)
+mascaraMenosRojosFac=mascaraMenosRojosFac*i;
+
+mascaraMenosVerdesFac=1;
+for(i=1;i<=mascaraMenosVerdes;i++)
+mascaraMenosVerdesFac=mascaraMenosVerdesFac*i;
+
+pe=0;
+
+for(i=unosRVP;i<=elMenor;i++)
+{
+rojosMenosRV=unosRojosP-RVP[i];
+verdesMenosRV=unosVerdesP-RVP[i];
+denominador2=mascaraMenosRojos-verdesMenosRV;
+
+unosRVPFac=1;
+for(i=1;i<=RVP[i];i++)
+unosRVPFac=unosRVPFac*i;
+
+rojosMenosRVFac=1;
+for(i=1;i<=rojosMenosRV;i++)
+rojosMenosRVFac=rojosMenosRVFac*i;
+
+verdesMenosRVFac=1;
+for(i=1;i<=verdesMenosRV;i++)
+verdesMenosRVFac=verdesMenosRVFac*i;
+
+denominador2Fac=1;
+for(i=1;i<=denominador2;i++)
+denominador2Fac=denominador2Fac*i;
+
+pa=((unosRojosFac/(unosRVPFac*rojosMenosRVFac))*(mascaraMenosRojosFac/(verdesMenosRVFac*denominador2Fac)))/(unosMascaraFac/(unosVerdesFac*mascaraMenosVerdesFac));
+
+pe=pe+pa;
+}
+
+
+
+//RESULTADOS
+
+
+
+selectWindow("rojoAndVerde");               //cierro imágenes para que no interfieran con futuras corridas de la aplicación
+close();
+
+titulo1 = "Resultados";                                            //genero cuadro que muestra resultados
+titulo2 = "["+titulo1+"]";
+  f = titulo2;
+ if (isOpen(titulo1))
+    print(f, "\\Clear");
+ else
+run("Table...", "name="+titulo1+" width=250 height=600");
+print(f, "\\Headings:para\t% intersección\t Valor p");
+print(f, " Rojo en verde"+"\t  "+rv+"\t  "+pe);
+print(f, " Verde en rojo"+"\t  "+vr+"\t  "+pe);
+print(f, " General"+"\t  "+supTot+"\t  "+pe);
+print(f, "");
+
+
+setBatchMode(false);
+
+// Resultados gráficos
+          
+
+run("Merge Channels...", "c1=[rojoAndMascara] c2=[verdeAndMascara] create keep");    //Genero imagen de triple colocalización
+rename("Colocalización");
+updateDisplay();
+
+selectWindow("rojoAndMascara");
+close();
+selectWindow("verdeAndMascara");
+close();
+}
+
+//FIN
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,195 @@
+// MMM
+
+macro "Relationship List [L]" 
+{
+
+w=4;
+h=4;
+
+function NEWFIGURE(vector)
+{
+newImage("image", "8-bit black", w, h, 1);       
+selectWindow("image");
+i=0;
+for (y=0; y<w; y++)
+	{
+	for (x=0; x<h; x++)
+		{
+		setPixel(x,y, vector[i]);
+		i++;
+		}
+	} 
+return "image";
+}
+
+
+function RANUMERATORS(r, g, b)
+{
+num=newArray(4);
+num[0]=0; num[1]=0;  num[2]=0; 
+for(i=0; i<w*h; i++)     
+	{                                                                                         
+	num[0]=num[0]+16*(g[i])*(b[i]);	
+	num[1]=num[1]+(r[i])*16*(b[i]);
+	num[2]=num[2]+(r[i])*(g[i])*16;
+	}
+return num;
+}
+
+
+function NUMERATORS(r, g, b)
+{
+num=newArray(4);
+num[0]=0; num[1]=0;  num[2]=0; num[3]=0;
+for(i=0; i<w*h; i++)     
+	{                                                                                         
+	num[0]=num[0]+(r[i])*(g[i]);	
+	num[1]=num[1]+(r[i])*(b[i]);
+	num[2]=num[2]+(b[i])*(g[i]);
+	num[3]=num[3]+(r[i])*(g[i])*(b[i]);
+	}
+return num;
+}
+
+// de estas voy a hacer 2 uno para dobles y otro para triples y reemplazo el segundo else con un if(actual>control-x && actual<control+x)
+// los otros 2 control tambien hay que cambiarlos por control+x o -x según corresponda y x no es igual en las triples que en las dobles
+
+sDcontrol=4608; //W*h*16*16+2*16*16
+iDcontrol=3584; //W*h*16*16-2*16*16
+sTcontrol=73728;  //W*h*16*16*16+2*16*16*16
+iTcontrol=57344; //W*h*16*16*16-2*16*16*16
+pcube=2*16*16*16;
+ 
+function SS(actual, inf, sup)  //7: compara la colo obtenida con la gausiana
+{
+if(actual<sup && actual>inf)
+	ss=0;
+if(actual>=sup)    
+	ss=1;
+if(actual<=inf)    
+	ss=-1;
+	
+return ss;
+}
+
+
+
+function SIGNIFICANCE(r, g, b)                     //9: calcula significancia estadística, devuelve un vector de cadena de caracteres (SC, NS, SE)
+{
+num=NUMERATORS(r, g, b);
+ranNum=RANUMERATORS(r, g, b);
+
+ss=newArray(7);                      //vector de salida
+ss[0]=SS(num[0], iDcontrol, sDcontrol);
+ss[1]=SS(num[1], iDcontrol, sDcontrol);
+ss[2]=SS(num[2], iDcontrol, sDcontrol);
+ss[3]=SS(num[3], ranNum[0]-pcube, ranNum[0]+pcube);
+ss[4]=SS(num[3], ranNum[1]-pcube, ranNum[1]+pcube);
+ss[5]=SS(num[3], ranNum[2]-pcube, ranNum[2]+pcube);
+ss[6]=SS(num[3], iTcontrol, sTcontrol);
+
+return ss;
+}
+
+iLimit=300000;
+
+r=newArray(w*h);
+g=newArray(w*h);
+b=newArray(w*h);
+
+random("seed", round(random*iLimit));
+
+super=1880;
+positives=469;
+sc=newArray(7);
+
+A=1;
+while(A<2)
+	{
+	sc[6]=A;
+	B=0;
+	while(B<2)
+		{
+		sc[5]=B;
+		C=1;
+		while(C<2)
+			{
+			sc[4]=C;
+			D=-1;
+			while(D<2)
+				{
+				sc[3]=D;
+				E=0;
+				while(E<2)
+					{
+					sc[2]=E;
+					F=1;
+					while(F<2)
+						{
+						sc[1]=F;
+						G=0;
+						while(G<2)
+							{
+							sc[0]=G;
+							
+
+condition=false; total=0;  
+        
+random("seed", round(random*iLimit));
+
+	do {	
+	
+	for(i=0; i<w*h; i++)
+		{
+	r[i]=0; g[i]=0; b[i]=0;
+		}
+	
+	for(i=0; i<w*h; i++)
+		{
+		ir=round(random*(w*h-1));
+		r[ir]=r[ir]+16;		
+		ig=round(random*(w*h-1));
+		g[ig]=g[ig]+16;		
+		ib=round(random*(w*h-1));
+		b[ib]=b[ib]+16;		
+		}
+
+	showStatus("Iterations: "+total+"  Status: "+super);
+	                           
+ 	total++;
+	 
+	ss=SIGNIFICANCE(r, g, b);
+	
+	if(ss[0]==sc[0] && ss[1]==sc[1] && ss[2]==sc[2] && ss[3]==sc[3] && ss[4]==sc[4] && ss[5]==sc[5] && ss[6]==sc[6])
+		condition=true;
+		else
+		condition=false;
+
+	}
+	while(condition==false && total<iLimit)
+
+if(condition==true)
+	positives++;	
+	
+super++; 	
+print(super+"  "+positives+"  "+total+"   "+sc[0]+"  "+sc[1]+"  "+sc[2]+"  "+sc[3]+"  "+sc[4]+"  "+sc[5]+"  "+sc[6]);
+
+
+							G++;
+							}
+						F++;
+						}
+					E++;
+					}
+				D++;
+				}
+			C++;
+			}
+		B++;
+		}
+	A++;
+	}
+
+
+}    //FIN
+

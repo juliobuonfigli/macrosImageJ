@@ -1,0 +1,5 @@
+En vez de hacer montecalrlo puedo directamente calcular la probabilidad de 
+tener el porcentage de colocalización obtenido. Cada imagen son eventos 
+independientes. Multiplico sus probabilidades para cada función. 
+O sea (23/42)*(3/78)*(9/86). La probabilidades independientes de encontrar un uno
+ en una coordenada elegida al azar.  

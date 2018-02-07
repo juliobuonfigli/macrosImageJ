@@ -1,0 +1,94 @@
+
+//Roi.getCoordinates(xpoints, ypoints);
+//print(xpoints[0]);
+
+w=getWidth;
+h=getHeight;
+frames=nSlices;
+if(w/2>h/2)
+	larger=w/2;
+	else
+	larger=h/2;
+frag=20;
+pi=3.141592653589793; 
+dt=pi/frag;
+esp=1.25;
+X=newArray(30);
+Y=newArray(30);
+ran=random;
+
+for(j=1; j<frames+1; j++) 
+	{
+	setSlice(j);
+	t=0;
+	CONT=0;
+	for(i=0; i<frag; i++)
+		{
+		run("Select None");
+		cont=0;
+		do
+			{
+			cont++;
+			xc=round(cont*cos(t)+w/2);
+			yc=round(cont*sin(t)+h/2);
+			pValue=getPixel(xc, yc);
+			}
+		while(pValue==0 && cont<larger) 
+		X[CONT]=xc;			
+		Y[CONT]=yc;
+		t=t+2*dt;
+		CONT++;
+		}
+	for(e=CONT; e<30; e++) {  X[e]=xc; 	Y[e]=yc; }
+	
+	run("Select None");
+	makePolygon(X[0], Y[0], X[1], Y[1], X[2], Y[2], X[3], Y[3], X[4], Y[4], X[5], Y[5], X[6], Y[6], X[7], Y[7], X[8], Y[8], X[9], Y[9], X[10], Y[10], X[11], Y[11], X[12], Y[12], X[13], Y[13], X[14], Y[14], X[15], Y[15], X[16], Y[16], X[17], Y[17], X[18], Y[18], X[19], Y[19], X[20], Y[20], X[21], Y[21], X[22], Y[22], X[23], Y[23], X[24], Y[24], X[25], Y[25], X[26], Y[26], X[27], Y[27], X[28], Y[28], X[29], Y[29]);
+	roiManager("Add");
+	roiManager("Select", j-1);
+	roiManager("Rename", j);
+	}
+t=0;
+for(j=0; j<frag; j++)
+	{
+	for(i=1; i<frames; i++)
+		{
+		setSlice(i);
+		roiManager("Select", i);
+		Roi.getCoordinates(xp, yp);
+		run("Select None");
+		d1=sqrt(pow(xp[j]-w/2, 2)+pow(yp[j]-h/2, 2));
+		d2=sqrt(pow(xp[j+1]-w/2, 2)+pow(yp[j+1]-h/2, 2));
+		/*XB=round(esp*d1*cos(t+2*dt)+w/2);
+		YB=round(esp*d1*sin(t+2*dt)+h/2);
+		XA=round(esp*d2*cos(t+4*dt)+w/2);
+		YA=round(esp*d2*sin(t+4*dt)+h/2);*/
+		xa=xp[j]+5*cos(t+2*dt);
+		ya=yp[j]+5*sin(t+2*dt);
+		XB=xp[j]+15*cos(t+2*dt);
+		YB=yp[j]+15*sin(t+2*dt);
+		xb=xp[j+1]+5*cos(t+4*dt);
+		yb=yp[j+1]+5*sin(t+4*dt);	
+		XA=xp[j+1]+15*cos(t+4*dt);
+		YA=yp[j+1]+15*sin(t+4*dt);
+		if(j==frag-1) {
+		xb=xp[0]+5*cos(t+4*dt);
+		yb=yp[0]+5*sin(t+4*dt);	
+		XA=xp[0]+15*cos(t+4*dt);
+		YA=yp[0]+15*sin(t+4*dt); }
+		makePolygon(xa, ya, xb, yb, XA, YA, XB, YB);
+		//makePolygon(xp[j], yp[j], xp[j+1], yp[j+1], XA, YA, XB, YB);  
+		//makePolygon(xp[j], yp[j], xp[j+1], yp[j+1], xp[j]+5, yp[j]+5, xp[j+1]+5, yp[j+1]+5); 
+		wait(10);
+		run("Select None");
+		}
+	t=t+2*dt;
+	}
+
+/*d=sqrt(pow(xp[j]-xp[j+1], 2)+pow(yp[j]-yp[j+1], 2));
+alfa=atan(esp/d);
+x2a=xp[j]+sin(alfa)*d;
+y2a=yp[j]+sin(alfa)*esp;
+x2b=xp[j+1]+sin(alfa)*d;
+y2b=yp[j+1]+sin(alfa)*esp;*/
+
+	

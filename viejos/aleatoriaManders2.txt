@@ -1,0 +1,101 @@
+
+
+
+// desordenar un vector
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+selectWindow("01b.tif (green)");	   
+  az = newArray(w*h);
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		az[i++] = getPixel(x,y);
+	}
+
+u=newArray(w*h);
+i=0;
+for(i=0; i<w*h; i++)
+	u[i]=true;
+
+aR=newArray(w*h);
+i=0;	
+while(i<w*h)
+	{
+	s=round(random*w*h);
+        	if(u[s]!=false)
+		{
+		aR[i]=az[s];
+		u[s]=false;
+		i++;
+		}
+	}
+	
+
+newImage("Untitled", "8-bit Black", 512, 512, 1);
+selectWindow("Untitled");	   
+  
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		aR[i++] = setPixel(x,y);
+	}
+
+updateDisplay();
+
+
+
+/*
+
+while(az[i] != false) 	
+	{
+	for(i=0; i<w+h; i++)
+		{
+		s=random*264000
+		if(a[i] == 255)
+			{
+			az[i]=Ra[s];
+				if(
+				az[i]=false;
+			}
+		}
+	}
+
+
+
+	selectWindow(mascara);                            //genero una imagen aleatoria para el canal rojo
+	run("Duplicate...", "title=RandRojo");
+
+	i=0;
+	while(i<w*h)
+	{
+	f=0;
+	l=0;
+   	for (y=0; y<h; y++)
+		{
+      		for (x=0; x<w; x++)
+			{
+          			l = getPixel(x, y);
+			if(l == 255)
+				{
+				if(r[i] != 0)
+					{
+					f= random;
+					if(f>factor)
+						{
+						setPixel(x, y, r[i]);
+						i++;
+						}					
+					}
+					else
+					i++;
+				}
+			}
+		}
+	}
+	updateDisplay();
+
+*/

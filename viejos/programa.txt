@@ -1,0 +1,10 @@
+
+int getPixelCount (int t)
+for (int f=0; f<al valor que devuelva pixelcount; f++){
+if(nombre del vector de la imagen[f]==255)
+{e++;}
+else; 
+{p++;}
+}
+show(p);
+show(e);

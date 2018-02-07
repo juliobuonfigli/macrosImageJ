@@ -1,0 +1,127 @@
+
+
+
+
+
+function VECTORIZAR(imagenAvectorizar, w, h)     //1: funcion para vectorizar imagenes                    
+{
+selectWindow(imagenAvectorizar);
+vector=newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		vector[i] = getPixel(x,y);
+		i++;
+		}
+	}
+return vector;
+}
+
+
+function NEIGHBOURPIXEL(ia, w, h)       //selecciona un pixel vecino al azar
+{
+do    {	
+	ran=random;
+	if(ran>0 && ran<0.125)
+		ib=ia-w-1;
+	if(ran>0.125 && ran<0.250)
+		ib=ia-w;
+	if(ran>0.250 && ran<0.375)
+		ib=ia-w+1;
+	if(ran>0.375 && ran<0.500)
+		ib=ia-1;
+	if(ran>0.500 && ran<0.625)
+		ib=ia+1;
+	if(ran>0.625 && ran<0.750)
+		ib=ia+w-1;
+	if(ran>0.750 && ran<0.875)
+		ib=ia+w;
+	if(ran>0.875 && ran<1.05)
+		ib=ia+w+1;
+	}  while(ib<0 || ib>w*h-1)
+return ib;
+}
+
+
+
+
+id1=getImageID();                                            //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+
+
+Dialog.create("prueba montecarlo y colo");                    //genero ventana de inicio                                                      
+  Dialog.addChoice("canal 1: ", figura);  
+  Dialog.addChoice("canal 2: ", figura);         
+       Dialog.show();
+   	c1=Dialog.getChoice();
+  	c2=Dialog.getChoice();
+
+w = getWidth;               
+h = getHeight;
+
+ca=VECTORIZAR(c1, w, h);
+cb=VECTORIZAR(c2, w, h);
+
+for(i=0; i<1000000; i++)
+	{
+	do {
+	ii=round(random*(w*h-1));
+	} while(ca[ii]<10)
+	fi=NEIGHBOURPIXEL(ii, w, h);
+	if((ca[fi]+1)*cb[fi]+(ca[ii]-1)*cb[ii]<ca[fi]*cb[fi]+ca[ii]*cb[ii] && ca[fi]<255)
+	{
+	ca[fi]=ca[fi]+1;
+	ca[ii]=ca[ii]-1;
+	}
+	do {
+	ii=round(random*(w*h-1));
+	}   while(cb[ii]<10)
+	fi=NEIGHBOURPIXEL(ii, w, h);
+	if((cb[fi]+1)*ca[fi]+(cb[ii]-1)*ca[ii]<ca[fi]*cb[fi]+ca[ii]*cb[ii] && cb[fi]<255)
+	{
+	cb[fi]=cb[fi]+1;
+	cb[ii]=cb[ii]-1;
+	}
+	showStatus(i);
+	}
+
+
+
+newImage("Red", "8-bit black", w, h, 1);        // imagen final: merge de estas tres
+selectWindow("Red");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, ca[i]);
+		i++;
+		}
+	} 
+
+newImage("Green", "8-bit black", w, h, 1);        
+selectWindow("Green");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, cb[i]);
+		i++;
+		}
+	} 
+
+run("Merge Channels...", "c1=Red c2=Green create");

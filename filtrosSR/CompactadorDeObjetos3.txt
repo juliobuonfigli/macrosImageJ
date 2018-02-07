@@ -1,0 +1,75 @@
+//Compactador de objetos
+
+/* variables a controlar:
+Número de iteraciones: cuando el número de movidas aceptadas cae significativamente
+incremento de intensidad: compromiso entre calidad y velocidad
+radio aproximado: se ajusta con un coeficinte que multiplica a random....
+o regulando multiplicaciones rand*random
+solo funcionará con imágenes de 16 bit para arriba
+*/ 
+ 
+iter=15000;
+w = getWidth;              
+h = getHeight; 
+ww=1/w;
+size=sqrt(w*w+h*h);
+rad=0.06;
+radsize=rad*size;
+
+function VECTORIZAR(imagenAvectorizar, w, h)     //1: funcion para vectorizar imagenes                    
+{
+selectWindow(imagenAvectorizar);
+vector=newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		vector[i] = getPixel(x,y);
+		i++;
+		}
+	}
+return vector;
+}
+
+newImage("Res", "8-bit black", w, h, 20);
+
+for(j=1; j<21; j++)
+{
+setSlice(j);
+a=newArray(w*h);
+a=VECTORIZAR("green", w, h) ;
+
+
+for(i=0; i<iter; i++)
+	{
+	do {
+	ii=round(random*(w*h-1));  
+	fi=round(random*(w*h-1));  	
+	Xi=ii%w;
+	Yi=floor(ii*ww);
+	Xf=fi%w;
+	Yf=floor(fi*ww);
+	dis=sqrt((Xf-Xi)*(Xf-Xi)+(Yf-Yi)*(Yf-Yi));
+	disMin=radsize*random;
+	} while(a[fi]>254 || a[ii]<1 || a[ii]>a[fi] || ii==fi || dis>disMin) 
+	
+	a[fi]=a[fi]+1;
+	a[ii]=a[ii]-1;
+	
+	showStatus(i);
+	}                       
+
+         
+        // imagen final: merge de estas tres
+selectWindow("Res");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, a[i]);
+		i++;
+		}
+	} 
+}

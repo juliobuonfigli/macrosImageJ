@@ -1,0 +1,8 @@
+setAutoThreshold("Default dark");
+//run("Threshold...");
+
+setAutoThreshold("Percentile dark");
+run("Convert to Mask");
+doWand(256, 256);
+
+run("Create Mask");

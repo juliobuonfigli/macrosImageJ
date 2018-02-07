@@ -1,0 +1,21 @@
+In some cases, you might need to edit the recorded macro to make it usable with other images than the one you used to record the macro with.
+ Example: when you merge channels, you end up with a statement like this:
+001
+002	run("Merge Channels...",
+    "red=[Edges of boats.gif] green=boats.gif blue=boats.gif gray=*None*");
+
+The parameters passed to Merge Channels... depend very much on the current image's name. One possible solution looks like this:
+001
+002
+003	title = getTitle();
+run("Merge Channels...",
+     "red=[Edges of " + title + "] green=" + title + " blue=" + title + " gray=*None*");
+
+Note that we need to use string concatenation in order to insert the current image's name in place of boats.gif, as described in above.
+In order to allow spaces in the name, you might also want to add extra [...] around the title:
+001
+002
+003	title = getTitle();
+run("Merge Channels...",
+     "red=[Edges of " + title + "] green=[" + title + "] blue=[" + title + "] gray=*None*");
+

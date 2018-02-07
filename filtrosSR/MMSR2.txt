@@ -1,0 +1,611 @@
+// MMM
+
+macro "Image Improver [i]" 
+{
+
+
+function FORCER1(sc1, ss1, pi1, pi2, pf1, pf2)          //Condicion de aceptacion de movidas de montecarlo
+{
+if(sc1>ss1)
+	{
+	if(((pf1+1)*pf2)-((pi1-1)*pi2)>(pf1*pf2)-(pi1*pi2))
+		change=true;
+		else
+		change=false;
+	}
+	else
+	{
+	if(((pf1+1)*pf2)-((pi1-1)*pi2)>(pf1*pf2)-(pi1*pi2))
+		change=false;
+		else
+		change=true;
+	}
+return change;
+}
+
+function FORCER2(sc2, ss2, pi1, pi3, pf1, pf3)
+{
+if(sc2>ss2)
+	{
+	if(((pf1+1)*pf3)-((pi1-1)*pi3)>(pf1*pf3)-(pi1*pi3))
+		change=true;
+		else
+		change=false;
+	}
+	else
+	{
+	if(((pf1+1)*pf3)-((pi1-1)*pi3)>(pf1*pf3)-(pi1*pi3))
+		change=false;
+		else
+		change=true;
+	}
+return change;
+}
+
+function FORCER3(sc3, ss3, pi1, pi2, pi3, pf1, pf2, pf3)
+{
+if(sc3>ss3)
+	{
+	if(((pf1+1)*pf3*pf2)-((pi1-1)*pi3*pi2)>(pf1*pf3*pf2)-(pi1*pi3*pi2))
+		change=true;
+		else
+		change=false;
+	}
+	else
+	{
+	if(((pf1+1)*pf3*pf2)-((pi1-1)*pi3*pi2)>(pf1*pf3*pf2)-(pi1*pi3*pi2))
+		change=false;
+		else
+		change=true;
+	}
+return change;
+}
+
+
+function FORCER(sc1, sc2, sc3, ss1, ss2, ss3, pi1, pi2, pi3, pf1, pf2, pf3)    //utiliza las funciones segun los estados de colo de la imagen a tratar y la imagen control
+{
+
+if(sc1==ss1 && sc2==ss2 && sc3==ss3)
+	change=false;
+if(sc1!=ss1 && sc2!=ss2 && sc3!=ss3)
+	{
+	a=FORCER1(sc1, ss1, pi1, pi2, pf1, pf2);
+	b=FORCER2(sc2, ss2, pi1, pi3, pf1, pf3);
+	c=FORCER3(sc3, ss3, pi1, pi2, pi3, pf1, pf2, pf3);
+	if(a==true && b==true && c==true)
+		change=true;
+		else
+		change=false;
+	}
+if(sc1!=ss1 && sc2!=ss2 && sc3==ss3)
+	{
+	a=FORCER1(sc1, ss1, pi1, pi2, pf1, pf2);
+	b=FORCER2(sc2, ss2, pi1, pi3, pf1, pf3);
+	if(a==true && b==true)
+		change=true;
+		else
+		change=false;
+	}
+if(sc1!=ss1 && sc2==ss2 && sc3!=ss3)
+	{
+	a=FORCER1(sc1, ss1, pi1, pi2, pf1, pf2);
+	c=FORCER3(sc3, ss3, pi1, pi2, pi3, pf1, pf2, pf3);
+	if(a==true && c==true)
+		change=true;
+		else
+		change=false;
+	}
+if(sc1==ss1 && sc2!=ss2 && sc3!=ss3)
+	{
+	b=FORCER2(sc2, ss2, pi1, pi3, pf1, pf3);
+	c=FORCER3(sc3, ss3, pi1, pi2, pi3, pf1, pf2, pf3);
+	if(b==true && c==true)
+		change=true;
+		else
+		change=false;
+	}
+if(sc1==ss1 && sc2==ss2 && sc3!=ss3)
+	{
+	c=FORCER3(sc3, ss3, pi1, pi2, pi3, pf1, pf2, pf3);
+	if(c==true)
+		change=true;
+		else
+		change=false;
+	}
+if(sc1==ss1 && sc2!=ss2 && sc3==ss3)
+	{
+	b=FORCER2(sc2, ss2, pi1, pi3, pf1, pf3);
+	if(b==true)
+		change=true;
+		else
+		change=false;
+	}
+if(sc1!=ss1 && sc2==ss2 && sc3==ss3)
+	{
+	a=FORCER1(sc1, ss1, pi1, pi2, pf1, pf2);
+	if(a==true)
+		change=true;
+		else
+		change=false;
+	}
+return change;
+}
+
+
+function NEIGHBOURPIXEL(ia, w, h)       //selecciona un pixel vecino al azar
+{
+do    {	
+	ran=random;
+	if(ran>0 && ran<0.125)
+		ib=ia-w-1;
+	if(ran>0.125 && ran<0.250)
+		ib=ia-w;
+	if(ran>0.250 && ran<0.375)
+		ib=ia-w+1;
+	if(ran>0.375 && ran<0.500)
+		ib=ia-1;
+	if(ran>0.500 && ran<0.625)
+		ib=ia+1;
+	if(ran>0.625 && ran<0.750)
+		ib=ia+w-1;
+	if(ran>0.750 && ran<0.875)
+		ib=ia+w;
+	if(ran>0.875 && ran<1.05)
+		ib=ia+w+1;
+	}  while(ib<0 || ib>w*h-1)
+return ib;
+}
+
+
+function VECTORIZAR(imagenAvectorizar, w, h)     //1: funcion para vectorizar imagenes                    
+{
+selectWindow(imagenAvectorizar);
+vector=newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		vector[i] = getPixel(x,y);
+		i++;
+		}
+	}
+return vector;
+}
+
+function DENOMINATORS(r, g, b, w, h)             //2: calcula todos los denominadores de todos los coeficientes 
+	{
+	denR=0; denG=0; denB=0;   
+	for (i=0; i<w*h; i++)
+		{
+		denR=denR+r[i];
+		denG=denG+g[i];
+		denB=denB+b[i];
+		}
+DEN=newArray(7);
+DEN[0]=denR*denG;
+DEN[1]=denR*denB;
+DEN[2]=denG*denB;
+DEN[3]=denR*denR*denR;
+DEN[4]=denG*denG*denG;
+DEN[5]=denB*denB*denB;
+DEN[6]=denR*denG*denB;
+return DEN;
+	}
+
+function RG(r, g, w, h)           //3,4,5,6: calcula los numeradores de los coeficientes       
+{
+numRG=0;    
+for(i=0; i<w*h; i++)                                                                                              
+	numRG=numRG+(r[i])*(g[i]);
+return numRG;
+}
+
+function RB(r, b, w, h)       
+{
+numRB=0;    
+for(i=0; i<w*h; i++)                                                                                              
+	numRB=numRB+(r[i])*(b[i]);
+return numRB;
+}
+
+function GB(g, b, w, h)       
+{
+numGB=0;    
+for(i=0; i<w*h; i++)                                                                                              
+	numGB=numGB+(g[i])*(b[i]);
+return numGB;
+}
+
+function RGB(r, g, b, w, h)      
+{
+numRGB=0;   
+for(i=0; i<w*h; i++)                                                                                              
+	numRGB=numRGB+r[i]*g[i]*b[i];
+return numRGB;
+}
+
+function SS(actual, tail1, tail2)  //7: compara la colo obtenida con la gausiana
+{
+if(actual<tail1)
+	ss=-1;
+	else
+	{
+	if(actual>tail2)
+		ss=1;
+		else
+		ss=0;
+	}
+return ss;
+}
+
+function LETTERtoNUMBER(a)      
+{
+if(a=="SC")
+	b=1;
+if(a=="NS")
+	b=0;
+if(a=="SE")
+	b=-1;
+return b;
+}
+
+function RANDOMIZAR(virginVector, w, h)   //8: randomiza un vector
+{
+random("seed", round(random*w*h));
+	
+	pointer=newArray(w*h);                                                               
+	for(i=0; i<w*h; i++)
+		pointer[i]=true;
+
+	randomVector=newArray(w*h);
+	i=0;	
+	while(i<w*h)
+		{
+		e=round(random*(w*h-1));
+		if(pointer[e]==true)
+			{
+			randomVector[i]=virginVector[e];
+			pointer[e]=false;
+			i++;
+			}
+		}
+return randomVector;
+}	
+
+
+function SIGNIFICANCE(r, g, b, deno, rg, rb, gb, tr, tg, tb, rgb, w, h)   //9: calcula significancia estadística, devuelve un vector de cadena de caracteres (SC, NS, SE)
+{
+
+zCola=-1.64486;
+rRG=newArray(30);  rRB=newArray(30);  rGB=newArray(30);   rTR=newArray(30);  rTG=newArray(30);     rTB=newArray(30);    rRGB=newArray(30);
+sumRG=0;sumRB=0;sumGB=0;sum2RG=0;sum2RB=0;sum2GB=0;RsumTriple=0;GsumTriple=0;BsumTriple=0;RGBsumTriple=0;Rsum2Triple=0;Gsum2Triple=0;Bsum2Triple=0;RGBsum2Triple=0;
+
+for(i=0; i<30; i++)                       //aleatorización de imágenes, cálculo de coeficientes y sumas para promedios 
+	{
+	ranr=RANDOMIZAR(r, w, h);	
+	rang=RANDOMIZAR(g, w, h);
+	ranb=RANDOMIZAR(b, w, h);
+	rRG[i]=RG(ranr, rang, w, h)/deno[0];	
+	rRB[i]=RB(ranr, ranb, w, h)/deno[1];
+	rGB[i]=GB(rang, ranb, w, h)/deno[2];
+	rTR[i]=RGB(ranr, g, b, w, h)/deno[3];
+	rTG[i]=RGB(r, rang, b, w, h)/deno[4];
+	rTB[i]=RGB(r, g, ranb, w, h)/deno[5];
+	rRGB[i]=RGB(ranr, rang, ranb, w, h)/deno[6];
+	sumRG=sumRG+rRG[i];	
+	sumRB=sumRB+rRB[i];
+	sumGB=sumGB+rGB[i];
+	RsumTriple=RsumTriple+rTR[i];
+	GsumTriple=GsumTriple+rTG[i];
+	BsumTriple=BsumTriple+rTB[i];
+	RGBsumTriple=RGBsumTriple+rRGB[i];
+	}
+
+sumRG=sumRG/30;	
+sumRB=sumRB/30;
+sumGB=sumGB/30;
+RsumTriple=RsumTriple/30;
+GsumTriple=GsumTriple/30;
+BsumTriple=BsumTriple/30;
+RGBsumTriple=RGBsumTriple/30;
+
+  
+for(i=0; i<30; i++)                                  //desviación estandar                  
+	{	
+	sum2RG=sum2RG+(rRG[i]-sumRG)*(rRG[i]-sumRG);
+	sum2RB=sum2RB+(rRB[i]-sumRB)*(rRB[i]-sumRB);
+	sum2GB=sum2GB+(rGB[i]-sumGB)*(rGB[i]-sumGB);
+	Rsum2Triple=Rsum2Triple+(rTR[i]-RsumTriple)*(rTR[i]-RsumTriple);
+	Gsum2Triple=Gsum2Triple+(rTG[i]-GsumTriple)*(rTG[i]-GsumTriple);
+	Bsum2Triple=Bsum2Triple+(rTB[i]-BsumTriple)*(rTB[i]-BsumTriple);
+	RGBsum2Triple=RGBsum2Triple+(rRGB[i]-RGBsumTriple)*(rRGB[i]-RGBsumTriple);
+	}
+
+xnRG=zCola*sqrt(sum2RG/30)+sumRG;    //colas negativas                                
+xnRB=zCola*sqrt(sum2RB/30)+sumRB;
+xnGB=zCola*sqrt(sum2GB/30)+sumGB;
+RxnTriple=zCola*sqrt(Rsum2Triple/30)+RsumTriple;
+GxnTriple=zCola*sqrt(Gsum2Triple/30)+GsumTriple;
+BxnTriple=zCola*sqrt(Bsum2Triple/30)+BsumTriple;
+RGBxnTriple=zCola*sqrt(RGBsum2Triple/30)+RGBsumTriple;
+
+xpRG=abs(zCola)*sqrt(sum2RG/30)+sumRG;       //colas positivas                              
+xpRB=abs(zCola)*sqrt(sum2RB/30)+sumRB;
+xpGB=abs(zCola)*sqrt(sum2GB/30)+sumGB;
+RxpTriple=abs(zCola)*sqrt(Rsum2Triple/30)+RsumTriple;
+GxpTriple=abs(zCola)*sqrt(Gsum2Triple/30)+GsumTriple;
+BxpTriple=abs(zCola)*sqrt(Bsum2Triple/30)+BsumTriple;
+RGBxpTriple=abs(zCola)*sqrt(RGBsum2Triple/30)+RGBsumTriple;
+
+ss=newArray(7);                      //vector de salida
+ss[0]=SS(rg, xnRG, xpRG);
+ss[1]=SS(rb, xnRB, xpRB);
+ss[2]=SS(gb, xnGB, xpGB);
+ss[3]=SS(tr, RxnTriple, RxpTriple);
+ss[4]=SS(tg, GxnTriple, GxpTriple);
+ss[5]=SS(tb, BxnTriple, BxpTriple);
+ss[6]=SS(rgb, RGBxnTriple, RGBxpTriple);
+
+return ss;
+}
+
+
+
+id1=getImageID();                                            //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+
+
+Dialog.create("Image Improver");                    //genero ventana de inicio                                                      
+  Dialog.addChoice("Select a task: ", newArray("Get the source RGB Overlap Relationships", "Transform the source RGB according a control RGB", "Transform the source RGB according a set of relationships"));  
+  Dialog.addChoice("Source RGB:", figura);         
+       Dialog.show();
+   	task=Dialog.getChoice();
+  	SRGB=Dialog.getChoice();
+
+if(task=="Get the source RGB Overlap Relationships")    // si solo quiero analizar una imagen  
+{
+selectWindow(SRGB);
+rename("SRGB");
+w = getWidth;              
+h = getHeight;                                                 
+run("Split Channels");
+r=VECTORIZAR("SRGB (red)", w, h);
+g=VECTORIZAR("SRGB (green)", w, h);
+b=VECTORIZAR("SRGB (blue)", w, h);
+//setBatchMode(true);
+deno=DENOMINATORS(r, g, b, w, h);             
+rg=RG(r, g, w, h)/deno[0];       
+rb=RB(r, b, w, h)/deno[1];     
+gb=GB(g, b, w, h)/deno[2];       
+tr=RGB(r, g, b, w, h)/deno[3];
+tg=RGB(r, g, b, w, h)/deno[4];
+tb=RGB(r, g, b, w, h)/deno[5];
+rgb=RGB(r, g, b, w, h)/deno[6];      
+ss=SIGNIFICANCE(r, g, b, deno, rg, rb, gb, tr, tg, tb, rgb, w, h);
+
+titulo1 = "Results";                                            // cuadro de resultados
+titulo2 = "["+titulo1+"]";
+  f = titulo2;
+ if (isOpen(titulo1))
+    print(f, "\\Clear");
+ else
+run("Table...", "name="+titulo1+" width=250 height=600");
+print(f, "\\Headings:for\tOverlap\t  Significance");
+print(f, " Red and green"+"\t  "+rg+"\t  "+ss[0]);
+print(f, " Red and blue"+"\t  "+rb+"\t  "+ss[1]);
+print(f, " Blue and green"+"\t  "+gb+"\t  "+ss[2]);
+print(f, " RED in green and blue"+"\t  "+tr+"\t  "+ss[3]);
+print(f, " GREEN in red and blue"+"\t  "+tg+"\t  "+ss[4]);
+print(f, " BLUE in red and green"+"\t  "+tb+"\t  "+ss[5]);
+print(f, " Red, green and blue"+"\t  "+rgb+"\t  "+ss[6]);
+
+//setBatchMode("exit and display"); 
+}
+else
+{
+if(task=="Transform the source RGB according a control RGB")
+{
+
+Dialog.create("Control Image");                    //ventana de carga de imagen control                                                      
+    Dialog.addChoice("Control RGB:", figura);         
+    Dialog.addNumber("Iteration's limit (x100000): ", 10);   
+    Dialog.addNumber("Read significances each x iterations. x: ", 100);	
+	Dialog.show();
+   	CRGB=Dialog.getChoice();
+	iLimit=Dialog.getNumber()*10;
+	pLimit=Dialog.getNumber();
+
+
+selectWindow(CRGB);                           //relaciones de imagen control
+rename("CRGB");
+w = getWidth;              
+h = getHeight;                                                 
+run("Split Channels");
+r=VECTORIZAR("CRGB (red)", w, h);
+g=VECTORIZAR("CRGB (green)", w, h);
+b=VECTORIZAR("CRGB (blue)", w, h);
+//setBatchMode(true);
+deno=DENOMINATORS(r, g, b, w, h);             
+rg=RG(r, g, w, h)/deno[0];       
+rb=RB(r, b, w, h)/deno[1];     
+gb=GB(g, b, w, h)/deno[2];       
+tr=RGB(r, g, b, w, h)/deno[3];
+tg=RGB(r, g, b, w, h)/deno[4];
+tb=RGB(r, g, b, w, h)/deno[5];
+rgb=RGB(r, g, b, w, h)/deno[6];      
+ssc=SIGNIFICANCE(r, g, b, deno, rg, rb, gb, tr, tg, tb, rgb, w, h);
+}
+else
+{
+sS=newArray("SC", "SE", "NS");
+Dialog.create("Load relationships");                    //ventana de carga de relaciones                                                      
+  Dialog.addChoice("Red and Green: ", sS);  
+  Dialog.addChoice("Red and Blue:", sS);         
+  Dialog.addChoice("Green and Blue: ", sS);  
+  Dialog.addChoice("RED with green and blue:", sS);   
+  Dialog.addChoice("GREEN with red and blue:", sS);         
+  Dialog.addChoice("BLUE with red and green: ", sS);  
+  Dialog.addChoice("Red, Green and Blue:", sS);   
+  Dialog.addGetNumber("Iteration's limit (x100000): ", 10);   
+  Dialog.addGetNumber("Read significances each x iterations. x: ", 100);
+
+Dialog.show();
+   	RaG=Dialog.getChoice();
+  	RaB=Dialog.getChoice();
+	GaB=Dialog.getChoice();
+  	RwGB=Dialog.getChoice();
+	GwRB=Dialog.getChoice();
+  	BwRG=Dialog.getChoice();
+	RGaB=Dialog.getChoice();
+	iLimit=Dialog.getNumber()*100000;
+	pLimit=Dialog.getNumber();
+
+
+ssc=newArray(7);
+ssc[0]=LETTERtoNUMBER(RaG);
+ssc[1]=LETTERtoNUMBER(RaB);
+ssc[2]=LETTERtoNUMBER(GaB);
+ssc[3]=LETTERtoNUMBER(RwGB);
+ssc[4]=LETTERtoNUMBER(GwRB);
+ssc[5]=LETTERtoNUMBER(BwRG);
+ssc[6]=LETTERtoNUMBER(RGaB);
+}
+
+selectWindow(SRGB);                           // Comienza Montecarlo. Estados de colo de imagena a tratar 
+rename("SRGB");
+w = getWidth;              
+h = getHeight;                                                 
+run("Split Channels");
+r=VECTORIZAR("SRGB (red)", w, h);
+g=VECTORIZAR("SRGB (green)", w, h);
+b=VECTORIZAR("SRGB (blue)", w, h);
+deno=DENOMINATORS(r, g, b, w, h);             
+rg=RG(r, g, w, h)/deno[0];       
+rb=RB(r, b, w, h)/deno[1];     
+gb=GB(g, b, w, h)/deno[2];       
+tr=RGB(r, g, b, w, h)/deno[3];
+tg=RGB(r, g, b, w, h)/deno[4];
+tb=RGB(r, g, b, w, h)/deno[5];
+rgb=RGB(r, g, b, w, h)/deno[6];      
+ss=SIGNIFICANCE(r, g, b, deno, rg, rb, gb, tr, tg, tb, rgb, w, h);
+
+random("seed", round(random*w*h));
+
+	total=0; positives=0;          // comienza do while
+        do    {
+	rg1=RG(r, g, w, h)/deno[0];       
+	rb1=RB(r, b, w, h)/deno[1];     
+	gb1=GB(g, b, w, h)/deno[2];       
+	tr1=RGB(r, g, b, w, h)/deno[3];
+	tg1=RGB(r, g, b, w, h)/deno[4];
+	tb1=RGB(r, g, b, w, h)/deno[5];
+	rgb1=RGB(r, g, b, w, h)/deno[6];
+	n=0;
+	do {
+	ia=round(random*(w*h-1));             
+	ib=NEIGHBOURPIXEL(ia, w, h);
+	proof1=FORCER(ssc[0], ssc[1], ssc[3], ss[0], ss[1], ss[3], r[ia], g[ia], b[ia], r[ib], g[ib], b[ib]);     // condiciones de aceptacion
+        if(proof1==true)
+	{
+	r[ia]=r[ia]+1;
+	r[ib]=r[ib]-1;
+	n++;
+	}} while(proof1==false && n<w*h) 
+	n=0;
+	do{
+	ia=round(random*(w*h-1));             
+	ib=NEIGHBOURPIXEL(ia, w, h);
+	proof2=FORCER(ssc[0], ssc[2], ssc[4], ss[0], ss[2], ss[4], g[ia], r[ia], b[ia], g[ib], r[ib], b[ib]);
+        if(proof2==true)
+	{
+	g[ia]=g[ia]+1;
+	g[ib]=g[ib]-1;
+	} } while(proof2==false && n<w*h) 
+	n=0;
+	do{
+	ia=round(random*(w*h-1));             
+	ib=NEIGHBOURPIXEL(ia, w, h);
+	proof3=FORCER(ssc[1], ssc[2], ssc[5], ss[1], ss[2], ss[5], b[ia], r[ia], g[ia], b[ib], r[ib], g[ib]);
+        if(proof3==true)
+	{
+	b[ia]=b[ia]+1;
+	b[ib]=b[ib]-1;
+	} } while(proof3==false && n<w*h) 
+	total++;
+	rg2=RG(r, g, w, h)/deno[0];       
+	rb2=RB(r, b, w, h)/deno[1];     
+	gb2=GB(g, b, w, h)/deno[2];       
+	tr2=RGB(r, g, b, w, h)/deno[3];
+	tg2=RGB(r, g, b, w, h)/deno[4];
+	tb2=RGB(r, g, b, w, h)/deno[5];
+	rgb2=RGB(r, g, b, w, h)/deno[6];  	
+	if(abs(rg1-crg)<abs(rg2-crg) || ...
+	//vuelvo para atras todas las movidas para las que proof es true, renombrar arriba crg para las del vector control
+	if(positives%pLimit==0)                       //vuelvo a calcular estados de colo cada pLimit positivas
+	{ 	    
+	ss=SIGNIFICANCE(r, g, b, deno, rg, rb, gb, tr, tg, tb, rgb, w, h);
+	showStatus("Iterations: "+total+"  Movements: "+positives);
+	}
+	if(ss[0]==sc[0] && ss[1]==sc[1] && ss[2]==sc[2] && ss[3]==sc[3] && ss[4]==sc[4] && ss[5]==sc[5] && ss[6]==sc[6])
+		condition=true;
+		else
+		condition=false;
+	}
+	while(condition==false && total<iLimit)
+ 	
+print("Iterations: "+total+"  Movements: "+positives+"  Reds: "+pReds+"  Greens: "+pGreens+"  Blues: "+pBlues);
+
+newImage("Red", "8-bit black", w, h, 1);        // imagen final: merge de estas tres
+selectWindow("Red");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, r[i]);
+		i++;
+		}
+	} 
+
+newImage("Green", "8-bit black", w, h, 1);        
+selectWindow("Green");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, g[i]);
+		i++;
+		}
+	} 
+
+newImage("Blue", "8-bit black", w, h, 1);        
+selectWindow("Blue");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, b[i]);
+		i++;
+		}
+	} 
+
+run("Merge Channels...", "c1=Red c2=Green c3=Blue create");
+
+
+
+}    //FIN
+

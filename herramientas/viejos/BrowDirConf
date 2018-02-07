@@ -1,0 +1,51 @@
+
+newImage("BrownianMovement", "8-bit black", 20, 20, 45);
+
+w=getWidth;
+h=getHeight;
+frames=nSlices;
+
+function pa(w, h, n) {
+v=newArray(n);
+vv=newArray(w*h);
+for(i=0; i<w*h; i++)
+	vv[i]=false;
+for(i=0; i<n; i++) {
+	p=round(random*(w*h));
+		if(vv[p]==false)
+			{ v[i]=p; vv[p]=true; } 
+			else
+			{ i--; }
+	}
+return v;
+}
+
+n=8;
+v=pa(w, h, n);
+step=1;
+
+for(i=1; i<frames+1; i++)
+	{
+	setSlice(i);
+	for(j=0; j<n; j++)
+		{
+		x=v[j]%w;
+		y=floor(v[j]/w);
+		pix=getPixel(x, y);
+		setPixel(x, y, pix+60);
+		//do {
+			h=round(random*step);
+			x1=round((2*random-1)*h);
+			x=x+x1;
+			if(random>0.5)
+				g=-1;
+				else
+				g=1;
+			y=round(y+g*sqrt(h*h-x1*x1));
+			v[j]=y*w+x;
+			//} while(x<0 || x>=w || y<0 || y>=h)
+		}
+	}
+		
+		
+		

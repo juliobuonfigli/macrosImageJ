@@ -1,0 +1,56 @@
+
+w = getWidth;
+h = getHeight;
+
+
+
+selectWindow("Result of 01b.tif (green)-1");       
+   a = newArray(w*h);
+   i = 0;
+   sum=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	sum=sum+a[i];
+	
+
+
+
+selectWindow("Mask-1");
+suma=0;
+while(suma<sum-2000)
+	{
+	beep();
+	for(k=100; k>0; k--)
+		{
+		for (y=0; y<h; y=y+k)
+			{
+			for (x=0; x<w; x=x+k)
+				{
+				p=round(random*w*h);
+				s=getPixel(x, y);
+				if(s==255 && a[p] != 0)
+					{
+					setPixel(x, y, a[p]);
+					suma=suma+a[p];
+					}
+				}
+			}
+		}
+	}
+	
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		l=getPixel(x, y);
+		if(l == 255)
+			setPixel(x, y, 0);
+		}
+	}
+updateDisplay();
+
+print("fin");

@@ -1,0 +1,129 @@
+
+//COLOCALIZACIÓN
+/*
+
+id1=getImageID();          //identificación de IDs
+imagen1=getTitle();
+selectImage(id1-1);
+id2=getImageID();
+imagen2=getTitle();
+selectImage(id1-2);
+id3=getImageID();
+imagen3=getTitle();
+
+
+
+selectImageID(id1);          // cuento pixeles   
+   w = getWidth;
+   h = getHeight;
+   a = newArray(w*h);
+   i = 0;
+   unos1 = 0;
+   ceros1 = 0;    
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		unos1++;
+		else
+		ceros1++;
+	}
+
+selectImageID(id2);       
+   w = getWidth;
+   h = getHeight;
+   a = newArray(w*h);
+   i = 0;
+   unos2 = 0;
+   ceros2 = 0;    
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		unos2++;
+		else
+		ceros2++;
+	}
+
+selectImageID(id3);       
+   w = getWidth;
+   h = getHeight;
+   a = newArray(w*h);
+   i = 0;
+   unos3 = 0;
+   ceros3 = 0;    
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		unos3++;
+		else
+		ceros3++;
+	}
+
+colo1=unos3/unos1;
+colo2=unos3/unos2;                   //calculo colo
+
+if(unos1 | unos2>100000)        
+	{                                                   //reduzco en la misma proporci
+	k1=unos1/10000;
+	k2=unos2/10000;
+	x=unos3/10000;
+	}
+	else
+	{
+	if(unos1 | unos2>10000)		
+		{
+		k1=unos1/1000;
+		k2=unos2/1000;
+		x=unos3/1000;
+		}
+		else
+		{
+		if(unos1 | unos2>1000)
+			{
+			k1=unos1/100;
+			k2=unos2/100;
+			x=unos3/100;
+			}
+			else
+			{
+			if(unos1 | unos2>100)
+				{
+				k1=unos1/10;
+				k2=unos2/10;
+				x=unos3/10;
+				}
+				else
+				{
+				k1=unos1;
+				k2=unos2;
+				x=unos3;
+				}
+			}
+		}
+	}
+
+
+
+
+/*
+f=1;
+y=4.9;
+for(i=1;i<=y;i++)
+f=f*i;
+
+print(f)
+*/

@@ -1,0 +1,103 @@
+/*Si en un vector de tres pixels lineales generado al azar las intensidades aumentan progresivamente las mayores aumentan y las menores disminuyen
+igual que anterior pero solo opera entre el primero y el último*/ 
+
+mult=1000000;
+ITER=0.5;
+iter=mult*ITER;
+slices=1;
+w = getWidth;              
+h = getHeight;
+ww=1/w;
+wh=w*h;
+wh2=wh-1;
+size=sqrt(w*w+h*h);
+
+
+function VECTORIZAR(imagenAvectorizar, w, h)                      
+{
+selectWindow(imagenAvectorizar);
+vector=newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		vector[i] = getPixel(x,y);
+		i++;
+		}
+	}
+return vector;
+}
+
+		
+a=newArray(w*h);
+
+for(slice=0; slice<slices; slice++)
+	{
+	a=VECTORIZAR("ggg1", w, h) ;
+	movidas=0;
+	for(i=0; i<iter; i++)
+		{
+		inc=1;
+		ii=round(random*wh2);  
+		Xi=ii%w;
+		Yi=floor(ii*ww);
+		
+		alfa=2*PI*random;
+		x1=round(2*cos(alfa)); 
+		y1=round(2*sin(alfa)); 	
+		x2=round(3*cos(alfa));
+		y2=round(3*sin(alfa));  
+		
+		Xf1=Xi+x1;
+		Yf1=Yi+y1;
+		fi1=w*Yf1+Xf1;  	
+		if(fi1>wh2)
+			{fi1=wh2; inc=0;}
+		if(fi1<0)
+			{fi1=0; inc=0;}
+	
+		Xf2=Xi+x2;
+		Yf2=Yi+y2;
+		fi2=w*Yf2+Xf2;  	
+		if(fi2>wh2)
+			{fi2=wh2; inc=0;}
+		if(fi2<0)
+			{fi2=0; inc=0;}
+	
+		if(Xf1>wh2 || Xf1<0 || Xf2>wh2 || Xf2<0)
+			inc=0;
+		
+		if(a[fi1]>a[ii] && a[fi1]<a[fi2])
+			{	
+			a[fi2]=a[fi2]+1;
+			a[ii]=a[ii]-1;
+			movidas++;
+			}
+						
+		if(a[fi2]<a[fi1] && a[fi1]<a[ii])
+			{
+			a[fi2]=a[fi2]-1;
+			a[ii]=a[ii]+1;
+			movidas++;
+			}
+						
+		showStatus(i+"    "+movidas+"     "+slice);
+		}                       
+
+	corte=1000+slice;
+	newImage(corte, "8-bit random", w, h, 1);
+	selectWindow(corte);
+	i=0;
+	for (y=0; y<h; y++)
+		{
+		for (x=0; x<w; x++)
+			{
+			setPixel(x,y, a[i]);
+			i++;
+			}
+		} 
+	}  
+
+run("Images to Stack", "method=[Copy (center)] name=Stack title=10 use");
+       

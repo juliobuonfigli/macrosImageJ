@@ -1,0 +1,11 @@
+setAutoThreshold("Percentile dark");
+//run("Threshold...");
+setAutoThreshold("Default dark");
+run("Convert to Mask");
+selectWindow();
+setAutoThreshold("Default dark");
+run("Convert to Mask");
+selectWindow();
+setAutoThreshold("Default dark");
+run("Convert to Mask");
+run("BlobProb");

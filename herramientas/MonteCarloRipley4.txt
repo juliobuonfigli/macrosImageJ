@@ -1,0 +1,266 @@
+// Montecarlo y Ripley
+
+macro "Image Improver [i]" 
+{
+ 
+function RIPLEY(vector)              // calcula el coeficiente de Ripley de la imagen        
+{
+a=vector;
+ripley=0;
+	for(i=0; i<w*h; i++)            
+	{
+	if(a[i]>OT)
+	{
+	if(i==0)
+	        ripley=ripley+(a[1]*a[1]+a[w]*a[w]+a[w+1]*a[w+1]+a[0]*a[0])/4;
+	if(i>0 && i<w-1)
+            	ripley=ripley+(a[i]*a[i]+a[i-1]*a[i-1]+a[i+1]*a[i+1]+a[i+w-1]*a[i+w-1]+a[i+w]*a[i+w]+a[i+w+1]*a[i+w+1])/6;
+            if(i==w-1)
+		ripley=ripley+(a[i-1]*a[i-1]+a[i]*a[i]+a[i+w-1]*a[i+w-1]+a[i+w]*a[i+w])/4;
+	if(i%w==0 && i!=w*h-w && i!=0)
+		ripley=ripley+(a[i]*a[i]+a[i+1]*a[i+1]+a[i+w]*a[i+w]+a[i+w+1]*a[i+w+1]+a[i-w+1]*a[i-w+1]+a[i-w]*a[i-w])/6;
+	if((i+1)%w==0 && i!=w-1 && i!=h*w-1)
+		ripley=ripley+(a[i]*a[i]+a[i+w]*a[i+w]+a[i-w-1]*a[i-w-1]-a[i-w]*a[i-w]+a[i+w-1]*a[i+w-1]+a[i-1]*a[i-1])/6;
+	if(i==h*w-w)
+		ripley=ripley+(a[i]*a[i]+a[i+1]*a[i+1]+a[i-w]*a[i-w]+a[i-w+1]*a[i-w+1])/4;
+	if(i>h*w-w && i<h*w-1)
+		ripley=ripley+(a[i]*a[i]+a[i-w-1]*a[i-w-1]+a[i-w]*a[i-w]+a[i-w+1]*a[i-w+1]+a[i-1]*a[i-1]+a[i+1]*a[i+1])/6;
+	if(i==h*w-1)
+		ripley=ripley+(a[i]*a[i]+a[i-1]*a[i-1]+a[i-w]*a[i-w]+a[i-w-1]*a[i-w-1])/4;
+	if(i>w && i<h*w-w-1 && i%w!=0 && (i+1)%w!=0)
+		ripley=ripley+(a[i]*a[i]+a[i-w-1]*a[i-w-1]+a[i-w]*a[i-w]+a[i-w+1]*a[i-w+1]+a[i-1]*a[i-1]+a[i+1]*a[i+1]+a[i+w-1]*a[i+w-1]+a[i+w]*a[i+w]+a[i+w+1]*a[i+w+1])/9;
+	} }
+return ripley;
+}
+
+function PixelRipley(vector, pos)              // calcula el coeficiente de Ripley de un pixel        
+{      
+i1=pos;  
+a=vector;
+ripley1=0;
+	if(i1==0)
+	        ripley1=ripley1+(a[1]*a[1]+a[w]*a[w]+a[w+1]*a[w+1]+a[0]*a[0])/4;
+	if(i1>0 && i1<w-1)
+            	ripley1=ripley1+(a[i1]*a[i1]+a[i1-1]*a[i1-1]+a[i1+1]*a[i1+1]+a[i1+w-1]*a[i1+w-1]+a[i1+w]*a[i1+w]+a[i1+w+1]*a[i1+w+1])/6;
+            if(i1==w-1)
+		ripley1=ripley1+(a[i1-1]*a[i1-1]+a[i1]*a[i1]+a[i1+w-1]*a[i1+w-1]+a[i1+w]*a[i1+w])/4;
+	if(i1%w==0 && i1!=w*h-w && i1!=0)
+		ripley1=ripley1+(a[i1]*a[i1]+a[i1+1]*a[i1+1]+a[i1+w]*a[i1+w]+a[i1+w+1]*a[i1+w+1]+a[i1-w+1]*a[i1-w+1]+a[i1-w]*a[i1-w])/6;
+	if((i1+1)%w==0 && i1!=w-1 && i1!=h*w-1)
+		ripley1=ripley1+(a[i1]*a[i1]+a[i1+w]*a[i1+w]+a[i1-w-1]*a[i1-w-1]-a[i1-w]*a[i1-w]+a[i1+w-1]*a[i1+w-1]+a[i1-1]*a[i1-1])/6;
+	if(i1==h*w-w)
+		ripley1=ripley1+(a[i1]*a[i1]+a[i1+1]*a[i1+1]+a[i1-w]*a[i1-w]+a[i1-w+1]*a[i1-w+1])/4;
+	if(i1>h*w-w && i1<h*w-1)
+		ripley1=ripley1+(a[i1]*a[i1]+a[i1-w-1]*a[i1-w-1]+a[i1-w]*a[i1-w]+a[i1-w+1]*a[i1-w+1]+a[i1-1]*a[i1-1]+a[i1+1]*a[i1+1])/6;
+	if(i1==h*w-1)
+		ripley1=ripley1+(a[i1]*a[i1]+a[i1-1]*a[i1-1]+a[i1-w]*a[i1-w]+a[i1-w-1]*a[i1-w-1])/4;
+	if(i1>w && i1<h*w-w-1 && i1%w!=0 && (i1+1)%w!=0)
+		ripley1=ripley1+(a[i1]*a[i1]+a[i1-w-1]*a[i1-w-1]+a[i1-w]*a[i1-w]+a[i1-w+1]*a[i1-w+1]+a[i1-1]*a[i1-1]+a[i1+1]*a[i1+1]+a[i1+w-1]*a[i1+w-1]+a[i1+w]*a[i1+w]+a[i1+w+1]*a[i1+w+1])/9;
+return ripley1;
+}
+
+
+Dialog.create("Image Improver");    //genero ventana de inicio                                                      
+  Dialog.addChoice("Issue: ", newArray("Calculate Riplay's factor", "Treat an Image"));         
+        Dialog.show();
+
+   	primeraOpcion=Dialog.getChoice();
+
+	if(primeraOpcion=="Calculate Riplay's factor")
+{
+ 
+id1=getImageID();                                            //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+Dialog.create("Image Improver");    //genero ventana de inicio                                                      
+  Dialog.addChoice("Control image:", figura);         
+    Dialog.addNumber("Object Threshold:", 30); 
+  Dialog.addNumber("Average Intensity:", 50); 
+  //Dialog.addCheckbox("Default average intensity", false);      //lo calcula a partir de el umbral de objetos 
+  
+       Dialog.show();
+   	image=Dialog.getChoice();
+   	OT=Dialog.getNumber();
+            AI=Dialog.getNumber();
+	
+w = getWidth;                                             //declaracion e inicializacion de variables                             
+h = getHeight;
+a = newArray(w*h);
+AIM=0;
+i = 0;
+suma=0;
+
+selectWindow(image);
+for (y=0; y<h; y++)                   //vectorizo y calculo la intensidad promedio de la imagen
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		suma=suma+a[i];
+		i++;
+		}	
+	}
+
+AIM=suma/(w*h);
+
+for(i=0; i<w*h; i++)                                           // hago que la intensidad promedio de la imagen sea igual a la intensidad promedio seteada                  
+	a[i]=round(a[i]*(AI/AIM));
+
+	factorDeRipley=RIPLEY(a);
+
+        print("Ripley: "+ factorDeRipley);
+  	
+}
+else
+{
+id1=getImageID();                                            //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+ Dialog.create("Image Improver");    //genero ventana de inicio                                                      
+  Dialog.addChoice("Image to treat:", figura);         
+  Dialog.addNumber("Control Ripley's factor ", 00000000); 
+  Dialog.addNumber("Maximun of iterations (x10.000):", 10 );
+  Dialog.addNumber("Object Threshold:", 30); 
+  Dialog.addNumber("Average intensity:", 50); 
+  Dialog.addChoice("Distance Restriction:", newArray("none", "linear", "quadratic", "cubic"));
+//   Dialog.addNumber("Kalman: ", 1);
+
+       Dialog.show();
+	image=Dialog.getChoice();
+   	ripleyControl=Dialog.getNumber();
+   	MI=Dialog.getNumber();
+   	OT=Dialog.getNumber();
+   	AI=Dialog.getNumber();
+	DR=Dialog.getChoice();
+	
+
+w = getWidth;         //declaracion e inicializacion de variables                             
+h = getHeight;
+rMax=w*w+h*h;
+a = newArray(w*h);
+AIM=0;
+i = 0;
+suma=0;
+MI=MI*10000;
+
+
+selectWindow(image);
+for (y=0; y<h; y++)                   //vectorizo y calculo la intensidad promedio de la imagen
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		suma=suma+a[i];
+		i++;
+		}	
+	}
+
+AIM=suma/(w*h);
+
+for(i=0; i<w*h; i++)                                           // hago que la intensidad promedio de la imagen sea igual a la intensidad promedio seteada                  
+	a[i]=round(a[i]*(AI/AIM));
+
+ripley3=RIPLEY(a);
+
+
+	k=0;
+	j=0;
+        do                                                                    // Comienza Montecarlo
+	{
+        do 	{                                                          //evita que las dos posiciones elegidas al azar sean la misma                                         
+	ia=round(random*(w*h-1));
+	ib=round(random*(h*w-1)); 
+	} 	while(ia==ib)
+            
+	i=0;
+          if(DR!="none"){
+         for(y=0; y<h; y++)                                //calcula la distancia entre las dos pixels escogidos al azar
+		{
+		for(x=0; x<w; x++)
+			{
+			if(i==ia)
+				{
+				x1=x;
+				y1=y;
+				}
+			if(i==ib)
+				{
+				x2=x;
+				y2=y;
+				}
+			i++;					
+			}
+		}
+	r=(x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)+1;}
+	
+	
+ 	if(DR=="none")                         //restricciones de distancia
+		{rand=1; r=0;}
+		else {
+		rand=random;
+	if(DR=="quadratic")
+		rand=random*random;
+	if(DR=="cubic")
+		rand=random*random*random*random*random;
+	
+	}
+	//print("x1: "+x1+"  x2: "+x2+"  y1: "+y1+"  y2: "+y2+"  r: "+r+"  rMax: "+rMax+" rand: "+rand+"  rMax*rand: "+rMax*rand);
+	     
+	if(r<rand*rMax)	{      //Solo ejecuta si la distancia entre pixels es menor que rand x rMax
+            
+	ripley1=PixelRipley(a, ia);
+	ripley2=PixelRipley(a, ib);
+                               
+	if(ripley1>ripley2 && a[ia]<255 && a[ib]>0)    //la movida es aceptada solo si se eleva el factor de ripley
+		{
+		a[ia]=a[ia]+1;
+		a[ib]=a[ib]-1;
+        		k++;
+                        }
+	}	
+
+if(k%100==0)    {                          //el coeficiente de Ripley de la imagen total se calcula cada 100 iteraciones positivas
+
+ripley3=RIPLEY(a);
+showStatus("Iterations: "+j+"  Movements: "+k+"  Ripley: "+ripley3);}
+
+j++;
+
+}
+while(ripley3<ripleyControl && j<MI)    //condición de Montecarlo hasta alcanzar el factor de Ripley cargado o hasta alcanzar ciertp número de iteraciones
+
+print("Total iterations: "+j+"    Accepted movements: "+k+"    Ripley's factor: "+ripley3);   // imprime resultados
+
+newImage("Resultado", "8-bit black", w, h, 1);       //genera la nueva imagen 
+selectWindow("Resultado");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, a[i]);
+		i++;
+		}
+	} 
+
+}}
+

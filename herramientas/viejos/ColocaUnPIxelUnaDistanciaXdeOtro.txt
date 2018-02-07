@@ -1,0 +1,48 @@
+function RADIO(ia, ib)                  //calcula la distancia entre las dos pixels escogidos al azar
+{
+	i=0;
+            for(y=0; y<h; y++)                               
+		{
+		for(x=0; x<w; x++)
+			{
+			if(i==ia)
+				{
+				x1=x;
+				y1=y;
+				}
+			if(i==ib)
+				{
+				x2=x;
+				y2=y;
+				}
+			i++;					
+			}
+		}
+return	(x2-x1)*(x2-x1)+(y2-y1)*(y2-y1);
+}
+
+
+w = getWidth;               
+h = getHeight;
+
+
+selectWindow("es");
+
+ia=w*h/2+w/2;
+setPixel(w/2, h/2, 255); 
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		ib=y*w+x;			
+		r=RADIO(ia, ib);
+		rand=random;
+		if(rand*rand*rand*rand*rand*rand*w*h>r)
+			setPixel(x, y, 100);
+		i++;
+		}
+	}
+
+
+	

@@ -1,0 +1,51 @@
+
+w=getWidth;
+h=getHeight;
+
+  r = newArray(w*h);
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		r[i] = getPixel(x,y);
+		i++;
+		}
+	}
+
+j=0;
+r2=newArray(w*h);
+for(y1=0; y1<h; y1++)
+	{
+	for(x1=0; x1<w; x1++)
+		{
+		i=0;
+		for(y2=0; y2<h; y2++)
+			{
+			for(x2=0; x2<w; x2++)
+				{
+				if(x1==x2 && y1==y2)
+					r2[i]=r2[i]+0;
+					else
+					r2[i]=r2[i]+round(r[j]*0.8/sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)));
+				i++;
+				}
+			}
+		j++;
+		}
+	}
+
+newImage("singularidad", "16-bit black", w, h, 1);
+
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x, y, r[i]+r2[i]);
+		i++;
+		}
+	}
+
+
+

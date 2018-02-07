@@ -1,0 +1,71 @@
+
+newImage("BrownianMovement", "8-bit black", 200, 200, 45);
+
+x1=100; x2=150; x3=40; x4=78; x5=165; x6=100; x7=36; x8=32; y1=70; y2=36; y3=26; y4=89; y5=123; y6=150; y7=120; y8=60;
+
+setPixel(x1, y1, 255);
+setPixel(x2, y2, 255);
+setPixel(x3, y3, 255);
+setPixel(x4, y4, 255);
+setPixel(x5, y5,  255);
+setPixel(x6, y6, 255);
+setPixel(x7, y7, 255);
+setPixel(x8, y8,  255);
+
+pi=3.1416;
+pa=4;
+random("seed", 689569335789098);
+dir=random;
+
+for(i=2; i<46; i++)
+{
+setSlice(i);
+
+randangle=dir*2*pi;
+y1=y1+sin(randangle)*pa;
+x1=x1+cos(randangle)*pa;
+
+randangle=dir*2*pi;
+y2=y2+sin(randangle)*pa;
+x2=x2+cos(randangle)*pa;
+
+randangle=dir*2*pi;
+y3=y3+sin(randangle)*pa;
+x3=x3+cos(randangle)*pa;
+
+randangle=dir*2*pi;
+y4=y4+sin(randangle)*pa;
+x4=x4+cos(randangle)*pa;
+
+randangle=dir*2*pi;
+y5=y5+sin(randangle)*pa;
+x5=x5+cos(randangle)*pa;
+
+randangle=dir*2*pi;
+y6=y6+sin(randangle)*pa;
+x6=x6+cos(randangle)*pa;
+
+randangle=dir*2*pi;
+y7=y7+sin(randangle)*pa;
+x7=x7+cos(randangle)*pa;
+
+randangle=dir*2*pi;
+y8=y8+sin(randangle)*pa;
+x8=x8+cos(randangle)*pa;
+
+
+setPixel(x1, y1, 255);
+setPixel(x2, y2, 255);
+setPixel(x3, y3, 255);
+setPixel(x4, y4, 255);
+setPixel(x5, y5,  255);
+setPixel(x6, y6, 255);
+setPixel(x7, y7, 255);
+setPixel(x8, y8, 255);
+
+
+//print(x1+"   "+x2+"   "+x3+"   "+x4+"   "+x5);
+//print(y1+"   "+y2+"   "+y3+"   "+y4+"   "+y5);
+
+}
+

@@ -1,0 +1,1269 @@
+//ESto es para sacar el sangrado, pero ya s ele había ocurrido a otro
+
+macro "Image Deconstructor [r]" 
+{
+
+requires("1.29p");                      
+
+id1=getImageID();                        //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+
+ Dialog.create("ImageDeco");    //genero ventana de inicio                                                      
+  Dialog.addChoice("Red:", figura);         
+  Dialog.addChoice("Green:", figura);          
+  Dialog.addChoice("Mask:", figura);  
+  
+       Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	mascara=Dialog.getChoice();
+   	
+
+selectWindow(mascara);
+run("Select None");
+
+selectWindow(rojo);
+run("8-bit");
+selectWindow(verde);
+run("8-bit");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==255)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+unosMascara=contarUnos(mascara);
+
+imageCalculator("AND create", verde, mascara);     //opero imágenes con la máscara
+rename("verdeAndMascara");
+imageCalculator("AND create", rojo, mascara);   
+rename("rojoAndMascara");
+
+
+selectWindow(mascara);	           //vectorizo la máscara
+ masc = newArray(w*h);
+ i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		masc[i] = getPixel(x,y);
+		i++;
+		}
+	}
+
+unosMascara=contarUnos(mascara);                        //cuento unos
+
+
+selectWindow("rojoAndMascara");	                     //vectorizo cada canal
+  rojo = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			rojo[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+
+selectWindow("verdeAndMascara");	
+  verde = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			verde[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+
+selectWindow("verdeAndMascara");
+close();
+selectWindow("rojoAndMascara");
+close();
+
+m=0;
+                                          // parametrizacion en 10 compartimientos
+sumaR1=0;
+
+
+
+
+rojo1=newArray(unosMascara);
+{
+
+
+for(j=0; j<255; j++)
+	{
+	for(i=0; i<unosMascara; i++)
+		{
+		if(Rojo[i]==j)
+			rojo[j][i]=j;
+			else
+			rojo[j][i]=0;
+		sumaR[j]=sumaR[j]+rojo[j][i];
+		if(Verde[i]==j)
+			verde[j][i]=j;
+			else
+			verde[j][i]=0;
+		sumaV[j]=sumaV[j]+verde[j][i];
+		}
+	promV[j]=sumaV[j]/unosMascara;
+	}
+
+for(i=0; i<unosMascara; i++)
+	{
+	denVV=denVV+(Verde[i]-promVV)*(Verde[i]-promVV);
+	denRR=denRR+(Rojo[i]-promRR)*(Rojo[i]-promRR);
+	}
+
+for(j=0; j<255; j++)
+	{
+	for(i=0; i<unosMascara; i++)
+		{
+		denR[j]=denR[j]+(rojo[j][i]-promR[j])*(rojo[j][i]-promR[j]); 
+		numRV[j]=numRV[j]+(rojo[j][i]-promR[j])*(Verde[i]-promVV);
+		denV[j]=denV[j]+(verde[j][i]-promV[j])*(verde[j][i]-promV[j]);
+		numVR[j]=numVR[j]+(verde[j][i]-promV[j])*(Rojo[i]-promRR);  
+		}     
+
+for(i=1; i<256; i++)
+	{ 
+	denRVV[i]=sqrt(denR[i]*denVV);
+	denVRR[i]=sqrt(denV[i]*denRR);
+	pearsonRV[i]=numRV[i]/denRVV[i];
+	pearsonVR[i]=numVR[i]/denVRR[i];
+	}
+
+
+sumaR1=0; rojo1=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo1[i]=m; else rojo1[i]=0; sumaR1=sumaR1+rojo1[i]; } promR1=sumaR1/unosMascara;
+sumaR2=0; rojo2=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo2[i]=m; else rojo2[i]=0; sumaR2=sumaR2+rojo2[i]; } promR2=sumaR2/unosMascara;
+sumaR3=0; rojo3=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo3[i]=m; else rojo3[i]=0; sumaR3=sumaR3+rojo3[i]; } promR3=sumaR3/unosMascara;
+sumaR4=0; rojo4=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo4[i]=m; else rojo4[i]=0; sumaR4=sumaR4+rojo4[i]; } promR4=sumaR4/unosMascara;
+sumaR5=0; rojo5=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo5[i]=m; else rojo5[i]=0; sumaR5=sumaR5+rojo5[i]; } promR5=sumaR5/unosMascara;
+sumaR6=0; rojo6=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo6[i]=m; else rojo6[i]=0; sumaR6=sumaR6+rojo6[i]; } promR6=sumaR6/unosMascara;
+sumaR7=0; rojo7=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo7[i]=m; else rojo7[i]=0; sumaR7=sumaR7+rojo7[i]; } promR7=sumaR7/unosMascara;
+sumaR8=0; rojo8=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo8[i]=m; else rojo8[i]=0; sumaR8=sumaR8+rojo8[i]; } promR8=sumaR8/unosMascara;
+sumaR9=0; rojo9=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo9[i]=m; else rojo9[i]=0; sumaR9=sumaR9+rojo9[i]; } promR9=sumaR9/unosMascara;
+sumaR10=0; rojo10=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo10[i]=m; else rojo10[i]=0; sumaR10=sumaR10+rojo10[i]; } promR10=sumaR10/unosMascara;
+sumaR11=0; rojo11=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo11[i]=m; else rojo11[i]=0; sumaR11=sumaR11+rojo11[i]; } promR11=sumaR11/unosMascara;
+sumaR12=0; rojo12=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo12[i]=m; else rojo12[i]=0; sumaR12=sumaR12+rojo12[i]; } promR12=sumaR12/unosMascara;
+sumaR13=0; rojo13=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo13[i]=m; else rojo13[i]=0; sumaR13=sumaR13+rojo13[i]; } promR13=sumaR13/unosMascara;
+sumaR14=0; rojo14=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo14[i]=m; else rojo14[i]=0; sumaR14=sumaR14+rojo14[i]; } promR14=sumaR14/unosMascara;
+sumaR15=0; rojo15=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo15[i]=m; else rojo15[i]=0; sumaR15=sumaR15+rojo15[i]; } promR15=sumaR15/unosMascara;
+sumaR16=0; rojo16=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo16[i]=m; else rojo16[i]=0; sumaR16=sumaR16+rojo16[i]; } promR16=sumaR16/unosMascara;
+sumaR17=0; rojo17=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo17[i]=m; else rojo17[i]=0; sumaR17=sumaR17+rojo17[i]; } promR17=sumaR17/unosMascara;
+sumaR18=0; rojo18=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo18[i]=m; else rojo18[i]=0; sumaR18=sumaR18+rojo18[i]; } promR18=sumaR18/unosMascara;
+sumaR19=0; rojo19=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo19[i]=m; else rojo19[i]=0; sumaR19=sumaR19+rojo19[i]; } promR19=sumaR19/unosMascara;
+sumaR20=0; rojo20=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo20[i]=m; else rojo20[i]=0; sumaR20=sumaR20+rojo20[i]; } promR20=sumaR20/unosMascara;
+sumaR21=0; rojo21=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo21[i]=m; else rojo21[i]=0; sumaR21=sumaR21+rojo21[i]; } promR21=sumaR21/unosMascara;
+sumaR22=0; rojo22=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo22[i]=m; else rojo22[i]=0; sumaR22=sumaR22+rojo22[i]; } promR22=sumaR22/unosMascara;
+sumaR23=0; rojo23=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo23[i]=m; else rojo23[i]=0; sumaR23=sumaR23+rojo23[i]; } promR23=sumaR23/unosMascara;
+sumaR24=0; rojo24=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo24[i]=m; else rojo24[i]=0; sumaR24=sumaR24+rojo24[i]; } promR24=sumaR24/unosMascara;
+sumaR25=0; rojo25=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo25[i]=m; else rojo25[i]=0; sumaR25=sumaR25+rojo25[i]; } promR25=sumaR25/unosMascara;
+sumaR26=0; rojo26=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo26[i]=m; else rojo26[i]=0; sumaR26=sumaR26+rojo26[i]; } promR26=sumaR26/unosMascara;
+sumaR27=0; rojo27=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo27[i]=m; else rojo27[i]=0; sumaR27=sumaR27+rojo27[i]; } promR27=sumaR27/unosMascara;
+sumaR28=0; rojo28=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo28[i]=m; else rojo28[i]=0; sumaR28=sumaR28+rojo28[i]; } promR28=sumaR28/unosMascara;
+sumaR29=0; rojo29=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo29[i]=m; else rojo29[i]=0; sumaR29=sumaR29+rojo29[i]; } promR29=sumaR29/unosMascara;
+sumaR30=0; rojo30=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo30[i]=m; else rojo30[i]=0; sumaR30=sumaR30+rojo30[i]; } promR30=sumaR30/unosMascara;
+sumaR31=0; rojo31=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo31[i]=m; else rojo31[i]=0; sumaR31=sumaR31+rojo31[i]; } promR31=sumaR31/unosMascara;
+sumaR32=0; rojo32=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo32[i]=m; else rojo32[i]=0; sumaR32=sumaR32+rojo32[i]; } promR32=sumaR32/unosMascara;
+sumaR33=0; rojo33=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo33[i]=m; else rojo33[i]=0; sumaR33=sumaR33+rojo33[i]; } promR33=sumaR33/unosMascara;
+sumaR34=0; rojo34=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo34[i]=m; else rojo34[i]=0; sumaR34=sumaR34+rojo34[i]; } promR34=sumaR34/unosMascara;
+sumaR35=0; rojo35=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo35[i]=m; else rojo35[i]=0; sumaR35=sumaR35+rojo35[i]; } promR35=sumaR35/unosMascara;
+sumaR36=0; rojo36=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo36[i]=m; else rojo36[i]=0; sumaR36=sumaR36+rojo36[i]; } promR36=sumaR36/unosMascara;
+sumaR37=0; rojo37=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo37[i]=m; else rojo37[i]=0; sumaR37=sumaR37+rojo37[i]; } promR37=sumaR37/unosMascara;
+sumaR38=0; rojo38=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo38[i]=m; else rojo38[i]=0; sumaR38=sumaR38+rojo38[i]; } promR38=sumaR38/unosMascara;
+sumaR39=0; rojo39=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo39[i]=m; else rojo39[i]=0; sumaR39=sumaR39+rojo39[i]; } promR39=sumaR39/unosMascara;
+sumaR40=0; rojo40=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo40[i]=m; else rojo40[i]=0; sumaR40=sumaR40+rojo40[i]; } promR40=sumaR40/unosMascara;
+sumaR41=0; rojo41=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo41[i]=m; else rojo41[i]=0; sumaR41=sumaR41+rojo41[i]; } promR41=sumaR41/unosMascara;
+sumaR42=0; rojo42=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo42[i]=m; else rojo42[i]=0; sumaR42=sumaR42+rojo42[i]; } promR42=sumaR42/unosMascara;
+sumaR43=0; rojo43=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo43[i]=m; else rojo43[i]=0; sumaR43=sumaR43+rojo43[i]; } promR43=sumaR43/unosMascara;
+sumaR44=0; rojo44=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo44[i]=m; else rojo44[i]=0; sumaR44=sumaR44+rojo44[i]; } promR44=sumaR44/unosMascara;
+sumaR45=0; rojo45=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo45[i]=m; else rojo45[i]=0; sumaR45=sumaR45+rojo45[i]; } promR45=sumaR45/unosMascara;
+sumaR46=0; rojo46=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo46[i]=m; else rojo46[i]=0; sumaR46=sumaR46+rojo46[i]; } promR46=sumaR46/unosMascara;
+sumaR47=0; rojo47=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo47[i]=m; else rojo47[i]=0; sumaR47=sumaR47+rojo47[i]; } promR47=sumaR47/unosMascara;
+sumaR48=0; rojo48=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo48[i]=m; else rojo48[i]=0; sumaR48=sumaR48+rojo48[i]; } promR48=sumaR48/unosMascara;
+sumaR49=0; rojo49=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo49[i]=m; else rojo49[i]=0; sumaR49=sumaR49+rojo49[i]; } promR49=sumaR49/unosMascara;
+sumaR50=0; rojo50=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo50[i]=m; else rojo50[i]=0; sumaR50=sumaR50+rojo50[i]; } promR50=sumaR50/unosMascara;
+sumaR51=0; rojo51=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo51[i]=m; else rojo51[i]=0; sumaR51=sumaR51+rojo51[i]; } promR51=sumaR51/unosMascara;
+sumaR52=0; rojo52=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo52[i]=m; else rojo52[i]=0; sumaR52=sumaR52+rojo52[i]; } promR52=sumaR52/unosMascara;
+sumaR53=0; rojo53=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo53[i]=m; else rojo53[i]=0; sumaR53=sumaR53+rojo53[i]; } promR53=sumaR53/unosMascara;
+sumaR54=0; rojo54=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo54[i]=m; else rojo54[i]=0; sumaR54=sumaR54+rojo54[i]; } promR54=sumaR54/unosMascara;
+sumaR55=0; rojo55=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo55[i]=m; else rojo55[i]=0; sumaR55=sumaR55+rojo55[i]; } promR55=sumaR55/unosMascara;
+sumaR56=0; rojo56=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo56[i]=m; else rojo56[i]=0; sumaR56=sumaR56+rojo56[i]; } promR56=sumaR56/unosMascara;
+sumaR57=0; rojo57=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo57[i]=m; else rojo57[i]=0; sumaR57=sumaR57+rojo57[i]; } promR57=sumaR57/unosMascara;
+sumaR58=0; rojo58=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo58[i]=m; else rojo58[i]=0; sumaR58=sumaR58+rojo58[i]; } promR58=sumaR58/unosMascara;
+sumaR59=0; rojo59=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo59[i]=m; else rojo59[i]=0; sumaR59=sumaR59+rojo59[i]; } promR59=sumaR59/unosMascara;
+sumaR60=0; rojo60=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo60[i]=m; else rojo60[i]=0; sumaR60=sumaR60+rojo60[i]; } promR60=sumaR60/unosMascara;
+sumaR61=0; rojo61=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo61[i]=m; else rojo61[i]=0; sumaR61=sumaR61+rojo61[i]; } promR61=sumaR61/unosMascara;
+sumaR62=0; rojo62=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo62[i]=m; else rojo62[i]=0; sumaR62=sumaR62+rojo62[i]; } promR62=sumaR62/unosMascara;
+sumaR63=0; rojo63=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo63[i]=m; else rojo63[i]=0; sumaR63=sumaR63+rojo63[i]; } promR63=sumaR63/unosMascara;
+sumaR64=0; rojo64=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo64[i]=m; else rojo64[i]=0; sumaR64=sumaR64+rojo64[i]; } promR64=sumaR64/unosMascara;
+sumaR65=0; rojo65=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo65[i]=m; else rojo65[i]=0; sumaR65=sumaR65+rojo65[i]; } promR65=sumaR65/unosMascara;
+sumaR66=0; rojo66=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo66[i]=m; else rojo66[i]=0; sumaR66=sumaR66+rojo66[i]; } promR66=sumaR66/unosMascara;
+sumaR67=0; rojo67=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo67[i]=m; else rojo67[i]=0; sumaR67=sumaR67+rojo67[i]; } promR67=sumaR67/unosMascara;
+sumaR68=0; rojo68=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo68[i]=m; else rojo68[i]=0; sumaR68=sumaR68+rojo68[i]; } promR68=sumaR68/unosMascara;
+sumaR69=0; rojo69=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo69[i]=m; else rojo69[i]=0; sumaR69=sumaR69+rojo69[i]; } promR69=sumaR69/unosMascara;
+sumaR70=0; rojo70=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo70[i]=m; else rojo70[i]=0; sumaR70=sumaR70+rojo70[i]; } promR70=sumaR70/unosMascara;
+sumaR71=0; rojo71=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo71[i]=m; else rojo71[i]=0; sumaR71=sumaR71+rojo71[i]; } promR71=sumaR71/unosMascara;
+sumaR72=0; rojo72=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo72[i]=m; else rojo72[i]=0; sumaR72=sumaR72+rojo72[i]; } promR72=sumaR72/unosMascara;
+sumaR73=0; rojo73=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo73[i]=m; else rojo73[i]=0; sumaR73=sumaR73+rojo73[i]; } promR73=sumaR73/unosMascara;
+sumaR74=0; rojo74=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo74[i]=m; else rojo74[i]=0; sumaR74=sumaR74+rojo74[i]; } promR74=sumaR74/unosMascara;
+sumaR75=0; rojo75=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo75[i]=m; else rojo75[i]=0; sumaR75=sumaR75+rojo75[i]; } promR75=sumaR75/unosMascara;
+sumaR76=0; rojo76=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo76[i]=m; else rojo76[i]=0; sumaR76=sumaR76+rojo76[i]; } promR76=sumaR76/unosMascara;
+sumaR77=0; rojo77=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo77[i]=m; else rojo77[i]=0; sumaR77=sumaR77+rojo77[i]; } promR77=sumaR77/unosMascara;
+sumaR78=0; rojo78=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo78[i]=m; else rojo78[i]=0; sumaR78=sumaR78+rojo78[i]; } promR78=sumaR78/unosMascara;
+sumaR79=0; rojo79=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo79[i]=m; else rojo79[i]=0; sumaR79=sumaR79+rojo79[i]; } promR79=sumaR79/unosMascara;
+sumaR80=0; rojo80=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo80[i]=m; else rojo80[i]=0; sumaR80=sumaR80+rojo80[i]; } promR80=sumaR80/unosMascara;
+sumaR81=0; rojo81=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo81[i]=m; else rojo81[i]=0; sumaR81=sumaR81+rojo81[i]; } promR81=sumaR81/unosMascara;
+sumaR82=0; rojo82=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo82[i]=m; else rojo82[i]=0; sumaR82=sumaR82+rojo82[i]; } promR82=sumaR82/unosMascara;
+sumaR83=0; rojo83=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo83[i]=m; else rojo83[i]=0; sumaR83=sumaR83+rojo83[i]; } promR83=sumaR83/unosMascara;
+sumaR84=0; rojo84=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo84[i]=m; else rojo84[i]=0; sumaR84=sumaR84+rojo84[i]; } promR84=sumaR84/unosMascara;
+sumaR85=0; rojo85=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo85[i]=m; else rojo85[i]=0; sumaR85=sumaR85+rojo85[i]; } promR85=sumaR85/unosMascara;
+sumaR86=0; rojo86=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo86[i]=m; else rojo86[i]=0; sumaR86=sumaR86+rojo86[i]; } promR86=sumaR86/unosMascara;
+sumaR87=0; rojo87=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo87[i]=m; else rojo87[i]=0; sumaR87=sumaR87+rojo87[i]; } promR87=sumaR87/unosMascara;
+sumaR88=0; rojo88=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo88[i]=m; else rojo88[i]=0; sumaR88=sumaR88+rojo88[i]; } promR88=sumaR88/unosMascara;
+sumaR89=0; rojo89=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo89[i]=m; else rojo89[i]=0; sumaR89=sumaR89+rojo89[i]; } promR89=sumaR89/unosMascara;
+sumaR90=0; rojo90=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo90[i]=m; else rojo90[i]=0; sumaR90=sumaR90+rojo90[i]; } promR90=sumaR90/unosMascara;
+sumaR91=0; rojo91=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo91[i]=m; else rojo91[i]=0; sumaR91=sumaR91+rojo91[i]; } promR91=sumaR91/unosMascara;
+sumaR92=0; rojo92=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo92[i]=m; else rojo92[i]=0; sumaR92=sumaR92+rojo92[i]; } promR92=sumaR92/unosMascara;
+sumaR93=0; rojo93=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo93[i]=m; else rojo93[i]=0; sumaR93=sumaR93+rojo93[i]; } promR93=sumaR93/unosMascara;
+sumaR94=0; rojo94=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo94[i]=m; else rojo94[i]=0; sumaR94=sumaR94+rojo94[i]; } promR94=sumaR94/unosMascara;
+sumaR95=0; rojo95=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo95[i]=m; else rojo95[i]=0; sumaR95=sumaR95+rojo95[i]; } promR95=sumaR95/unosMascara;
+sumaR96=0; rojo96=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo96[i]=m; else rojo96[i]=0; sumaR96=sumaR96+rojo96[i]; } promR96=sumaR96/unosMascara;
+sumaR97=0; rojo97=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo97[i]=m; else rojo97[i]=0; sumaR97=sumaR97+rojo97[i]; } promR97=sumaR97/unosMascara;
+sumaR98=0; rojo98=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo98[i]=m; else rojo98[i]=0; sumaR98=sumaR98+rojo98[i]; } promR98=sumaR98/unosMascara;
+sumaR99=0; rojo99=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo99[i]=m; else rojo99[i]=0; sumaR99=sumaR99+rojo99[i]; } promR99=sumaR99/unosMascara;
+sumaR100=0; rojo100=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo100[i]=m; else rojo100[i]=0; sumaR100=sumaR100+rojo100[i]; } promR100=sumaR100/unosMascara;
+sumaR101=0; rojo101=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo101[i]=m; else rojo101[i]=0; sumaR101=sumaR101+rojo101[i]; } promR101=sumaR101/unosMascara;
+sumaR102=0; rojo102=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo102[i]=m; else rojo102[i]=0; sumaR102=sumaR102+rojo102[i]; } promR102=sumaR102/unosMascara;
+sumaR103=0; rojo103=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo103[i]=m; else rojo103[i]=0; sumaR103=sumaR103+rojo103[i]; } promR103=sumaR103/unosMascara;
+sumaR104=0; rojo104=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo104[i]=m; else rojo104[i]=0; sumaR104=sumaR104+rojo104[i]; } promR104=sumaR104/unosMascara;
+sumaR105=0; rojo105=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo105[i]=m; else rojo105[i]=0; sumaR105=sumaR105+rojo105[i]; } promR105=sumaR105/unosMascara;
+sumaR106=0; rojo106=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo106[i]=m; else rojo106[i]=0; sumaR106=sumaR106+rojo106[i]; } promR106=sumaR106/unosMascara;
+sumaR107=0; rojo107=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo107[i]=m; else rojo107[i]=0; sumaR107=sumaR107+rojo107[i]; } promR107=sumaR107/unosMascara;
+sumaR108=0; rojo108=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo108[i]=m; else rojo108[i]=0; sumaR108=sumaR108+rojo108[i]; } promR108=sumaR108/unosMascara;
+sumaR109=0; rojo109=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo109[i]=m; else rojo109[i]=0; sumaR109=sumaR109+rojo109[i]; } promR109=sumaR109/unosMascara;
+sumaR110=0; rojo110=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo110[i]=m; else rojo110[i]=0; sumaR110=sumaR110+rojo110[i]; } promR110=sumaR110/unosMascara;
+sumaR111=0; rojo111=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo111[i]=m; else rojo111[i]=0; sumaR111=sumaR111+rojo111[i]; } promR111=sumaR111/unosMascara;
+sumaR112=0; rojo112=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo112[i]=m; else rojo112[i]=0; sumaR112=sumaR112+rojo112[i]; } promR112=sumaR112/unosMascara;
+sumaR113=0; rojo113=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo113[i]=m; else rojo113[i]=0; sumaR113=sumaR113+rojo113[i]; } promR113=sumaR113/unosMascara;
+sumaR114=0; rojo114=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo114[i]=m; else rojo114[i]=0; sumaR114=sumaR114+rojo114[i]; } promR114=sumaR114/unosMascara;
+sumaR115=0; rojo115=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo115[i]=m; else rojo115[i]=0; sumaR115=sumaR115+rojo115[i]; } promR115=sumaR115/unosMascara;
+sumaR116=0; rojo116=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo116[i]=m; else rojo116[i]=0; sumaR116=sumaR116+rojo116[i]; } promR116=sumaR116/unosMascara;
+sumaR117=0; rojo117=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo117[i]=m; else rojo117[i]=0; sumaR117=sumaR117+rojo117[i]; } promR117=sumaR117/unosMascara;
+sumaR118=0; rojo118=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo118[i]=m; else rojo118[i]=0; sumaR118=sumaR118+rojo118[i]; } promR118=sumaR118/unosMascara;
+sumaR119=0; rojo119=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo119[i]=m; else rojo119[i]=0; sumaR119=sumaR119+rojo119[i]; } promR119=sumaR119/unosMascara;
+sumaR120=0; rojo120=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo120[i]=m; else rojo120[i]=0; sumaR120=sumaR120+rojo120[i]; } promR120=sumaR120/unosMascara;
+sumaR121=0; rojo121=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo121[i]=m; else rojo121[i]=0; sumaR121=sumaR121+rojo121[i]; } promR121=sumaR121/unosMascara;
+sumaR122=0; rojo122=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo122[i]=m; else rojo122[i]=0; sumaR122=sumaR122+rojo122[i]; } promR122=sumaR122/unosMascara;
+sumaR123=0; rojo123=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo123[i]=m; else rojo123[i]=0; sumaR123=sumaR123+rojo123[i]; } promR123=sumaR123/unosMascara;
+sumaR124=0; rojo124=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo124[i]=m; else rojo124[i]=0; sumaR124=sumaR124+rojo124[i]; } promR124=sumaR124/unosMascara;
+sumaR125=0; rojo125=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo125[i]=m; else rojo125[i]=0; sumaR125=sumaR125+rojo125[i]; } promR125=sumaR125/unosMascara;
+sumaR126=0; rojo126=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo126[i]=m; else rojo126[i]=0; sumaR126=sumaR126+rojo126[i]; } promR126=sumaR126/unosMascara;
+sumaR127=0; rojo127=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo127[i]=m; else rojo127[i]=0; sumaR127=sumaR127+rojo127[i]; } promR127=sumaR127/unosMascara;
+sumaR128=0; rojo128=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo128[i]=m; else rojo128[i]=0; sumaR128=sumaR128+rojo128[i]; } promR128=sumaR128/unosMascara;
+sumaR129=0; rojo129=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo129[i]=m; else rojo129[i]=0; sumaR129=sumaR129+rojo129[i]; } promR129=sumaR129/unosMascara;
+sumaR130=0; rojo130=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo130[i]=m; else rojo130[i]=0; sumaR130=sumaR130+rojo130[i]; } promR130=sumaR130/unosMascara;
+sumaR131=0; rojo131=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo131[i]=m; else rojo131[i]=0; sumaR131=sumaR131+rojo131[i]; } promR131=sumaR131/unosMascara;
+sumaR132=0; rojo132=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo132[i]=m; else rojo132[i]=0; sumaR132=sumaR132+rojo132[i]; } promR132=sumaR132/unosMascara;
+sumaR133=0; rojo133=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo133[i]=m; else rojo133[i]=0; sumaR133=sumaR133+rojo133[i]; } promR133=sumaR133/unosMascara;
+sumaR134=0; rojo134=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo134[i]=m; else rojo134[i]=0; sumaR134=sumaR134+rojo134[i]; } promR134=sumaR134/unosMascara;
+sumaR135=0; rojo135=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo135[i]=m; else rojo135[i]=0; sumaR135=sumaR135+rojo135[i]; } promR135=sumaR135/unosMascara;
+sumaR136=0; rojo136=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo136[i]=m; else rojo136[i]=0; sumaR136=sumaR136+rojo136[i]; } promR136=sumaR136/unosMascara;
+sumaR137=0; rojo137=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo137[i]=m; else rojo137[i]=0; sumaR137=sumaR137+rojo137[i]; } promR137=sumaR137/unosMascara;
+sumaR138=0; rojo138=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo138[i]=m; else rojo138[i]=0; sumaR138=sumaR138+rojo138[i]; } promR138=sumaR138/unosMascara;
+sumaR139=0; rojo139=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo139[i]=m; else rojo139[i]=0; sumaR139=sumaR139+rojo139[i]; } promR139=sumaR139/unosMascara;
+sumaR140=0; rojo140=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo140[i]=m; else rojo140[i]=0; sumaR140=sumaR140+rojo140[i]; } promR140=sumaR140/unosMascara;
+sumaR141=0; rojo141=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo141[i]=m; else rojo141[i]=0; sumaR141=sumaR141+rojo141[i]; } promR141=sumaR141/unosMascara;
+sumaR142=0; rojo142=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo142[i]=m; else rojo142[i]=0; sumaR142=sumaR142+rojo142[i]; } promR142=sumaR142/unosMascara;
+sumaR143=0; rojo143=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo143[i]=m; else rojo143[i]=0; sumaR143=sumaR143+rojo143[i]; } promR143=sumaR143/unosMascara;
+sumaR144=0; rojo144=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo144[i]=m; else rojo144[i]=0; sumaR144=sumaR144+rojo144[i]; } promR144=sumaR144/unosMascara;
+sumaR145=0; rojo145=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo145[i]=m; else rojo145[i]=0; sumaR145=sumaR145+rojo145[i]; } promR145=sumaR145/unosMascara;
+sumaR146=0; rojo146=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo146[i]=m; else rojo146[i]=0; sumaR146=sumaR146+rojo146[i]; } promR146=sumaR146/unosMascara;
+sumaR147=0; rojo147=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo147[i]=m; else rojo147[i]=0; sumaR147=sumaR147+rojo147[i]; } promR147=sumaR147/unosMascara;
+sumaR148=0; rojo148=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo148[i]=m; else rojo148[i]=0; sumaR148=sumaR148+rojo148[i]; } promR148=sumaR148/unosMascara;
+sumaR149=0; rojo149=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo149[i]=m; else rojo149[i]=0; sumaR149=sumaR149+rojo149[i]; } promR149=sumaR149/unosMascara;
+sumaR150=0; rojo150=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo150[i]=m; else rojo150[i]=0; sumaR150=sumaR150+rojo150[i]; } promR150=sumaR150/unosMascara;
+sumaR151=0; rojo151=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo151[i]=m; else rojo151[i]=0; sumaR151=sumaR151+rojo151[i]; } promR151=sumaR151/unosMascara;
+sumaR152=0; rojo152=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo152[i]=m; else rojo152[i]=0; sumaR152=sumaR152+rojo152[i]; } promR152=sumaR152/unosMascara;
+sumaR153=0; rojo153=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo153[i]=m; else rojo153[i]=0; sumaR153=sumaR153+rojo153[i]; } promR153=sumaR153/unosMascara;
+sumaR154=0; rojo154=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo154[i]=m; else rojo154[i]=0; sumaR154=sumaR154+rojo154[i]; } promR154=sumaR154/unosMascara;
+sumaR155=0; rojo155=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo155[i]=m; else rojo155[i]=0; sumaR155=sumaR155+rojo155[i]; } promR155=sumaR155/unosMascara;
+sumaR156=0; rojo156=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo156[i]=m; else rojo156[i]=0; sumaR156=sumaR156+rojo156[i]; } promR156=sumaR156/unosMascara;
+sumaR157=0; rojo157=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo157[i]=m; else rojo157[i]=0; sumaR157=sumaR157+rojo157[i]; } promR157=sumaR157/unosMascara;
+sumaR158=0; rojo158=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo158[i]=m; else rojo158[i]=0; sumaR158=sumaR158+rojo158[i]; } promR158=sumaR158/unosMascara;
+sumaR159=0; rojo159=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo159[i]=m; else rojo159[i]=0; sumaR159=sumaR159+rojo159[i]; } promR159=sumaR159/unosMascara;
+sumaR160=0; rojo160=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo160[i]=m; else rojo160[i]=0; sumaR160=sumaR160+rojo160[i]; } promR160=sumaR160/unosMascara;
+sumaR161=0; rojo161=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo161[i]=m; else rojo161[i]=0; sumaR161=sumaR161+rojo161[i]; } promR161=sumaR161/unosMascara;
+sumaR162=0; rojo162=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo162[i]=m; else rojo162[i]=0; sumaR162=sumaR162+rojo162[i]; } promR162=sumaR162/unosMascara;
+sumaR163=0; rojo163=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo163[i]=m; else rojo163[i]=0; sumaR163=sumaR163+rojo163[i]; } promR163=sumaR163/unosMascara;
+sumaR164=0; rojo164=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo164[i]=m; else rojo164[i]=0; sumaR164=sumaR164+rojo164[i]; } promR164=sumaR164/unosMascara;
+sumaR165=0; rojo165=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo165[i]=m; else rojo165[i]=0; sumaR165=sumaR165+rojo165[i]; } promR165=sumaR165/unosMascara;
+sumaR166=0; rojo166=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo166[i]=m; else rojo166[i]=0; sumaR166=sumaR166+rojo166[i]; } promR166=sumaR166/unosMascara;
+sumaR167=0; rojo167=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo167[i]=m; else rojo167[i]=0; sumaR167=sumaR167+rojo167[i]; } promR167=sumaR167/unosMascara;
+sumaR168=0; rojo168=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo168[i]=m; else rojo168[i]=0; sumaR168=sumaR168+rojo168[i]; } promR168=sumaR168/unosMascara;
+sumaR169=0; rojo169=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo169[i]=m; else rojo169[i]=0; sumaR169=sumaR169+rojo169[i]; } promR169=sumaR169/unosMascara;
+sumaR170=0; rojo170=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo170[i]=m; else rojo170[i]=0; sumaR170=sumaR170+rojo170[i]; } promR170=sumaR170/unosMascara;
+sumaR171=0; rojo171=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo171[i]=m; else rojo171[i]=0; sumaR171=sumaR171+rojo171[i]; } promR171=sumaR171/unosMascara;
+sumaR172=0; rojo172=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo172[i]=m; else rojo172[i]=0; sumaR172=sumaR172+rojo172[i]; } promR172=sumaR172/unosMascara;
+sumaR173=0; rojo173=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo173[i]=m; else rojo173[i]=0; sumaR173=sumaR173+rojo173[i]; } promR173=sumaR173/unosMascara;
+sumaR174=0; rojo174=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo174[i]=m; else rojo174[i]=0; sumaR174=sumaR174+rojo174[i]; } promR174=sumaR174/unosMascara;
+sumaR175=0; rojo175=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo175[i]=m; else rojo175[i]=0; sumaR175=sumaR175+rojo175[i]; } promR175=sumaR175/unosMascara;
+sumaR176=0; rojo176=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo176[i]=m; else rojo176[i]=0; sumaR176=sumaR176+rojo176[i]; } promR176=sumaR176/unosMascara;
+sumaR177=0; rojo177=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo177[i]=m; else rojo177[i]=0; sumaR177=sumaR177+rojo177[i]; } promR177=sumaR177/unosMascara;
+sumaR178=0; rojo178=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo178[i]=m; else rojo178[i]=0; sumaR178=sumaR178+rojo178[i]; } promR178=sumaR178/unosMascara;
+sumaR179=0; rojo179=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo179[i]=m; else rojo179[i]=0; sumaR179=sumaR179+rojo179[i]; } promR179=sumaR179/unosMascara;
+sumaR180=0; rojo180=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo180[i]=m; else rojo180[i]=0; sumaR180=sumaR180+rojo180[i]; } promR180=sumaR180/unosMascara;
+sumaR181=0; rojo181=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo181[i]=m; else rojo181[i]=0; sumaR181=sumaR181+rojo181[i]; } promR181=sumaR181/unosMascara;
+sumaR182=0; rojo182=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo182[i]=m; else rojo182[i]=0; sumaR182=sumaR182+rojo182[i]; } promR182=sumaR182/unosMascara;
+sumaR183=0; rojo183=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo183[i]=m; else rojo183[i]=0; sumaR183=sumaR183+rojo183[i]; } promR183=sumaR183/unosMascara;
+sumaR184=0; rojo184=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo184[i]=m; else rojo184[i]=0; sumaR184=sumaR184+rojo184[i]; } promR184=sumaR184/unosMascara;
+sumaR185=0; rojo185=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo185[i]=m; else rojo185[i]=0; sumaR185=sumaR185+rojo185[i]; } promR185=sumaR185/unosMascara;
+sumaR186=0; rojo186=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo186[i]=m; else rojo186[i]=0; sumaR186=sumaR186+rojo186[i]; } promR186=sumaR186/unosMascara;
+sumaR187=0; rojo187=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo187[i]=m; else rojo187[i]=0; sumaR187=sumaR187+rojo187[i]; } promR187=sumaR187/unosMascara;
+sumaR188=0; rojo188=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo188[i]=m; else rojo188[i]=0; sumaR188=sumaR188+rojo188[i]; } promR188=sumaR188/unosMascara;
+sumaR189=0; rojo189=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo189[i]=m; else rojo189[i]=0; sumaR189=sumaR189+rojo189[i]; } promR189=sumaR189/unosMascara;
+sumaR190=0; rojo190=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo190[i]=m; else rojo190[i]=0; sumaR190=sumaR190+rojo190[i]; } promR190=sumaR190/unosMascara;
+sumaR191=0; rojo191=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo191[i]=m; else rojo191[i]=0; sumaR191=sumaR191+rojo191[i]; } promR191=sumaR191/unosMascara;
+sumaR192=0; rojo192=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo192[i]=m; else rojo192[i]=0; sumaR192=sumaR192+rojo192[i]; } promR192=sumaR192/unosMascara;
+sumaR193=0; rojo193=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo193[i]=m; else rojo193[i]=0; sumaR193=sumaR193+rojo193[i]; } promR193=sumaR193/unosMascara;
+sumaR194=0; rojo194=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo194[i]=m; else rojo194[i]=0; sumaR194=sumaR194+rojo194[i]; } promR194=sumaR194/unosMascara;
+sumaR195=0; rojo195=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo195[i]=m; else rojo195[i]=0; sumaR195=sumaR195+rojo195[i]; } promR195=sumaR195/unosMascara;
+sumaR196=0; rojo196=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo196[i]=m; else rojo196[i]=0; sumaR196=sumaR196+rojo196[i]; } promR196=sumaR196/unosMascara;
+sumaR197=0; rojo197=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo197[i]=m; else rojo197[i]=0; sumaR197=sumaR197+rojo197[i]; } promR197=sumaR197/unosMascara;
+sumaR198=0; rojo198=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo198[i]=m; else rojo198[i]=0; sumaR198=sumaR198+rojo198[i]; } promR198=sumaR198/unosMascara;
+sumaR199=0; rojo199=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo199[i]=m; else rojo199[i]=0; sumaR199=sumaR199+rojo199[i]; } promR199=sumaR199/unosMascara;
+sumaR200=0; rojo200=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo200[i]=m; else rojo200[i]=0; sumaR200=sumaR200+rojo200[i]; } promR200=sumaR200/unosMascara;
+sumaR201=0; rojo201=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo201[i]=m; else rojo201[i]=0; sumaR201=sumaR201+rojo201[i]; } promR201=sumaR201/unosMascara;
+sumaR202=0; rojo202=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo202[i]=m; else rojo202[i]=0; sumaR202=sumaR202+rojo202[i]; } promR202=sumaR202/unosMascara;
+sumaR203=0; rojo203=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo203[i]=m; else rojo203[i]=0; sumaR203=sumaR203+rojo203[i]; } promR203=sumaR203/unosMascara;
+sumaR204=0; rojo204=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo204[i]=m; else rojo204[i]=0; sumaR204=sumaR204+rojo204[i]; } promR204=sumaR204/unosMascara;
+sumaR205=0; rojo205=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo205[i]=m; else rojo205[i]=0; sumaR205=sumaR205+rojo205[i]; } promR205=sumaR205/unosMascara;
+sumaR206=0; rojo206=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo206[i]=m; else rojo206[i]=0; sumaR206=sumaR206+rojo206[i]; } promR206=sumaR206/unosMascara;
+sumaR207=0; rojo207=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo207[i]=m; else rojo207[i]=0; sumaR207=sumaR207+rojo207[i]; } promR207=sumaR207/unosMascara;
+sumaR208=0; rojo208=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo208[i]=m; else rojo208[i]=0; sumaR208=sumaR208+rojo208[i]; } promR208=sumaR208/unosMascara;
+sumaR209=0; rojo209=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo209[i]=m; else rojo209[i]=0; sumaR209=sumaR209+rojo209[i]; } promR209=sumaR209/unosMascara;
+sumaR210=0; rojo210=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo210[i]=m; else rojo210[i]=0; sumaR210=sumaR210+rojo210[i]; } promR210=sumaR210/unosMascara;
+sumaR211=0; rojo211=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo211[i]=m; else rojo211[i]=0; sumaR211=sumaR211+rojo211[i]; } promR211=sumaR211/unosMascara;
+sumaR212=0; rojo212=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo212[i]=m; else rojo212[i]=0; sumaR212=sumaR212+rojo212[i]; } promR212=sumaR212/unosMascara;
+sumaR213=0; rojo213=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo213[i]=m; else rojo213[i]=0; sumaR213=sumaR213+rojo213[i]; } promR213=sumaR213/unosMascara;
+sumaR214=0; rojo214=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo214[i]=m; else rojo214[i]=0; sumaR214=sumaR214+rojo214[i]; } promR214=sumaR214/unosMascara;
+sumaR215=0; rojo215=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo215[i]=m; else rojo215[i]=0; sumaR215=sumaR215+rojo215[i]; } promR215=sumaR215/unosMascara;
+sumaR216=0; rojo216=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo216[i]=m; else rojo216[i]=0; sumaR216=sumaR216+rojo216[i]; } promR216=sumaR216/unosMascara;
+sumaR217=0; rojo217=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo217[i]=m; else rojo217[i]=0; sumaR217=sumaR217+rojo217[i]; } promR217=sumaR217/unosMascara;
+sumaR218=0; rojo218=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo218[i]=m; else rojo218[i]=0; sumaR218=sumaR218+rojo218[i]; } promR218=sumaR218/unosMascara;
+sumaR219=0; rojo219=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo219[i]=m; else rojo219[i]=0; sumaR219=sumaR219+rojo219[i]; } promR219=sumaR219/unosMascara;
+sumaR220=0; rojo220=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo220[i]=m; else rojo220[i]=0; sumaR220=sumaR220+rojo220[i]; } promR220=sumaR220/unosMascara;
+sumaR221=0; rojo221=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo221[i]=m; else rojo221[i]=0; sumaR221=sumaR221+rojo221[i]; } promR221=sumaR221/unosMascara;
+sumaR222=0; rojo222=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo222[i]=m; else rojo222[i]=0; sumaR222=sumaR222+rojo222[i]; } promR222=sumaR222/unosMascara;
+sumaR223=0; rojo223=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo223[i]=m; else rojo223[i]=0; sumaR223=sumaR223+rojo223[i]; } promR223=sumaR223/unosMascara;
+sumaR224=0; rojo224=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo224[i]=m; else rojo224[i]=0; sumaR224=sumaR224+rojo224[i]; } promR224=sumaR224/unosMascara;
+sumaR225=0; rojo225=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo225[i]=m; else rojo225[i]=0; sumaR225=sumaR225+rojo225[i]; } promR225=sumaR225/unosMascara;
+sumaR226=0; rojo226=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo226[i]=m; else rojo226[i]=0; sumaR226=sumaR226+rojo226[i]; } promR226=sumaR226/unosMascara;
+sumaR227=0; rojo227=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo227[i]=m; else rojo227[i]=0; sumaR227=sumaR227+rojo227[i]; } promR227=sumaR227/unosMascara;
+sumaR228=0; rojo228=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo228[i]=m; else rojo228[i]=0; sumaR228=sumaR228+rojo228[i]; } promR228=sumaR228/unosMascara;
+sumaR229=0; rojo229=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo229[i]=m; else rojo229[i]=0; sumaR229=sumaR229+rojo229[i]; } promR229=sumaR229/unosMascara;
+sumaR230=0; rojo230=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo230[i]=m; else rojo230[i]=0; sumaR230=sumaR230+rojo230[i]; } promR230=sumaR230/unosMascara;
+sumaR231=0; rojo231=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo231[i]=m; else rojo231[i]=0; sumaR231=sumaR231+rojo231[i]; } promR231=sumaR231/unosMascara;
+sumaR232=0; rojo232=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo232[i]=m; else rojo232[i]=0; sumaR232=sumaR232+rojo232[i]; } promR232=sumaR232/unosMascara;
+sumaR233=0; rojo233=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo233[i]=m; else rojo233[i]=0; sumaR233=sumaR233+rojo233[i]; } promR233=sumaR233/unosMascara;
+sumaR234=0; rojo234=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo234[i]=m; else rojo234[i]=0; sumaR234=sumaR234+rojo234[i]; } promR234=sumaR234/unosMascara;
+sumaR235=0; rojo235=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo235[i]=m; else rojo235[i]=0; sumaR235=sumaR235+rojo235[i]; } promR235=sumaR235/unosMascara;
+sumaR236=0; rojo236=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo236[i]=m; else rojo236[i]=0; sumaR236=sumaR236+rojo236[i]; } promR236=sumaR236/unosMascara;
+sumaR237=0; rojo237=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo237[i]=m; else rojo237[i]=0; sumaR237=sumaR237+rojo237[i]; } promR237=sumaR237/unosMascara;
+sumaR238=0; rojo238=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo238[i]=m; else rojo238[i]=0; sumaR238=sumaR238+rojo238[i]; } promR238=sumaR238/unosMascara;
+sumaR239=0; rojo239=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo239[i]=m; else rojo239[i]=0; sumaR239=sumaR239+rojo239[i]; } promR239=sumaR239/unosMascara;
+sumaR240=0; rojo240=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo240[i]=m; else rojo240[i]=0; sumaR240=sumaR240+rojo240[i]; } promR240=sumaR240/unosMascara;
+sumaR241=0; rojo241=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo241[i]=m; else rojo241[i]=0; sumaR241=sumaR241+rojo241[i]; } promR241=sumaR241/unosMascara;
+sumaR242=0; rojo242=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo242[i]=m; else rojo242[i]=0; sumaR242=sumaR242+rojo242[i]; } promR242=sumaR242/unosMascara;
+sumaR243=0; rojo243=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo243[i]=m; else rojo243[i]=0; sumaR243=sumaR243+rojo243[i]; } promR243=sumaR243/unosMascara;
+sumaR244=0; rojo244=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo244[i]=m; else rojo244[i]=0; sumaR244=sumaR244+rojo244[i]; } promR244=sumaR244/unosMascara;
+sumaR245=0; rojo245=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo245[i]=m; else rojo245[i]=0; sumaR245=sumaR245+rojo245[i]; } promR245=sumaR245/unosMascara;
+sumaR246=0; rojo246=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo246[i]=m; else rojo246[i]=0; sumaR246=sumaR246+rojo246[i]; } promR246=sumaR246/unosMascara;
+sumaR247=0; rojo247=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo247[i]=m; else rojo247[i]=0; sumaR247=sumaR247+rojo247[i]; } promR247=sumaR247/unosMascara;
+sumaR248=0; rojo248=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo248[i]=m; else rojo248[i]=0; sumaR248=sumaR248+rojo248[i]; } promR248=sumaR248/unosMascara;
+sumaR249=0; rojo249=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo249[i]=m; else rojo249[i]=0; sumaR249=sumaR249+rojo249[i]; } promR249=sumaR249/unosMascara;
+sumaR250=0; rojo250=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo250[i]=m; else rojo250[i]=0; sumaR250=sumaR250+rojo250[i]; } promR250=sumaR250/unosMascara;
+sumaR251=0; rojo251=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo251[i]=m; else rojo251[i]=0; sumaR251=sumaR251+rojo251[i]; } promR251=sumaR251/unosMascara;
+sumaR252=0; rojo252=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo252[i]=m; else rojo252[i]=0; sumaR252=sumaR252+rojo252[i]; } promR252=sumaR252/unosMascara;
+sumaR253=0; rojo253=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo253[i]=m; else rojo253[i]=0; sumaR253=sumaR253+rojo253[i]; } promR253=sumaR253/unosMascara;
+sumaR254=0; rojo254=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo254[i]=m; else rojo254[i]=0; sumaR254=sumaR254+rojo254[i]; } promR254=sumaR254/unosMascara;
+sumaR255=0; rojo255=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(rojo[i]==m) rojo255[i]=m; else rojo255[i]=0; sumaR255=sumaR255+rojo255[i]; } promR255=sumaR255/unosMascara;
+
+m=0;
+
+sumaV1=0; verde1=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde1[i]=m; else verde1[i]=0; sumaV1=sumaV1+verde1[i]; } promV1=sumaV1/unosMascara;
+sumaV2=0; verde2=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde2[i]=m; else verde2[i]=0; sumaV2=sumaV2+verde2[i]; } promV2=sumaV2/unosMascara;
+sumaV3=0; verde3=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde3[i]=m; else verde3[i]=0; sumaV3=sumaV3+verde3[i]; } promV3=sumaV3/unosMascara;
+sumaV4=0; verde4=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde4[i]=m; else verde4[i]=0; sumaV4=sumaV4+verde4[i]; } promV4=sumaV4/unosMascara;
+sumaV5=0; verde5=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde5[i]=m; else verde5[i]=0; sumaV5=sumaV5+verde5[i]; } promV5=sumaV5/unosMascara;
+sumaV6=0; verde6=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde6[i]=m; else verde6[i]=0; sumaV6=sumaV6+verde6[i]; } promV6=sumaV6/unosMascara;
+sumaV7=0; verde7=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde7[i]=m; else verde7[i]=0; sumaV7=sumaV7+verde7[i]; } promV7=sumaV7/unosMascara;
+sumaV8=0; verde8=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde8[i]=m; else verde8[i]=0; sumaV8=sumaV8+verde8[i]; } promV8=sumaV8/unosMascara;
+sumaV9=0; verde9=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde9[i]=m; else verde9[i]=0; sumaV9=sumaV9+verde9[i]; } promV9=sumaV9/unosMascara;
+sumaV10=0; verde10=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde10[i]=m; else verde10[i]=0; sumaV10=sumaV10+verde10[i]; } promV10=sumaV10/unosMascara;
+sumaV11=0; verde11=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde11[i]=m; else verde11[i]=0; sumaV11=sumaV11+verde11[i]; } promV11=sumaV11/unosMascara;
+sumaV12=0; verde12=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde12[i]=m; else verde12[i]=0; sumaV12=sumaV12+verde12[i]; } promV12=sumaV12/unosMascara;
+sumaV13=0; verde13=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde13[i]=m; else verde13[i]=0; sumaV13=sumaV13+verde13[i]; } promV13=sumaV13/unosMascara;
+sumaV14=0; verde14=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde14[i]=m; else verde14[i]=0; sumaV14=sumaV14+verde14[i]; } promV14=sumaV14/unosMascara;
+sumaV15=0; verde15=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde15[i]=m; else verde15[i]=0; sumaV15=sumaV15+verde15[i]; } promV15=sumaV15/unosMascara;
+sumaV16=0; verde16=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde16[i]=m; else verde16[i]=0; sumaV16=sumaV16+verde16[i]; } promV16=sumaV16/unosMascara;
+sumaV17=0; verde17=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde17[i]=m; else verde17[i]=0; sumaV17=sumaV17+verde17[i]; } promV17=sumaV17/unosMascara;
+sumaV18=0; verde18=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde18[i]=m; else verde18[i]=0; sumaV18=sumaV18+verde18[i]; } promV18=sumaV18/unosMascara;
+sumaV19=0; verde19=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde19[i]=m; else verde19[i]=0; sumaV19=sumaV19+verde19[i]; } promV19=sumaV19/unosMascara;
+sumaV20=0; verde20=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde20[i]=m; else verde20[i]=0; sumaV20=sumaV20+verde20[i]; } promV20=sumaV20/unosMascara;
+sumaV21=0; verde21=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde21[i]=m; else verde21[i]=0; sumaV21=sumaV21+verde21[i]; } promV21=sumaV21/unosMascara;
+sumaV22=0; verde22=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde22[i]=m; else verde22[i]=0; sumaV22=sumaV22+verde22[i]; } promV22=sumaV22/unosMascara;
+sumaV23=0; verde23=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde23[i]=m; else verde23[i]=0; sumaV23=sumaV23+verde23[i]; } promV23=sumaV23/unosMascara;
+sumaV24=0; verde24=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde24[i]=m; else verde24[i]=0; sumaV24=sumaV24+verde24[i]; } promV24=sumaV24/unosMascara;
+sumaV25=0; verde25=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde25[i]=m; else verde25[i]=0; sumaV25=sumaV25+verde25[i]; } promV25=sumaV25/unosMascara;
+sumaV26=0; verde26=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde26[i]=m; else verde26[i]=0; sumaV26=sumaV26+verde26[i]; } promV26=sumaV26/unosMascara;
+sumaV27=0; verde27=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde27[i]=m; else verde27[i]=0; sumaV27=sumaV27+verde27[i]; } promV27=sumaV27/unosMascara;
+sumaV28=0; verde28=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde28[i]=m; else verde28[i]=0; sumaV28=sumaV28+verde28[i]; } promV28=sumaV28/unosMascara;
+sumaV29=0; verde29=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde29[i]=m; else verde29[i]=0; sumaV29=sumaV29+verde29[i]; } promV29=sumaV29/unosMascara;
+sumaV30=0; verde30=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde30[i]=m; else verde30[i]=0; sumaV30=sumaV30+verde30[i]; } promV30=sumaV30/unosMascara;
+sumaV31=0; verde31=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde31[i]=m; else verde31[i]=0; sumaV31=sumaV31+verde31[i]; } promV31=sumaV31/unosMascara;
+sumaV32=0; verde32=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde32[i]=m; else verde32[i]=0; sumaV32=sumaV32+verde32[i]; } promV32=sumaV32/unosMascara;
+sumaV33=0; verde33=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde33[i]=m; else verde33[i]=0; sumaV33=sumaV33+verde33[i]; } promV33=sumaV33/unosMascara;
+sumaV34=0; verde34=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde34[i]=m; else verde34[i]=0; sumaV34=sumaV34+verde34[i]; } promV34=sumaV34/unosMascara;
+sumaV35=0; verde35=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde35[i]=m; else verde35[i]=0; sumaV35=sumaV35+verde35[i]; } promV35=sumaV35/unosMascara;
+sumaV36=0; verde36=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde36[i]=m; else verde36[i]=0; sumaV36=sumaV36+verde36[i]; } promV36=sumaV36/unosMascara;
+sumaV37=0; verde37=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde37[i]=m; else verde37[i]=0; sumaV37=sumaV37+verde37[i]; } promV37=sumaV37/unosMascara;
+sumaV38=0; verde38=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde38[i]=m; else verde38[i]=0; sumaV38=sumaV38+verde38[i]; } promV38=sumaV38/unosMascara;
+sumaV39=0; verde39=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde39[i]=m; else verde39[i]=0; sumaV39=sumaV39+verde39[i]; } promV39=sumaV39/unosMascara;
+sumaV40=0; verde40=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde40[i]=m; else verde40[i]=0; sumaV40=sumaV40+verde40[i]; } promV40=sumaV40/unosMascara;
+sumaV41=0; verde41=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde41[i]=m; else verde41[i]=0; sumaV41=sumaV41+verde41[i]; } promV41=sumaV41/unosMascara;
+sumaV42=0; verde42=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde42[i]=m; else verde42[i]=0; sumaV42=sumaV42+verde42[i]; } promV42=sumaV42/unosMascara;
+sumaV43=0; verde43=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde43[i]=m; else verde43[i]=0; sumaV43=sumaV43+verde43[i]; } promV43=sumaV43/unosMascara;
+sumaV44=0; verde44=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde44[i]=m; else verde44[i]=0; sumaV44=sumaV44+verde44[i]; } promV44=sumaV44/unosMascara;
+sumaV45=0; verde45=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde45[i]=m; else verde45[i]=0; sumaV45=sumaV45+verde45[i]; } promV45=sumaV45/unosMascara;
+sumaV46=0; verde46=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde46[i]=m; else verde46[i]=0; sumaV46=sumaV46+verde46[i]; } promV46=sumaV46/unosMascara;
+sumaV47=0; verde47=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde47[i]=m; else verde47[i]=0; sumaV47=sumaV47+verde47[i]; } promV47=sumaV47/unosMascara;
+sumaV48=0; verde48=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde48[i]=m; else verde48[i]=0; sumaV48=sumaV48+verde48[i]; } promV48=sumaV48/unosMascara;
+sumaV49=0; verde49=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde49[i]=m; else verde49[i]=0; sumaV49=sumaV49+verde49[i]; } promV49=sumaV49/unosMascara;
+sumaV50=0; verde50=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde50[i]=m; else verde50[i]=0; sumaV50=sumaV50+verde50[i]; } promV50=sumaV50/unosMascara;
+sumaV51=0; verde51=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde51[i]=m; else verde51[i]=0; sumaV51=sumaV51+verde51[i]; } promV51=sumaV51/unosMascara;
+sumaV52=0; verde52=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde52[i]=m; else verde52[i]=0; sumaV52=sumaV52+verde52[i]; } promV52=sumaV52/unosMascara;
+sumaV53=0; verde53=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde53[i]=m; else verde53[i]=0; sumaV53=sumaV53+verde53[i]; } promV53=sumaV53/unosMascara;
+sumaV54=0; verde54=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde54[i]=m; else verde54[i]=0; sumaV54=sumaV54+verde54[i]; } promV54=sumaV54/unosMascara;
+sumaV55=0; verde55=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde55[i]=m; else verde55[i]=0; sumaV55=sumaV55+verde55[i]; } promV55=sumaV55/unosMascara;
+sumaV56=0; verde56=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde56[i]=m; else verde56[i]=0; sumaV56=sumaV56+verde56[i]; } promV56=sumaV56/unosMascara;
+sumaV57=0; verde57=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde57[i]=m; else verde57[i]=0; sumaV57=sumaV57+verde57[i]; } promV57=sumaV57/unosMascara;
+sumaV58=0; verde58=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde58[i]=m; else verde58[i]=0; sumaV58=sumaV58+verde58[i]; } promV58=sumaV58/unosMascara;
+sumaV59=0; verde59=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde59[i]=m; else verde59[i]=0; sumaV59=sumaV59+verde59[i]; } promV59=sumaV59/unosMascara;
+sumaV60=0; verde60=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde60[i]=m; else verde60[i]=0; sumaV60=sumaV60+verde60[i]; } promV60=sumaV60/unosMascara;
+sumaV61=0; verde61=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde61[i]=m; else verde61[i]=0; sumaV61=sumaV61+verde61[i]; } promV61=sumaV61/unosMascara;
+sumaV62=0; verde62=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde62[i]=m; else verde62[i]=0; sumaV62=sumaV62+verde62[i]; } promV62=sumaV62/unosMascara;
+sumaV63=0; verde63=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde63[i]=m; else verde63[i]=0; sumaV63=sumaV63+verde63[i]; } promV63=sumaV63/unosMascara;
+sumaV64=0; verde64=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde64[i]=m; else verde64[i]=0; sumaV64=sumaV64+verde64[i]; } promV64=sumaV64/unosMascara;
+sumaV65=0; verde65=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde65[i]=m; else verde65[i]=0; sumaV65=sumaV65+verde65[i]; } promV65=sumaV65/unosMascara;
+sumaV66=0; verde66=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde66[i]=m; else verde66[i]=0; sumaV66=sumaV66+verde66[i]; } promV66=sumaV66/unosMascara;
+sumaV67=0; verde67=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde67[i]=m; else verde67[i]=0; sumaV67=sumaV67+verde67[i]; } promV67=sumaV67/unosMascara;
+sumaV68=0; verde68=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde68[i]=m; else verde68[i]=0; sumaV68=sumaV68+verde68[i]; } promV68=sumaV68/unosMascara;
+sumaV69=0; verde69=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde69[i]=m; else verde69[i]=0; sumaV69=sumaV69+verde69[i]; } promV69=sumaV69/unosMascara;
+sumaV70=0; verde70=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde70[i]=m; else verde70[i]=0; sumaV70=sumaV70+verde70[i]; } promV70=sumaV70/unosMascara;
+sumaV71=0; verde71=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde71[i]=m; else verde71[i]=0; sumaV71=sumaV71+verde71[i]; } promV71=sumaV71/unosMascara;
+sumaV72=0; verde72=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde72[i]=m; else verde72[i]=0; sumaV72=sumaV72+verde72[i]; } promV72=sumaV72/unosMascara;
+sumaV73=0; verde73=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde73[i]=m; else verde73[i]=0; sumaV73=sumaV73+verde73[i]; } promV73=sumaV73/unosMascara;
+sumaV74=0; verde74=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde74[i]=m; else verde74[i]=0; sumaV74=sumaV74+verde74[i]; } promV74=sumaV74/unosMascara;
+sumaV75=0; verde75=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde75[i]=m; else verde75[i]=0; sumaV75=sumaV75+verde75[i]; } promV75=sumaV75/unosMascara;
+sumaV76=0; verde76=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde76[i]=m; else verde76[i]=0; sumaV76=sumaV76+verde76[i]; } promV76=sumaV76/unosMascara;
+sumaV77=0; verde77=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde77[i]=m; else verde77[i]=0; sumaV77=sumaV77+verde77[i]; } promV77=sumaV77/unosMascara;
+sumaV78=0; verde78=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde78[i]=m; else verde78[i]=0; sumaV78=sumaV78+verde78[i]; } promV78=sumaV78/unosMascara;
+sumaV79=0; verde79=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde79[i]=m; else verde79[i]=0; sumaV79=sumaV79+verde79[i]; } promV79=sumaV79/unosMascara;
+sumaV80=0; verde80=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde80[i]=m; else verde80[i]=0; sumaV80=sumaV80+verde80[i]; } promV80=sumaV80/unosMascara;
+sumaV81=0; verde81=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde81[i]=m; else verde81[i]=0; sumaV81=sumaV81+verde81[i]; } promV81=sumaV81/unosMascara;
+sumaV82=0; verde82=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde82[i]=m; else verde82[i]=0; sumaV82=sumaV82+verde82[i]; } promV82=sumaV82/unosMascara;
+sumaV83=0; verde83=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde83[i]=m; else verde83[i]=0; sumaV83=sumaV83+verde83[i]; } promV83=sumaV83/unosMascara;
+sumaV84=0; verde84=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde84[i]=m; else verde84[i]=0; sumaV84=sumaV84+verde84[i]; } promV84=sumaV84/unosMascara;
+sumaV85=0; verde85=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde85[i]=m; else verde85[i]=0; sumaV85=sumaV85+verde85[i]; } promV85=sumaV85/unosMascara;
+sumaV86=0; verde86=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde86[i]=m; else verde86[i]=0; sumaV86=sumaV86+verde86[i]; } promV86=sumaV86/unosMascara;
+sumaV87=0; verde87=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde87[i]=m; else verde87[i]=0; sumaV87=sumaV87+verde87[i]; } promV87=sumaV87/unosMascara;
+sumaV88=0; verde88=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde88[i]=m; else verde88[i]=0; sumaV88=sumaV88+verde88[i]; } promV88=sumaV88/unosMascara;
+sumaV89=0; verde89=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde89[i]=m; else verde89[i]=0; sumaV89=sumaV89+verde89[i]; } promV89=sumaV89/unosMascara;
+sumaV90=0; verde90=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde90[i]=m; else verde90[i]=0; sumaV90=sumaV90+verde90[i]; } promV90=sumaV90/unosMascara;
+sumaV91=0; verde91=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde91[i]=m; else verde91[i]=0; sumaV91=sumaV91+verde91[i]; } promV91=sumaV91/unosMascara;
+sumaV92=0; verde92=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde92[i]=m; else verde92[i]=0; sumaV92=sumaV92+verde92[i]; } promV92=sumaV92/unosMascara;
+sumaV93=0; verde93=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde93[i]=m; else verde93[i]=0; sumaV93=sumaV93+verde93[i]; } promV93=sumaV93/unosMascara;
+sumaV94=0; verde94=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde94[i]=m; else verde94[i]=0; sumaV94=sumaV94+verde94[i]; } promV94=sumaV94/unosMascara;
+sumaV95=0; verde95=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde95[i]=m; else verde95[i]=0; sumaV95=sumaV95+verde95[i]; } promV95=sumaV95/unosMascara;
+sumaV96=0; verde96=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde96[i]=m; else verde96[i]=0; sumaV96=sumaV96+verde96[i]; } promV96=sumaV96/unosMascara;
+sumaV97=0; verde97=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde97[i]=m; else verde97[i]=0; sumaV97=sumaV97+verde97[i]; } promV97=sumaV97/unosMascara;
+sumaV98=0; verde98=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde98[i]=m; else verde98[i]=0; sumaV98=sumaV98+verde98[i]; } promV98=sumaV98/unosMascara;
+sumaV99=0; verde99=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde99[i]=m; else verde99[i]=0; sumaV99=sumaV99+verde99[i]; } promV99=sumaV99/unosMascara;
+sumaV100=0; verde100=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde100[i]=m; else verde100[i]=0; sumaV100=sumaV100+verde100[i]; } promV100=sumaV100/unosMascara;
+sumaV101=0; verde101=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde101[i]=m; else verde101[i]=0; sumaV101=sumaV101+verde101[i]; } promV101=sumaV101/unosMascara;
+sumaV102=0; verde102=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde102[i]=m; else verde102[i]=0; sumaV102=sumaV102+verde102[i]; } promV102=sumaV102/unosMascara;
+sumaV103=0; verde103=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde103[i]=m; else verde103[i]=0; sumaV103=sumaV103+verde103[i]; } promV103=sumaV103/unosMascara;
+sumaV104=0; verde104=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde104[i]=m; else verde104[i]=0; sumaV104=sumaV104+verde104[i]; } promV104=sumaV104/unosMascara;
+sumaV105=0; verde105=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde105[i]=m; else verde105[i]=0; sumaV105=sumaV105+verde105[i]; } promV105=sumaV105/unosMascara;
+sumaV106=0; verde106=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde106[i]=m; else verde106[i]=0; sumaV106=sumaV106+verde106[i]; } promV106=sumaV106/unosMascara;
+sumaV107=0; verde107=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde107[i]=m; else verde107[i]=0; sumaV107=sumaV107+verde107[i]; } promV107=sumaV107/unosMascara;
+sumaV108=0; verde108=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde108[i]=m; else verde108[i]=0; sumaV108=sumaV108+verde108[i]; } promV108=sumaV108/unosMascara;
+sumaV109=0; verde109=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde109[i]=m; else verde109[i]=0; sumaV109=sumaV109+verde109[i]; } promV109=sumaV109/unosMascara;
+sumaV110=0; verde110=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde110[i]=m; else verde110[i]=0; sumaV110=sumaV110+verde110[i]; } promV110=sumaV110/unosMascara;
+sumaV111=0; verde111=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde111[i]=m; else verde111[i]=0; sumaV111=sumaV111+verde111[i]; } promV111=sumaV111/unosMascara;
+sumaV112=0; verde112=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde112[i]=m; else verde112[i]=0; sumaV112=sumaV112+verde112[i]; } promV112=sumaV112/unosMascara;
+sumaV113=0; verde113=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde113[i]=m; else verde113[i]=0; sumaV113=sumaV113+verde113[i]; } promV113=sumaV113/unosMascara;
+sumaV114=0; verde114=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde114[i]=m; else verde114[i]=0; sumaV114=sumaV114+verde114[i]; } promV114=sumaV114/unosMascara;
+sumaV115=0; verde115=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde115[i]=m; else verde115[i]=0; sumaV115=sumaV115+verde115[i]; } promV115=sumaV115/unosMascara;
+sumaV116=0; verde116=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde116[i]=m; else verde116[i]=0; sumaV116=sumaV116+verde116[i]; } promV116=sumaV116/unosMascara;
+sumaV117=0; verde117=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde117[i]=m; else verde117[i]=0; sumaV117=sumaV117+verde117[i]; } promV117=sumaV117/unosMascara;
+sumaV118=0; verde118=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde118[i]=m; else verde118[i]=0; sumaV118=sumaV118+verde118[i]; } promV118=sumaV118/unosMascara;
+sumaV119=0; verde119=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde119[i]=m; else verde119[i]=0; sumaV119=sumaV119+verde119[i]; } promV119=sumaV119/unosMascara;
+sumaV120=0; verde120=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde120[i]=m; else verde120[i]=0; sumaV120=sumaV120+verde120[i]; } promV120=sumaV120/unosMascara;
+sumaV121=0; verde121=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde121[i]=m; else verde121[i]=0; sumaV121=sumaV121+verde121[i]; } promV121=sumaV121/unosMascara;
+sumaV122=0; verde122=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde122[i]=m; else verde122[i]=0; sumaV122=sumaV122+verde122[i]; } promV122=sumaV122/unosMascara;
+sumaV123=0; verde123=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde123[i]=m; else verde123[i]=0; sumaV123=sumaV123+verde123[i]; } promV123=sumaV123/unosMascara;
+sumaV124=0; verde124=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde124[i]=m; else verde124[i]=0; sumaV124=sumaV124+verde124[i]; } promV124=sumaV124/unosMascara;
+sumaV125=0; verde125=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde125[i]=m; else verde125[i]=0; sumaV125=sumaV125+verde125[i]; } promV125=sumaV125/unosMascara;
+sumaV126=0; verde126=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde126[i]=m; else verde126[i]=0; sumaV126=sumaV126+verde126[i]; } promV126=sumaV126/unosMascara;
+sumaV127=0; verde127=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde127[i]=m; else verde127[i]=0; sumaV127=sumaV127+verde127[i]; } promV127=sumaV127/unosMascara;
+sumaV128=0; verde128=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde128[i]=m; else verde128[i]=0; sumaV128=sumaV128+verde128[i]; } promV128=sumaV128/unosMascara;
+sumaV129=0; verde129=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde129[i]=m; else verde129[i]=0; sumaV129=sumaV129+verde129[i]; } promV129=sumaV129/unosMascara;
+sumaV130=0; verde130=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde130[i]=m; else verde130[i]=0; sumaV130=sumaV130+verde130[i]; } promV130=sumaV130/unosMascara;
+sumaV131=0; verde131=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde131[i]=m; else verde131[i]=0; sumaV131=sumaV131+verde131[i]; } promV131=sumaV131/unosMascara;
+sumaV132=0; verde132=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde132[i]=m; else verde132[i]=0; sumaV132=sumaV132+verde132[i]; } promV132=sumaV132/unosMascara;
+sumaV133=0; verde133=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde133[i]=m; else verde133[i]=0; sumaV133=sumaV133+verde133[i]; } promV133=sumaV133/unosMascara;
+sumaV134=0; verde134=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde134[i]=m; else verde134[i]=0; sumaV134=sumaV134+verde134[i]; } promV134=sumaV134/unosMascara;
+sumaV135=0; verde135=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde135[i]=m; else verde135[i]=0; sumaV135=sumaV135+verde135[i]; } promV135=sumaV135/unosMascara;
+sumaV136=0; verde136=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde136[i]=m; else verde136[i]=0; sumaV136=sumaV136+verde136[i]; } promV136=sumaV136/unosMascara;
+sumaV137=0; verde137=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde137[i]=m; else verde137[i]=0; sumaV137=sumaV137+verde137[i]; } promV137=sumaV137/unosMascara;
+sumaV138=0; verde138=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde138[i]=m; else verde138[i]=0; sumaV138=sumaV138+verde138[i]; } promV138=sumaV138/unosMascara;
+sumaV139=0; verde139=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde139[i]=m; else verde139[i]=0; sumaV139=sumaV139+verde139[i]; } promV139=sumaV139/unosMascara;
+sumaV140=0; verde140=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde140[i]=m; else verde140[i]=0; sumaV140=sumaV140+verde140[i]; } promV140=sumaV140/unosMascara;
+sumaV141=0; verde141=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde141[i]=m; else verde141[i]=0; sumaV141=sumaV141+verde141[i]; } promV141=sumaV141/unosMascara;
+sumaV142=0; verde142=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde142[i]=m; else verde142[i]=0; sumaV142=sumaV142+verde142[i]; } promV142=sumaV142/unosMascara;
+sumaV143=0; verde143=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde143[i]=m; else verde143[i]=0; sumaV143=sumaV143+verde143[i]; } promV143=sumaV143/unosMascara;
+sumaV144=0; verde144=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde144[i]=m; else verde144[i]=0; sumaV144=sumaV144+verde144[i]; } promV144=sumaV144/unosMascara;
+sumaV145=0; verde145=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde145[i]=m; else verde145[i]=0; sumaV145=sumaV145+verde145[i]; } promV145=sumaV145/unosMascara;
+sumaV146=0; verde146=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde146[i]=m; else verde146[i]=0; sumaV146=sumaV146+verde146[i]; } promV146=sumaV146/unosMascara;
+sumaV147=0; verde147=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde147[i]=m; else verde147[i]=0; sumaV147=sumaV147+verde147[i]; } promV147=sumaV147/unosMascara;
+sumaV148=0; verde148=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde148[i]=m; else verde148[i]=0; sumaV148=sumaV148+verde148[i]; } promV148=sumaV148/unosMascara;
+sumaV149=0; verde149=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde149[i]=m; else verde149[i]=0; sumaV149=sumaV149+verde149[i]; } promV149=sumaV149/unosMascara;
+sumaV150=0; verde150=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde150[i]=m; else verde150[i]=0; sumaV150=sumaV150+verde150[i]; } promV150=sumaV150/unosMascara;
+sumaV151=0; verde151=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde151[i]=m; else verde151[i]=0; sumaV151=sumaV151+verde151[i]; } promV151=sumaV151/unosMascara;
+sumaV152=0; verde152=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde152[i]=m; else verde152[i]=0; sumaV152=sumaV152+verde152[i]; } promV152=sumaV152/unosMascara;
+sumaV153=0; verde153=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde153[i]=m; else verde153[i]=0; sumaV153=sumaV153+verde153[i]; } promV153=sumaV153/unosMascara;
+sumaV154=0; verde154=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde154[i]=m; else verde154[i]=0; sumaV154=sumaV154+verde154[i]; } promV154=sumaV154/unosMascara;
+sumaV155=0; verde155=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde155[i]=m; else verde155[i]=0; sumaV155=sumaV155+verde155[i]; } promV155=sumaV155/unosMascara;
+sumaV156=0; verde156=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde156[i]=m; else verde156[i]=0; sumaV156=sumaV156+verde156[i]; } promV156=sumaV156/unosMascara;
+sumaV157=0; verde157=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde157[i]=m; else verde157[i]=0; sumaV157=sumaV157+verde157[i]; } promV157=sumaV157/unosMascara;
+sumaV158=0; verde158=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde158[i]=m; else verde158[i]=0; sumaV158=sumaV158+verde158[i]; } promV158=sumaV158/unosMascara;
+sumaV159=0; verde159=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde159[i]=m; else verde159[i]=0; sumaV159=sumaV159+verde159[i]; } promV159=sumaV159/unosMascara;
+sumaV160=0; verde160=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde160[i]=m; else verde160[i]=0; sumaV160=sumaV160+verde160[i]; } promV160=sumaV160/unosMascara;
+sumaV161=0; verde161=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde161[i]=m; else verde161[i]=0; sumaV161=sumaV161+verde161[i]; } promV161=sumaV161/unosMascara;
+sumaV162=0; verde162=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde162[i]=m; else verde162[i]=0; sumaV162=sumaV162+verde162[i]; } promV162=sumaV162/unosMascara;
+sumaV163=0; verde163=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde163[i]=m; else verde163[i]=0; sumaV163=sumaV163+verde163[i]; } promV163=sumaV163/unosMascara;
+sumaV164=0; verde164=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde164[i]=m; else verde164[i]=0; sumaV164=sumaV164+verde164[i]; } promV164=sumaV164/unosMascara;
+sumaV165=0; verde165=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde165[i]=m; else verde165[i]=0; sumaV165=sumaV165+verde165[i]; } promV165=sumaV165/unosMascara;
+sumaV166=0; verde166=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde166[i]=m; else verde166[i]=0; sumaV166=sumaV166+verde166[i]; } promV166=sumaV166/unosMascara;
+sumaV167=0; verde167=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde167[i]=m; else verde167[i]=0; sumaV167=sumaV167+verde167[i]; } promV167=sumaV167/unosMascara;
+sumaV168=0; verde168=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde168[i]=m; else verde168[i]=0; sumaV168=sumaV168+verde168[i]; } promV168=sumaV168/unosMascara;
+sumaV169=0; verde169=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde169[i]=m; else verde169[i]=0; sumaV169=sumaV169+verde169[i]; } promV169=sumaV169/unosMascara;
+sumaV170=0; verde170=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde170[i]=m; else verde170[i]=0; sumaV170=sumaV170+verde170[i]; } promV170=sumaV170/unosMascara;
+sumaV171=0; verde171=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde171[i]=m; else verde171[i]=0; sumaV171=sumaV171+verde171[i]; } promV171=sumaV171/unosMascara;
+sumaV172=0; verde172=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde172[i]=m; else verde172[i]=0; sumaV172=sumaV172+verde172[i]; } promV172=sumaV172/unosMascara;
+sumaV173=0; verde173=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde173[i]=m; else verde173[i]=0; sumaV173=sumaV173+verde173[i]; } promV173=sumaV173/unosMascara;
+sumaV174=0; verde174=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde174[i]=m; else verde174[i]=0; sumaV174=sumaV174+verde174[i]; } promV174=sumaV174/unosMascara;
+sumaV175=0; verde175=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde175[i]=m; else verde175[i]=0; sumaV175=sumaV175+verde175[i]; } promV175=sumaV175/unosMascara;
+sumaV176=0; verde176=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde176[i]=m; else verde176[i]=0; sumaV176=sumaV176+verde176[i]; } promV176=sumaV176/unosMascara;
+sumaV177=0; verde177=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde177[i]=m; else verde177[i]=0; sumaV177=sumaV177+verde177[i]; } promV177=sumaV177/unosMascara;
+sumaV178=0; verde178=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde178[i]=m; else verde178[i]=0; sumaV178=sumaV178+verde178[i]; } promV178=sumaV178/unosMascara;
+sumaV179=0; verde179=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde179[i]=m; else verde179[i]=0; sumaV179=sumaV179+verde179[i]; } promV179=sumaV179/unosMascara;
+sumaV180=0; verde180=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde180[i]=m; else verde180[i]=0; sumaV180=sumaV180+verde180[i]; } promV180=sumaV180/unosMascara;
+sumaV181=0; verde181=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde181[i]=m; else verde181[i]=0; sumaV181=sumaV181+verde181[i]; } promV181=sumaV181/unosMascara;
+sumaV182=0; verde182=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde182[i]=m; else verde182[i]=0; sumaV182=sumaV182+verde182[i]; } promV182=sumaV182/unosMascara;
+sumaV183=0; verde183=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde183[i]=m; else verde183[i]=0; sumaV183=sumaV183+verde183[i]; } promV183=sumaV183/unosMascara;
+sumaV184=0; verde184=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde184[i]=m; else verde184[i]=0; sumaV184=sumaV184+verde184[i]; } promV184=sumaV184/unosMascara;
+sumaV185=0; verde185=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde185[i]=m; else verde185[i]=0; sumaV185=sumaV185+verde185[i]; } promV185=sumaV185/unosMascara;
+sumaV186=0; verde186=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde186[i]=m; else verde186[i]=0; sumaV186=sumaV186+verde186[i]; } promV186=sumaV186/unosMascara;
+sumaV187=0; verde187=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde187[i]=m; else verde187[i]=0; sumaV187=sumaV187+verde187[i]; } promV187=sumaV187/unosMascara;
+sumaV188=0; verde188=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde188[i]=m; else verde188[i]=0; sumaV188=sumaV188+verde188[i]; } promV188=sumaV188/unosMascara;
+sumaV189=0; verde189=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde189[i]=m; else verde189[i]=0; sumaV189=sumaV189+verde189[i]; } promV189=sumaV189/unosMascara;
+sumaV190=0; verde190=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde190[i]=m; else verde190[i]=0; sumaV190=sumaV190+verde190[i]; } promV190=sumaV190/unosMascara;
+sumaV191=0; verde191=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde191[i]=m; else verde191[i]=0; sumaV191=sumaV191+verde191[i]; } promV191=sumaV191/unosMascara;
+sumaV192=0; verde192=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde192[i]=m; else verde192[i]=0; sumaV192=sumaV192+verde192[i]; } promV192=sumaV192/unosMascara;
+sumaV193=0; verde193=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde193[i]=m; else verde193[i]=0; sumaV193=sumaV193+verde193[i]; } promV193=sumaV193/unosMascara;
+sumaV194=0; verde194=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde194[i]=m; else verde194[i]=0; sumaV194=sumaV194+verde194[i]; } promV194=sumaV194/unosMascara;
+sumaV195=0; verde195=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde195[i]=m; else verde195[i]=0; sumaV195=sumaV195+verde195[i]; } promV195=sumaV195/unosMascara;
+sumaV196=0; verde196=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde196[i]=m; else verde196[i]=0; sumaV196=sumaV196+verde196[i]; } promV196=sumaV196/unosMascara;
+sumaV197=0; verde197=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde197[i]=m; else verde197[i]=0; sumaV197=sumaV197+verde197[i]; } promV197=sumaV197/unosMascara;
+sumaV198=0; verde198=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde198[i]=m; else verde198[i]=0; sumaV198=sumaV198+verde198[i]; } promV198=sumaV198/unosMascara;
+sumaV199=0; verde199=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde199[i]=m; else verde199[i]=0; sumaV199=sumaV199+verde199[i]; } promV199=sumaV199/unosMascara;
+sumaV200=0; verde200=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde200[i]=m; else verde200[i]=0; sumaV200=sumaV200+verde200[i]; } promV200=sumaV200/unosMascara;
+sumaV201=0; verde201=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde201[i]=m; else verde201[i]=0; sumaV201=sumaV201+verde201[i]; } promV201=sumaV201/unosMascara;
+sumaV202=0; verde202=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde202[i]=m; else verde202[i]=0; sumaV202=sumaV202+verde202[i]; } promV202=sumaV202/unosMascara;
+sumaV203=0; verde203=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde203[i]=m; else verde203[i]=0; sumaV203=sumaV203+verde203[i]; } promV203=sumaV203/unosMascara;
+sumaV204=0; verde204=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde204[i]=m; else verde204[i]=0; sumaV204=sumaV204+verde204[i]; } promV204=sumaV204/unosMascara;
+sumaV205=0; verde205=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde205[i]=m; else verde205[i]=0; sumaV205=sumaV205+verde205[i]; } promV205=sumaV205/unosMascara;
+sumaV206=0; verde206=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde206[i]=m; else verde206[i]=0; sumaV206=sumaV206+verde206[i]; } promV206=sumaV206/unosMascara;
+sumaV207=0; verde207=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde207[i]=m; else verde207[i]=0; sumaV207=sumaV207+verde207[i]; } promV207=sumaV207/unosMascara;
+sumaV208=0; verde208=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde208[i]=m; else verde208[i]=0; sumaV208=sumaV208+verde208[i]; } promV208=sumaV208/unosMascara;
+sumaV209=0; verde209=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde209[i]=m; else verde209[i]=0; sumaV209=sumaV209+verde209[i]; } promV209=sumaV209/unosMascara;
+sumaV210=0; verde210=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde210[i]=m; else verde210[i]=0; sumaV210=sumaV210+verde210[i]; } promV210=sumaV210/unosMascara;
+sumaV211=0; verde211=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde211[i]=m; else verde211[i]=0; sumaV211=sumaV211+verde211[i]; } promV211=sumaV211/unosMascara;
+sumaV212=0; verde212=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde212[i]=m; else verde212[i]=0; sumaV212=sumaV212+verde212[i]; } promV212=sumaV212/unosMascara;
+sumaV213=0; verde213=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde213[i]=m; else verde213[i]=0; sumaV213=sumaV213+verde213[i]; } promV213=sumaV213/unosMascara;
+sumaV214=0; verde214=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde214[i]=m; else verde214[i]=0; sumaV214=sumaV214+verde214[i]; } promV214=sumaV214/unosMascara;
+sumaV215=0; verde215=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde215[i]=m; else verde215[i]=0; sumaV215=sumaV215+verde215[i]; } promV215=sumaV215/unosMascara;
+sumaV216=0; verde216=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde216[i]=m; else verde216[i]=0; sumaV216=sumaV216+verde216[i]; } promV216=sumaV216/unosMascara;
+sumaV217=0; verde217=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde217[i]=m; else verde217[i]=0; sumaV217=sumaV217+verde217[i]; } promV217=sumaV217/unosMascara;
+sumaV218=0; verde218=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde218[i]=m; else verde218[i]=0; sumaV218=sumaV218+verde218[i]; } promV218=sumaV218/unosMascara;
+sumaV219=0; verde219=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde219[i]=m; else verde219[i]=0; sumaV219=sumaV219+verde219[i]; } promV219=sumaV219/unosMascara;
+sumaV220=0; verde220=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde220[i]=m; else verde220[i]=0; sumaV220=sumaV220+verde220[i]; } promV220=sumaV220/unosMascara;
+sumaV221=0; verde221=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde221[i]=m; else verde221[i]=0; sumaV221=sumaV221+verde221[i]; } promV221=sumaV221/unosMascara;
+sumaV222=0; verde222=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde222[i]=m; else verde222[i]=0; sumaV222=sumaV222+verde222[i]; } promV222=sumaV222/unosMascara;
+sumaV223=0; verde223=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde223[i]=m; else verde223[i]=0; sumaV223=sumaV223+verde223[i]; } promV223=sumaV223/unosMascara;
+sumaV224=0; verde224=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde224[i]=m; else verde224[i]=0; sumaV224=sumaV224+verde224[i]; } promV224=sumaV224/unosMascara;
+sumaV225=0; verde225=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde225[i]=m; else verde225[i]=0; sumaV225=sumaV225+verde225[i]; } promV225=sumaV225/unosMascara;
+sumaV226=0; verde226=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde226[i]=m; else verde226[i]=0; sumaV226=sumaV226+verde226[i]; } promV226=sumaV226/unosMascara;
+sumaV227=0; verde227=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde227[i]=m; else verde227[i]=0; sumaV227=sumaV227+verde227[i]; } promV227=sumaV227/unosMascara;
+sumaV228=0; verde228=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde228[i]=m; else verde228[i]=0; sumaV228=sumaV228+verde228[i]; } promV228=sumaV228/unosMascara;
+sumaV229=0; verde229=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde229[i]=m; else verde229[i]=0; sumaV229=sumaV229+verde229[i]; } promV229=sumaV229/unosMascara;
+sumaV230=0; verde230=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde230[i]=m; else verde230[i]=0; sumaV230=sumaV230+verde230[i]; } promV230=sumaV230/unosMascara;
+sumaV231=0; verde231=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde231[i]=m; else verde231[i]=0; sumaV231=sumaV231+verde231[i]; } promV231=sumaV231/unosMascara;
+sumaV232=0; verde232=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde232[i]=m; else verde232[i]=0; sumaV232=sumaV232+verde232[i]; } promV232=sumaV232/unosMascara;
+sumaV233=0; verde233=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde233[i]=m; else verde233[i]=0; sumaV233=sumaV233+verde233[i]; } promV233=sumaV233/unosMascara;
+sumaV234=0; verde234=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde234[i]=m; else verde234[i]=0; sumaV234=sumaV234+verde234[i]; } promV234=sumaV234/unosMascara;
+sumaV235=0; verde235=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde235[i]=m; else verde235[i]=0; sumaV235=sumaV235+verde235[i]; } promV235=sumaV235/unosMascara;
+sumaV236=0; verde236=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde236[i]=m; else verde236[i]=0; sumaV236=sumaV236+verde236[i]; } promV236=sumaV236/unosMascara;
+sumaV237=0; verde237=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde237[i]=m; else verde237[i]=0; sumaV237=sumaV237+verde237[i]; } promV237=sumaV237/unosMascara;
+sumaV238=0; verde238=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde238[i]=m; else verde238[i]=0; sumaV238=sumaV238+verde238[i]; } promV238=sumaV238/unosMascara;
+sumaV239=0; verde239=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde239[i]=m; else verde239[i]=0; sumaV239=sumaV239+verde239[i]; } promV239=sumaV239/unosMascara;
+sumaV240=0; verde240=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde240[i]=m; else verde240[i]=0; sumaV240=sumaV240+verde240[i]; } promV240=sumaV240/unosMascara;
+sumaV241=0; verde241=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde241[i]=m; else verde241[i]=0; sumaV241=sumaV241+verde241[i]; } promV241=sumaV241/unosMascara;
+sumaV242=0; verde242=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde242[i]=m; else verde242[i]=0; sumaV242=sumaV242+verde242[i]; } promV242=sumaV242/unosMascara;
+sumaV243=0; verde243=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde243[i]=m; else verde243[i]=0; sumaV243=sumaV243+verde243[i]; } promV243=sumaV243/unosMascara;
+sumaV244=0; verde244=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde244[i]=m; else verde244[i]=0; sumaV244=sumaV244+verde244[i]; } promV244=sumaV244/unosMascara;
+sumaV245=0; verde245=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde245[i]=m; else verde245[i]=0; sumaV245=sumaV245+verde245[i]; } promV245=sumaV245/unosMascara;
+sumaV246=0; verde246=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde246[i]=m; else verde246[i]=0; sumaV246=sumaV246+verde246[i]; } promV246=sumaV246/unosMascara;
+sumaV247=0; verde247=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde247[i]=m; else verde247[i]=0; sumaV247=sumaV247+verde247[i]; } promV247=sumaV247/unosMascara;
+sumaV248=0; verde248=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde248[i]=m; else verde248[i]=0; sumaV248=sumaV248+verde248[i]; } promV248=sumaV248/unosMascara;
+sumaV249=0; verde249=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde249[i]=m; else verde249[i]=0; sumaV249=sumaV249+verde249[i]; } promV249=sumaV249/unosMascara;
+sumaV250=0; verde250=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde250[i]=m; else verde250[i]=0; sumaV250=sumaV250+verde250[i]; } promV250=sumaV250/unosMascara;
+sumaV251=0; verde251=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde251[i]=m; else verde251[i]=0; sumaV251=sumaV251+verde251[i]; } promV251=sumaV251/unosMascara;
+sumaV252=0; verde252=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde252[i]=m; else verde252[i]=0; sumaV252=sumaV252+verde252[i]; } promV252=sumaV252/unosMascara;
+sumaV253=0; verde253=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde253[i]=m; else verde253[i]=0; sumaV253=sumaV253+verde253[i]; } promV253=sumaV253/unosMascara;
+sumaV254=0; verde254=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde254[i]=m; else verde254[i]=0; sumaV254=sumaV254+verde254[i]; } promV254=sumaV254/unosMascara;
+sumaV255=0; verde255=newArray(unosMascara); m++; for(i=0; i<unosMascara; i++) { if(verde[i]==m) verde255[i]=m; else verde255[i]=0; sumaV255=sumaV255+verde255[i]; } promV255=sumaV255/unosMascara;
+
+
+numVR=newArray(256);
+numRV=newArray(256);
+denR=newArray(256);
+denV=newArray(256);
+for(i=1; i<256; i++)
+{
+numVR[i]=0;
+numRV[i]=0;
+denR[i]=0;
+denV[i]=0;
+}
+
+sumaRR=0;
+sumaVV=0;
+for(i=0; i<unosMascara; i++)
+{
+sumaRR=sumaRR+rojo[i];
+sumaVV=sumaVV+verde[i];
+}
+promRR=sumaRR/unosMascara;
+promVV=sumaVV/unosMascara;
+denVV=0;
+denRR=0;
+
+for(i=0; i<unosMascara; i++)                                     //calculo todas las series                
+	{
+	showStatus("Pearson: "+i);
+
+	denVV=denVV+(verde[i]-promVV)*(verde[i]-promVV);	
+
+	denR[1]=denR[1]+(rojo1[i]-promR1)*(rojo1[i]-promR1); numRV[1]=numRV[1]+(rojo1[i]-promR[1])*(verde[i]-promVV);                                                                        
+	denR[2]=denR[2]+(rojo2[i]-promR2)*(rojo2[i]-promR2); numRV[2]=numRV[2]+(rojo2[i]-promR[2])*(verde[i]-promVV);
+	denR[3]=denR[3]+(rojo3[i]-promR3)*(rojo3[i]-promR3); numRV[3]=numRV[3]+(rojo3[i]-promR[3])*(verde[i]-promVV);
+	denR[4]=denR[4]+(rojo4[i]-promR4)*(rojo4[i]-promR4); numRV[4]=numRV[4]+(rojo4[i]-promR[4])*(verde[i]-promVV);
+	denR[5]=denR[5]+(rojo5[i]-promR5)*(rojo5[i]-promR5); numRV[5]=numRV[5]+(rojo5[i]-promR[5])*(verde[i]-promVV);
+	denR[6]=denR[6]+(rojo6[i]-promR6)*(rojo6[i]-promR6); numRV[6]=numRV[6]+(rojo6[i]-promR[6])*(verde[i]-promVV);
+	denR[7]=denR[7]+(rojo7[i]-promR7)*(rojo7[i]-promR7); numRV[7]=numRV[7]+(rojo7[i]-promR[7])*(verde[i]-promVV);
+	denR[8]=denR[8]+(rojo8[i]-promR8)*(rojo8[i]-promR8); numRV[8]=numRV[8]+(rojo8[i]-promR[8])*(verde[i]-promVV);
+	denR[9]=denR[9]+(rojo9[i]-promR9)*(rojo9[i]-promR9); numRV[9]=numRV[9]+(rojo9[i]-promR[9])*(verde[i]-promVV);
+	denR[10]=denR[10]+(rojo10[i]-promR10)*(rojo10[i]-promR10); numRV[10]=numRV[10]+(rojo10[i]-promR[10])*(verde[i]-promVV);
+	denR[11]=denR[11]+(rojo11[i]-promR11)*(rojo11[i]-promR11); numRV[11]=numRV[11]+(rojo11[i]-promR[11])*(verde[i]-promVV);
+	denR[12]=denR[12]+(rojo12[i]-promR12)*(rojo12[i]-promR12); numRV[12]=numRV[12]+(rojo12[i]-promR[12])*(verde[i]-promVV);
+	denR[13]=denR[13]+(rojo13[i]-promR13)*(rojo13[i]-promR13); numRV[13]=numRV[13]+(rojo13[i]-promR[13])*(verde[i]-promVV);
+	denR[14]=denR[14]+(rojo14[i]-promR14)*(rojo14[i]-promR14); numRV[14]=numRV[14]+(rojo14[i]-promR[14])*(verde[i]-promVV);
+	denR[15]=denR[15]+(rojo15[i]-promR15)*(rojo15[i]-promR15); numRV[15]=numRV[15]+(rojo15[i]-promR[15])*(verde[i]-promVV);
+	denR[16]=denR[16]+(rojo16[i]-promR16)*(rojo16[i]-promR16); numRV[16]=numRV[16]+(rojo16[i]-promR[16])*(verde[i]-promVV);
+	denR[17]=denR[17]+(rojo17[i]-promR17)*(rojo17[i]-promR17); numRV[17]=numRV[17]+(rojo17[i]-promR[17])*(verde[i]-promVV);
+	denR[18]=denR[18]+(rojo18[i]-promR18)*(rojo18[i]-promR18); numRV[18]=numRV[18]+(rojo18[i]-promR[18])*(verde[i]-promVV);
+	denR[19]=denR[19]+(rojo19[i]-promR19)*(rojo19[i]-promR19); numRV[19]=numRV[19]+(rojo19[i]-promR[19])*(verde[i]-promVV);
+	denR[20]=denR[20]+(rojo20[i]-promR20)*(rojo20[i]-promR20); numRV[20]=numRV[20]+(rojo20[i]-promR[20])*(verde[i]-promVV);
+	denR[21]=denR[21]+(rojo21[i]-promR21)*(rojo21[i]-promR21); numRV[21]=numRV[21]+(rojo21[i]-promR[21])*(verde[i]-promVV);
+	denR[22]=denR[22]+(rojo22[i]-promR22)*(rojo22[i]-promR22); numRV[22]=numRV[22]+(rojo22[i]-promR[22])*(verde[i]-promVV);
+	denR[23]=denR[23]+(rojo23[i]-promR23)*(rojo23[i]-promR23); numRV[23]=numRV[23]+(rojo23[i]-promR[23])*(verde[i]-promVV);
+	denR[24]=denR[24]+(rojo24[i]-promR24)*(rojo24[i]-promR24); numRV[24]=numRV[24]+(rojo24[i]-promR[24])*(verde[i]-promVV);
+	denR[25]=denR[25]+(rojo25[i]-promR25)*(rojo25[i]-promR25); numRV[25]=numRV[25]+(rojo25[i]-promR[25])*(verde[i]-promVV);
+	denR[26]=denR[26]+(rojo26[i]-promR26)*(rojo26[i]-promR26); numRV[26]=numRV[26]+(rojo26[i]-promR[26])*(verde[i]-promVV);
+	denR[27]=denR[27]+(rojo27[i]-promR27)*(rojo27[i]-promR27); numRV[27]=numRV[27]+(rojo27[i]-promR[27])*(verde[i]-promVV);
+	denR[28]=denR[28]+(rojo28[i]-promR28)*(rojo28[i]-promR28); numRV[28]=numRV[28]+(rojo28[i]-promR[28])*(verde[i]-promVV);
+	denR[29]=denR[29]+(rojo29[i]-promR29)*(rojo29[i]-promR29); numRV[29]=numRV[29]+(rojo29[i]-promR[29])*(verde[i]-promVV);
+	denR[30]=denR[30]+(rojo30[i]-promR30)*(rojo30[i]-promR30); numRV[30]=numRV[30]+(rojo30[i]-promR[30])*(verde[i]-promVV);
+	denR[31]=denR[31]+(rojo31[i]-promR31)*(rojo31[i]-promR31); numRV[31]=numRV[31]+(rojo31[i]-promR[31])*(verde[i]-promVV);
+	denR[32]=denR[32]+(rojo32[i]-promR32)*(rojo32[i]-promR32); numRV[32]=numRV[32]+(rojo32[i]-promR[32])*(verde[i]-promVV);
+	denR[33]=denR[33]+(rojo33[i]-promR33)*(rojo33[i]-promR33); numRV[33]=numRV[33]+(rojo33[i]-promR[33])*(verde[i]-promVV);
+	denR[34]=denR[34]+(rojo34[i]-promR34)*(rojo34[i]-promR34); numRV[34]=numRV[34]+(rojo34[i]-promR[34])*(verde[i]-promVV);
+	denR[35]=denR[35]+(rojo35[i]-promR35)*(rojo35[i]-promR35); numRV[35]=numRV[35]+(rojo35[i]-promR[35])*(verde[i]-promVV);
+	denR[36]=denR[36]+(rojo36[i]-promR36)*(rojo36[i]-promR36); numRV[36]=numRV[36]+(rojo36[i]-promR[36])*(verde[i]-promVV);
+	denR[37]=denR[37]+(rojo37[i]-promR37)*(rojo37[i]-promR37); numRV[37]=numRV[37]+(rojo37[i]-promR[37])*(verde[i]-promVV);
+	denR[38]=denR[38]+(rojo38[i]-promR38)*(rojo38[i]-promR38); numRV[38]=numRV[38]+(rojo38[i]-promR[38])*(verde[i]-promVV);
+	denR[39]=denR[39]+(rojo39[i]-promR39)*(rojo39[i]-promR39); numRV[39]=numRV[39]+(rojo39[i]-promR[39])*(verde[i]-promVV);
+	denR[40]=denR[40]+(rojo40[i]-promR40)*(rojo40[i]-promR40); numRV[40]=numRV[40]+(rojo40[i]-promR[40])*(verde[i]-promVV);
+	denR[41]=denR[41]+(rojo41[i]-promR41)*(rojo41[i]-promR41); numRV[41]=numRV[41]+(rojo41[i]-promR[41])*(verde[i]-promVV);
+	denR[42]=denR[42]+(rojo42[i]-promR42)*(rojo42[i]-promR42); numRV[42]=numRV[42]+(rojo42[i]-promR[42])*(verde[i]-promVV);
+	denR[43]=denR[43]+(rojo43[i]-promR43)*(rojo43[i]-promR43); numRV[43]=numRV[43]+(rojo43[i]-promR[43])*(verde[i]-promVV);
+	denR[44]=denR[44]+(rojo44[i]-promR44)*(rojo44[i]-promR44); numRV[44]=numRV[44]+(rojo44[i]-promR[44])*(verde[i]-promVV);
+	denR[45]=denR[45]+(rojo45[i]-promR45)*(rojo45[i]-promR45); numRV[45]=numRV[45]+(rojo45[i]-promR[45])*(verde[i]-promVV);
+	denR[46]=denR[46]+(rojo46[i]-promR46)*(rojo46[i]-promR46); numRV[46]=numRV[46]+(rojo46[i]-promR[46])*(verde[i]-promVV);
+	denR[47]=denR[47]+(rojo47[i]-promR47)*(rojo47[i]-promR47); numRV[47]=numRV[47]+(rojo47[i]-promR[47])*(verde[i]-promVV);
+	denR[48]=denR[48]+(rojo48[i]-promR48)*(rojo48[i]-promR48); numRV[48]=numRV[48]+(rojo48[i]-promR[48])*(verde[i]-promVV);
+	denR[49]=denR[49]+(rojo49[i]-promR49)*(rojo49[i]-promR49); numRV[49]=numRV[49]+(rojo49[i]-promR[49])*(verde[i]-promVV);
+	denR[50]=denR[50]+(rojo50[i]-promR50)*(rojo50[i]-promR50); numRV[50]=numRV[50]+(rojo50[i]-promR[50])*(verde[i]-promVV);
+	denR[51]=denR[51]+(rojo51[i]-promR51)*(rojo51[i]-promR51); numRV[51]=numRV[51]+(rojo51[i]-promR[51])*(verde[i]-promVV);
+	denR[52]=denR[52]+(rojo52[i]-promR52)*(rojo52[i]-promR52); numRV[52]=numRV[52]+(rojo52[i]-promR[52])*(verde[i]-promVV);
+	denR[53]=denR[53]+(rojo53[i]-promR53)*(rojo53[i]-promR53); numRV[53]=numRV[53]+(rojo53[i]-promR[53])*(verde[i]-promVV);
+	denR[54]=denR[54]+(rojo54[i]-promR54)*(rojo54[i]-promR54); numRV[54]=numRV[54]+(rojo54[i]-promR[54])*(verde[i]-promVV);
+	denR[55]=denR[55]+(rojo55[i]-promR55)*(rojo55[i]-promR55); numRV[55]=numRV[55]+(rojo55[i]-promR[55])*(verde[i]-promVV);
+	denR[56]=denR[56]+(rojo56[i]-promR56)*(rojo56[i]-promR56); numRV[56]=numRV[56]+(rojo56[i]-promR[56])*(verde[i]-promVV);
+	denR[57]=denR[57]+(rojo57[i]-promR57)*(rojo57[i]-promR57); numRV[57]=numRV[57]+(rojo57[i]-promR[57])*(verde[i]-promVV);
+	denR[58]=denR[58]+(rojo58[i]-promR58)*(rojo58[i]-promR58); numRV[58]=numRV[58]+(rojo58[i]-promR[58])*(verde[i]-promVV);
+	denR[59]=denR[59]+(rojo59[i]-promR59)*(rojo59[i]-promR59); numRV[59]=numRV[59]+(rojo59[i]-promR[59])*(verde[i]-promVV);
+	denR[60]=denR[60]+(rojo60[i]-promR60)*(rojo60[i]-promR60); numRV[60]=numRV[60]+(rojo60[i]-promR[60])*(verde[i]-promVV);
+	denR[61]=denR[61]+(rojo61[i]-promR61)*(rojo61[i]-promR61); numRV[61]=numRV[61]+(rojo61[i]-promR[61])*(verde[i]-promVV);
+	denR[62]=denR[62]+(rojo62[i]-promR62)*(rojo62[i]-promR62); numRV[62]=numRV[62]+(rojo62[i]-promR[62])*(verde[i]-promVV);
+	denR[63]=denR[63]+(rojo63[i]-promR63)*(rojo63[i]-promR63); numRV[63]=numRV[63]+(rojo63[i]-promR[63])*(verde[i]-promVV);
+	denR[64]=denR[64]+(rojo64[i]-promR64)*(rojo64[i]-promR64); numRV[64]=numRV[64]+(rojo64[i]-promR[64])*(verde[i]-promVV);
+	denR[65]=denR[65]+(rojo65[i]-promR65)*(rojo65[i]-promR65); numRV[65]=numRV[65]+(rojo65[i]-promR[65])*(verde[i]-promVV);
+	denR[66]=denR[66]+(rojo66[i]-promR66)*(rojo66[i]-promR66); numRV[66]=numRV[66]+(rojo66[i]-promR[66])*(verde[i]-promVV);
+	denR[67]=denR[67]+(rojo67[i]-promR67)*(rojo67[i]-promR67); numRV[67]=numRV[67]+(rojo67[i]-promR[67])*(verde[i]-promVV);
+	denR[68]=denR[68]+(rojo68[i]-promR68)*(rojo68[i]-promR68); numRV[68]=numRV[68]+(rojo68[i]-promR[68])*(verde[i]-promVV);
+	denR[69]=denR[69]+(rojo69[i]-promR69)*(rojo69[i]-promR69); numRV[69]=numRV[69]+(rojo69[i]-promR[69])*(verde[i]-promVV);
+	denR[70]=denR[70]+(rojo70[i]-promR70)*(rojo70[i]-promR70); numRV[70]=numRV[70]+(rojo70[i]-promR[70])*(verde[i]-promVV);
+	denR[71]=denR[71]+(rojo71[i]-promR71)*(rojo71[i]-promR71); numRV[71]=numRV[71]+(rojo71[i]-promR[71])*(verde[i]-promVV);
+	denR[72]=denR[72]+(rojo72[i]-promR72)*(rojo72[i]-promR72); numRV[72]=numRV[72]+(rojo72[i]-promR[72])*(verde[i]-promVV);
+	denR[73]=denR[73]+(rojo73[i]-promR73)*(rojo73[i]-promR73); numRV[73]=numRV[73]+(rojo73[i]-promR[73])*(verde[i]-promVV);
+	denR[74]=denR[74]+(rojo74[i]-promR74)*(rojo74[i]-promR74); numRV[74]=numRV[74]+(rojo74[i]-promR[74])*(verde[i]-promVV);
+	denR[75]=denR[75]+(rojo75[i]-promR75)*(rojo75[i]-promR75); numRV[75]=numRV[75]+(rojo75[i]-promR[75])*(verde[i]-promVV);
+	denR[76]=denR[76]+(rojo76[i]-promR76)*(rojo76[i]-promR76); numRV[76]=numRV[76]+(rojo76[i]-promR[76])*(verde[i]-promVV);
+	denR[77]=denR[77]+(rojo77[i]-promR77)*(rojo77[i]-promR77); numRV[77]=numRV[77]+(rojo77[i]-promR[77])*(verde[i]-promVV);
+	denR[78]=denR[78]+(rojo78[i]-promR78)*(rojo78[i]-promR78); numRV[78]=numRV[78]+(rojo78[i]-promR[78])*(verde[i]-promVV);
+	denR[79]=denR[79]+(rojo79[i]-promR79)*(rojo79[i]-promR79); numRV[79]=numRV[79]+(rojo79[i]-promR[79])*(verde[i]-promVV);
+	denR[80]=denR[80]+(rojo80[i]-promR80)*(rojo80[i]-promR80); numRV[80]=numRV[80]+(rojo80[i]-promR[80])*(verde[i]-promVV);
+	denR[81]=denR[81]+(rojo81[i]-promR81)*(rojo81[i]-promR81); numRV[81]=numRV[81]+(rojo81[i]-promR[81])*(verde[i]-promVV);
+	denR[82]=denR[82]+(rojo82[i]-promR82)*(rojo82[i]-promR82); numRV[82]=numRV[82]+(rojo82[i]-promR[82])*(verde[i]-promVV);
+	denR[83]=denR[83]+(rojo83[i]-promR83)*(rojo83[i]-promR83); numRV[83]=numRV[83]+(rojo83[i]-promR[83])*(verde[i]-promVV);
+	denR[84]=denR[84]+(rojo84[i]-promR84)*(rojo84[i]-promR84); numRV[84]=numRV[84]+(rojo84[i]-promR[84])*(verde[i]-promVV);
+	denR[85]=denR[85]+(rojo85[i]-promR85)*(rojo85[i]-promR85); numRV[85]=numRV[85]+(rojo85[i]-promR[85])*(verde[i]-promVV);
+	denR[86]=denR[86]+(rojo86[i]-promR86)*(rojo86[i]-promR86); numRV[86]=numRV[86]+(rojo86[i]-promR[86])*(verde[i]-promVV);
+	denR[87]=denR[87]+(rojo87[i]-promR87)*(rojo87[i]-promR87); numRV[87]=numRV[87]+(rojo87[i]-promR[87])*(verde[i]-promVV);
+	denR[88]=denR[88]+(rojo88[i]-promR88)*(rojo88[i]-promR88); numRV[88]=numRV[88]+(rojo88[i]-promR[88])*(verde[i]-promVV);
+	denR[89]=denR[89]+(rojo89[i]-promR89)*(rojo89[i]-promR89); numRV[89]=numRV[89]+(rojo89[i]-promR[89])*(verde[i]-promVV);
+	denR[90]=denR[90]+(rojo90[i]-promR90)*(rojo90[i]-promR90); numRV[90]=numRV[90]+(rojo90[i]-promR[90])*(verde[i]-promVV);
+	denR[91]=denR[91]+(rojo91[i]-promR91)*(rojo91[i]-promR91); numRV[91]=numRV[91]+(rojo91[i]-promR[91])*(verde[i]-promVV);
+	denR[92]=denR[92]+(rojo92[i]-promR92)*(rojo92[i]-promR92); numRV[92]=numRV[92]+(rojo92[i]-promR[92])*(verde[i]-promVV);
+	denR[93]=denR[93]+(rojo93[i]-promR93)*(rojo93[i]-promR93); numRV[93]=numRV[93]+(rojo93[i]-promR[93])*(verde[i]-promVV);
+	denR[94]=denR[94]+(rojo94[i]-promR94)*(rojo94[i]-promR94); numRV[94]=numRV[94]+(rojo94[i]-promR[94])*(verde[i]-promVV);
+	denR[95]=denR[95]+(rojo95[i]-promR95)*(rojo95[i]-promR95); numRV[95]=numRV[95]+(rojo95[i]-promR[95])*(verde[i]-promVV);
+	denR[96]=denR[96]+(rojo96[i]-promR96)*(rojo96[i]-promR96); numRV[96]=numRV[96]+(rojo96[i]-promR[96])*(verde[i]-promVV);
+	denR[97]=denR[97]+(rojo97[i]-promR97)*(rojo97[i]-promR97); numRV[97]=numRV[97]+(rojo97[i]-promR[97])*(verde[i]-promVV);
+	denR[98]=denR[98]+(rojo98[i]-promR98)*(rojo98[i]-promR98); numRV[98]=numRV[98]+(rojo98[i]-promR[98])*(verde[i]-promVV);
+	denR[99]=denR[99]+(rojo99[i]-promR99)*(rojo99[i]-promR99); numRV[99]=numRV[99]+(rojo99[i]-promR[99])*(verde[i]-promVV);
+	denR[100]=denR[100]+(rojo100[i]-promR100)*(rojo100[i]-promR100); numRV[100]=numRV[100]+(rojo100[i]-promR[100])*(verde[i]-promVV);
+	denR[101]=denR[101]+(rojo101[i]-promR101)*(rojo101[i]-promR101); numRV[101]=numRV[101]+(rojo101[i]-promR[101])*(verde[i]-promVV);
+	denR[102]=denR[102]+(rojo102[i]-promR102)*(rojo102[i]-promR102); numRV[102]=numRV[102]+(rojo102[i]-promR[102])*(verde[i]-promVV);
+	denR[103]=denR[103]+(rojo103[i]-promR103)*(rojo103[i]-promR103); numRV[103]=numRV[103]+(rojo103[i]-promR[103])*(verde[i]-promVV);
+	denR[104]=denR[104]+(rojo104[i]-promR104)*(rojo104[i]-promR104); numRV[104]=numRV[104]+(rojo104[i]-promR[104])*(verde[i]-promVV);
+	denR[105]=denR[105]+(rojo105[i]-promR105)*(rojo105[i]-promR105); numRV[105]=numRV[105]+(rojo105[i]-promR[105])*(verde[i]-promVV);
+	denR[106]=denR[106]+(rojo106[i]-promR106)*(rojo106[i]-promR106); numRV[106]=numRV[106]+(rojo106[i]-promR[106])*(verde[i]-promVV);
+	denR[107]=denR[107]+(rojo107[i]-promR107)*(rojo107[i]-promR107); numRV[107]=numRV[107]+(rojo107[i]-promR[107])*(verde[i]-promVV);
+	denR[108]=denR[108]+(rojo108[i]-promR108)*(rojo108[i]-promR108); numRV[108]=numRV[108]+(rojo108[i]-promR[108])*(verde[i]-promVV);
+	denR[109]=denR[109]+(rojo109[i]-promR109)*(rojo109[i]-promR109); numRV[109]=numRV[109]+(rojo109[i]-promR[109])*(verde[i]-promVV);
+	denR[110]=denR[110]+(rojo110[i]-promR110)*(rojo110[i]-promR110); numRV[110]=numRV[110]+(rojo110[i]-promR[110])*(verde[i]-promVV);
+	denR[111]=denR[111]+(rojo111[i]-promR111)*(rojo111[i]-promR111); numRV[111]=numRV[111]+(rojo111[i]-promR[111])*(verde[i]-promVV);
+	denR[112]=denR[112]+(rojo112[i]-promR112)*(rojo112[i]-promR112); numRV[112]=numRV[112]+(rojo112[i]-promR[112])*(verde[i]-promVV);
+	denR[113]=denR[113]+(rojo113[i]-promR113)*(rojo113[i]-promR113); numRV[113]=numRV[113]+(rojo113[i]-promR[113])*(verde[i]-promVV);
+	denR[114]=denR[114]+(rojo114[i]-promR114)*(rojo114[i]-promR114); numRV[114]=numRV[114]+(rojo114[i]-promR[114])*(verde[i]-promVV);
+	denR[115]=denR[115]+(rojo115[i]-promR115)*(rojo115[i]-promR115); numRV[115]=numRV[115]+(rojo115[i]-promR[115])*(verde[i]-promVV);
+	denR[116]=denR[116]+(rojo116[i]-promR116)*(rojo116[i]-promR116); numRV[116]=numRV[116]+(rojo116[i]-promR[116])*(verde[i]-promVV);
+	denR[117]=denR[117]+(rojo117[i]-promR117)*(rojo117[i]-promR117); numRV[117]=numRV[117]+(rojo117[i]-promR[117])*(verde[i]-promVV);
+	denR[118]=denR[118]+(rojo118[i]-promR118)*(rojo118[i]-promR118); numRV[118]=numRV[118]+(rojo118[i]-promR[118])*(verde[i]-promVV);
+	denR[119]=denR[119]+(rojo119[i]-promR119)*(rojo119[i]-promR119); numRV[119]=numRV[119]+(rojo119[i]-promR[119])*(verde[i]-promVV);
+	denR[120]=denR[120]+(rojo120[i]-promR120)*(rojo120[i]-promR120); numRV[120]=numRV[120]+(rojo120[i]-promR[120])*(verde[i]-promVV);
+	denR[121]=denR[121]+(rojo121[i]-promR121)*(rojo121[i]-promR121); numRV[121]=numRV[121]+(rojo121[i]-promR[121])*(verde[i]-promVV);
+	denR[122]=denR[122]+(rojo122[i]-promR122)*(rojo122[i]-promR122); numRV[122]=numRV[122]+(rojo122[i]-promR[122])*(verde[i]-promVV);
+	denR[123]=denR[123]+(rojo123[i]-promR123)*(rojo123[i]-promR123); numRV[123]=numRV[123]+(rojo123[i]-promR[123])*(verde[i]-promVV);
+	denR[124]=denR[124]+(rojo124[i]-promR124)*(rojo124[i]-promR124); numRV[124]=numRV[124]+(rojo124[i]-promR[124])*(verde[i]-promVV);
+	denR[125]=denR[125]+(rojo125[i]-promR125)*(rojo125[i]-promR125); numRV[125]=numRV[125]+(rojo125[i]-promR[125])*(verde[i]-promVV);
+	denR[126]=denR[126]+(rojo126[i]-promR126)*(rojo126[i]-promR126); numRV[126]=numRV[126]+(rojo126[i]-promR[126])*(verde[i]-promVV);
+	denR[127]=denR[127]+(rojo127[i]-promR127)*(rojo127[i]-promR127); numRV[127]=numRV[127]+(rojo127[i]-promR[127])*(verde[i]-promVV);
+	denR[128]=denR[128]+(rojo128[i]-promR128)*(rojo128[i]-promR128); numRV[128]=numRV[128]+(rojo128[i]-promR[128])*(verde[i]-promVV);
+	denR[129]=denR[129]+(rojo129[i]-promR129)*(rojo129[i]-promR129); numRV[129]=numRV[129]+(rojo129[i]-promR[129])*(verde[i]-promVV);
+	denR[130]=denR[130]+(rojo130[i]-promR130)*(rojo130[i]-promR130); numRV[130]=numRV[130]+(rojo130[i]-promR[130])*(verde[i]-promVV);
+	denR[131]=denR[131]+(rojo131[i]-promR131)*(rojo131[i]-promR131); numRV[131]=numRV[131]+(rojo131[i]-promR[131])*(verde[i]-promVV);
+	denR[132]=denR[132]+(rojo132[i]-promR132)*(rojo132[i]-promR132); numRV[132]=numRV[132]+(rojo132[i]-promR[132])*(verde[i]-promVV);
+	denR[133]=denR[133]+(rojo133[i]-promR133)*(rojo133[i]-promR133); numRV[133]=numRV[133]+(rojo133[i]-promR[133])*(verde[i]-promVV);
+	denR[134]=denR[134]+(rojo134[i]-promR134)*(rojo134[i]-promR134); numRV[134]=numRV[134]+(rojo134[i]-promR[134])*(verde[i]-promVV);
+	denR[135]=denR[135]+(rojo135[i]-promR135)*(rojo135[i]-promR135); numRV[135]=numRV[135]+(rojo135[i]-promR[135])*(verde[i]-promVV);
+	denR[136]=denR[136]+(rojo136[i]-promR136)*(rojo136[i]-promR136); numRV[136]=numRV[136]+(rojo136[i]-promR[136])*(verde[i]-promVV);
+	denR[137]=denR[137]+(rojo137[i]-promR137)*(rojo137[i]-promR137); numRV[137]=numRV[137]+(rojo137[i]-promR[137])*(verde[i]-promVV);
+	denR[138]=denR[138]+(rojo138[i]-promR138)*(rojo138[i]-promR138); numRV[138]=numRV[138]+(rojo138[i]-promR[138])*(verde[i]-promVV);
+	denR[139]=denR[139]+(rojo139[i]-promR139)*(rojo139[i]-promR139); numRV[139]=numRV[139]+(rojo139[i]-promR[139])*(verde[i]-promVV);
+	denR[140]=denR[140]+(rojo140[i]-promR140)*(rojo140[i]-promR140); numRV[140]=numRV[140]+(rojo140[i]-promR[140])*(verde[i]-promVV);
+	denR[141]=denR[141]+(rojo141[i]-promR141)*(rojo141[i]-promR141); numRV[141]=numRV[141]+(rojo141[i]-promR[141])*(verde[i]-promVV);
+	denR[142]=denR[142]+(rojo142[i]-promR142)*(rojo142[i]-promR142); numRV[142]=numRV[142]+(rojo142[i]-promR[142])*(verde[i]-promVV);
+	denR[143]=denR[143]+(rojo143[i]-promR143)*(rojo143[i]-promR143); numRV[143]=numRV[143]+(rojo143[i]-promR[143])*(verde[i]-promVV);
+	denR[144]=denR[144]+(rojo144[i]-promR144)*(rojo144[i]-promR144); numRV[144]=numRV[144]+(rojo144[i]-promR[144])*(verde[i]-promVV);
+	denR[145]=denR[145]+(rojo145[i]-promR145)*(rojo145[i]-promR145); numRV[145]=numRV[145]+(rojo145[i]-promR[145])*(verde[i]-promVV);
+	denR[146]=denR[146]+(rojo146[i]-promR146)*(rojo146[i]-promR146); numRV[146]=numRV[146]+(rojo146[i]-promR[146])*(verde[i]-promVV);
+	denR[147]=denR[147]+(rojo147[i]-promR147)*(rojo147[i]-promR147); numRV[147]=numRV[147]+(rojo147[i]-promR[147])*(verde[i]-promVV);
+	denR[148]=denR[148]+(rojo148[i]-promR148)*(rojo148[i]-promR148); numRV[148]=numRV[148]+(rojo148[i]-promR[148])*(verde[i]-promVV);
+	denR[149]=denR[149]+(rojo149[i]-promR149)*(rojo149[i]-promR149); numRV[149]=numRV[149]+(rojo149[i]-promR[149])*(verde[i]-promVV);
+	denR[150]=denR[150]+(rojo150[i]-promR150)*(rojo150[i]-promR150); numRV[150]=numRV[150]+(rojo150[i]-promR[150])*(verde[i]-promVV);
+	denR[151]=denR[151]+(rojo151[i]-promR151)*(rojo151[i]-promR151); numRV[151]=numRV[151]+(rojo151[i]-promR[151])*(verde[i]-promVV);
+	denR[152]=denR[152]+(rojo152[i]-promR152)*(rojo152[i]-promR152); numRV[152]=numRV[152]+(rojo152[i]-promR[152])*(verde[i]-promVV);
+	denR[153]=denR[153]+(rojo153[i]-promR153)*(rojo153[i]-promR153); numRV[153]=numRV[153]+(rojo153[i]-promR[153])*(verde[i]-promVV);
+	denR[154]=denR[154]+(rojo154[i]-promR154)*(rojo154[i]-promR154); numRV[154]=numRV[154]+(rojo154[i]-promR[154])*(verde[i]-promVV);
+	denR[155]=denR[155]+(rojo155[i]-promR155)*(rojo155[i]-promR155); numRV[155]=numRV[155]+(rojo155[i]-promR[155])*(verde[i]-promVV);
+	denR[156]=denR[156]+(rojo156[i]-promR156)*(rojo156[i]-promR156); numRV[156]=numRV[156]+(rojo156[i]-promR[156])*(verde[i]-promVV);
+	denR[157]=denR[157]+(rojo157[i]-promR157)*(rojo157[i]-promR157); numRV[157]=numRV[157]+(rojo157[i]-promR[157])*(verde[i]-promVV);
+	denR[158]=denR[158]+(rojo158[i]-promR158)*(rojo158[i]-promR158); numRV[158]=numRV[158]+(rojo158[i]-promR[158])*(verde[i]-promVV);
+	denR[159]=denR[159]+(rojo159[i]-promR159)*(rojo159[i]-promR159); numRV[159]=numRV[159]+(rojo159[i]-promR[159])*(verde[i]-promVV);
+	denR[160]=denR[160]+(rojo160[i]-promR160)*(rojo160[i]-promR160); numRV[160]=numRV[160]+(rojo160[i]-promR[160])*(verde[i]-promVV);
+	denR[161]=denR[161]+(rojo161[i]-promR161)*(rojo161[i]-promR161); numRV[161]=numRV[161]+(rojo161[i]-promR[161])*(verde[i]-promVV);
+	denR[162]=denR[162]+(rojo162[i]-promR162)*(rojo162[i]-promR162); numRV[162]=numRV[162]+(rojo162[i]-promR[162])*(verde[i]-promVV);
+	denR[163]=denR[163]+(rojo163[i]-promR163)*(rojo163[i]-promR163); numRV[163]=numRV[163]+(rojo163[i]-promR[163])*(verde[i]-promVV);
+	denR[164]=denR[164]+(rojo164[i]-promR164)*(rojo164[i]-promR164); numRV[164]=numRV[164]+(rojo164[i]-promR[164])*(verde[i]-promVV);
+	denR[165]=denR[165]+(rojo165[i]-promR165)*(rojo165[i]-promR165); numRV[165]=numRV[165]+(rojo165[i]-promR[165])*(verde[i]-promVV);
+	denR[166]=denR[166]+(rojo166[i]-promR166)*(rojo166[i]-promR166); numRV[166]=numRV[166]+(rojo166[i]-promR[166])*(verde[i]-promVV);
+	denR[167]=denR[167]+(rojo167[i]-promR167)*(rojo167[i]-promR167); numRV[167]=numRV[167]+(rojo167[i]-promR[167])*(verde[i]-promVV);
+	denR[168]=denR[168]+(rojo168[i]-promR168)*(rojo168[i]-promR168); numRV[168]=numRV[168]+(rojo168[i]-promR[168])*(verde[i]-promVV);
+	denR[169]=denR[169]+(rojo169[i]-promR169)*(rojo169[i]-promR169); numRV[169]=numRV[169]+(rojo169[i]-promR[169])*(verde[i]-promVV);
+	denR[170]=denR[170]+(rojo170[i]-promR170)*(rojo170[i]-promR170); numRV[170]=numRV[170]+(rojo170[i]-promR[170])*(verde[i]-promVV);
+	denR[171]=denR[171]+(rojo171[i]-promR171)*(rojo171[i]-promR171); numRV[171]=numRV[171]+(rojo171[i]-promR[171])*(verde[i]-promVV);
+	denR[172]=denR[172]+(rojo172[i]-promR172)*(rojo172[i]-promR172); numRV[172]=numRV[172]+(rojo172[i]-promR[172])*(verde[i]-promVV);
+	denR[173]=denR[173]+(rojo173[i]-promR173)*(rojo173[i]-promR173); numRV[173]=numRV[173]+(rojo173[i]-promR[173])*(verde[i]-promVV);
+	denR[174]=denR[174]+(rojo174[i]-promR174)*(rojo174[i]-promR174); numRV[174]=numRV[174]+(rojo174[i]-promR[174])*(verde[i]-promVV);
+	denR[175]=denR[175]+(rojo175[i]-promR175)*(rojo175[i]-promR175); numRV[175]=numRV[175]+(rojo175[i]-promR[175])*(verde[i]-promVV);
+	denR[176]=denR[176]+(rojo176[i]-promR176)*(rojo176[i]-promR176); numRV[176]=numRV[176]+(rojo176[i]-promR[176])*(verde[i]-promVV);
+	denR[177]=denR[177]+(rojo177[i]-promR177)*(rojo177[i]-promR177); numRV[177]=numRV[177]+(rojo177[i]-promR[177])*(verde[i]-promVV);
+	denR[178]=denR[178]+(rojo178[i]-promR178)*(rojo178[i]-promR178); numRV[178]=numRV[178]+(rojo178[i]-promR[178])*(verde[i]-promVV);
+	denR[179]=denR[179]+(rojo179[i]-promR179)*(rojo179[i]-promR179); numRV[179]=numRV[179]+(rojo179[i]-promR[179])*(verde[i]-promVV);
+	denR[180]=denR[180]+(rojo180[i]-promR180)*(rojo180[i]-promR180); numRV[180]=numRV[180]+(rojo180[i]-promR[180])*(verde[i]-promVV);
+	denR[181]=denR[181]+(rojo181[i]-promR181)*(rojo181[i]-promR181); numRV[181]=numRV[181]+(rojo181[i]-promR[181])*(verde[i]-promVV);
+	denR[182]=denR[182]+(rojo182[i]-promR182)*(rojo182[i]-promR182); numRV[182]=numRV[182]+(rojo182[i]-promR[182])*(verde[i]-promVV);
+	denR[183]=denR[183]+(rojo183[i]-promR183)*(rojo183[i]-promR183); numRV[183]=numRV[183]+(rojo183[i]-promR[183])*(verde[i]-promVV);
+	denR[184]=denR[184]+(rojo184[i]-promR184)*(rojo184[i]-promR184); numRV[184]=numRV[184]+(rojo184[i]-promR[184])*(verde[i]-promVV);
+	denR[185]=denR[185]+(rojo185[i]-promR185)*(rojo185[i]-promR185); numRV[185]=numRV[185]+(rojo185[i]-promR[185])*(verde[i]-promVV);
+	denR[186]=denR[186]+(rojo186[i]-promR186)*(rojo186[i]-promR186); numRV[186]=numRV[186]+(rojo186[i]-promR[186])*(verde[i]-promVV);
+	denR[187]=denR[187]+(rojo187[i]-promR187)*(rojo187[i]-promR187); numRV[187]=numRV[187]+(rojo187[i]-promR[187])*(verde[i]-promVV);
+	denR[188]=denR[188]+(rojo188[i]-promR188)*(rojo188[i]-promR188); numRV[188]=numRV[188]+(rojo188[i]-promR[188])*(verde[i]-promVV);
+	denR[189]=denR[189]+(rojo189[i]-promR189)*(rojo189[i]-promR189); numRV[189]=numRV[189]+(rojo189[i]-promR[189])*(verde[i]-promVV);
+	denR[190]=denR[190]+(rojo190[i]-promR190)*(rojo190[i]-promR190); numRV[190]=numRV[190]+(rojo190[i]-promR[190])*(verde[i]-promVV);
+	denR[191]=denR[191]+(rojo191[i]-promR191)*(rojo191[i]-promR191); numRV[191]=numRV[191]+(rojo191[i]-promR[191])*(verde[i]-promVV);
+	denR[192]=denR[192]+(rojo192[i]-promR192)*(rojo192[i]-promR192); numRV[192]=numRV[192]+(rojo192[i]-promR[192])*(verde[i]-promVV);
+	denR[193]=denR[193]+(rojo193[i]-promR193)*(rojo193[i]-promR193); numRV[193]=numRV[193]+(rojo193[i]-promR[193])*(verde[i]-promVV);
+	denR[194]=denR[194]+(rojo194[i]-promR194)*(rojo194[i]-promR194); numRV[194]=numRV[194]+(rojo194[i]-promR[194])*(verde[i]-promVV);
+	denR[195]=denR[195]+(rojo195[i]-promR195)*(rojo195[i]-promR195); numRV[195]=numRV[195]+(rojo195[i]-promR[195])*(verde[i]-promVV);
+	denR[196]=denR[196]+(rojo196[i]-promR196)*(rojo196[i]-promR196); numRV[196]=numRV[196]+(rojo196[i]-promR[196])*(verde[i]-promVV);
+	denR[197]=denR[197]+(rojo197[i]-promR197)*(rojo197[i]-promR197); numRV[197]=numRV[197]+(rojo197[i]-promR[197])*(verde[i]-promVV);
+	denR[198]=denR[198]+(rojo198[i]-promR198)*(rojo198[i]-promR198); numRV[198]=numRV[198]+(rojo198[i]-promR[198])*(verde[i]-promVV);
+	denR[199]=denR[199]+(rojo199[i]-promR199)*(rojo199[i]-promR199); numRV[199]=numRV[199]+(rojo199[i]-promR[199])*(verde[i]-promVV);
+	denR[200]=denR[200]+(rojo200[i]-promR200)*(rojo200[i]-promR200); numRV[200]=numRV[200]+(rojo200[i]-promR[200])*(verde[i]-promVV);
+	denR[201]=denR[201]+(rojo201[i]-promR201)*(rojo201[i]-promR201); numRV[201]=numRV[201]+(rojo201[i]-promR[201])*(verde[i]-promVV);
+	denR[202]=denR[202]+(rojo202[i]-promR202)*(rojo202[i]-promR202); numRV[202]=numRV[202]+(rojo202[i]-promR[202])*(verde[i]-promVV);
+	denR[203]=denR[203]+(rojo203[i]-promR203)*(rojo203[i]-promR203); numRV[203]=numRV[203]+(rojo203[i]-promR[203])*(verde[i]-promVV);
+	denR[204]=denR[204]+(rojo204[i]-promR204)*(rojo204[i]-promR204); numRV[204]=numRV[204]+(rojo204[i]-promR[204])*(verde[i]-promVV);
+	denR[205]=denR[205]+(rojo205[i]-promR205)*(rojo205[i]-promR205); numRV[205]=numRV[205]+(rojo205[i]-promR[205])*(verde[i]-promVV);
+	denR[206]=denR[206]+(rojo206[i]-promR206)*(rojo206[i]-promR206); numRV[206]=numRV[206]+(rojo206[i]-promR[206])*(verde[i]-promVV);
+	denR[207]=denR[207]+(rojo207[i]-promR207)*(rojo207[i]-promR207); numRV[207]=numRV[207]+(rojo207[i]-promR[207])*(verde[i]-promVV);
+	denR[208]=denR[208]+(rojo208[i]-promR208)*(rojo208[i]-promR208); numRV[208]=numRV[208]+(rojo208[i]-promR[208])*(verde[i]-promVV);
+	denR[209]=denR[209]+(rojo209[i]-promR209)*(rojo209[i]-promR209); numRV[209]=numRV[209]+(rojo209[i]-promR[209])*(verde[i]-promVV);
+	denR[210]=denR[210]+(rojo210[i]-promR210)*(rojo210[i]-promR210); numRV[210]=numRV[210]+(rojo210[i]-promR[210])*(verde[i]-promVV);
+	denR[211]=denR[211]+(rojo211[i]-promR211)*(rojo211[i]-promR211); numRV[211]=numRV[211]+(rojo211[i]-promR[211])*(verde[i]-promVV);
+	denR[212]=denR[212]+(rojo212[i]-promR212)*(rojo212[i]-promR212); numRV[212]=numRV[212]+(rojo212[i]-promR[212])*(verde[i]-promVV);
+	denR[213]=denR[213]+(rojo213[i]-promR213)*(rojo213[i]-promR213); numRV[213]=numRV[213]+(rojo213[i]-promR[213])*(verde[i]-promVV);
+	denR[214]=denR[214]+(rojo214[i]-promR214)*(rojo214[i]-promR214); numRV[214]=numRV[214]+(rojo214[i]-promR[214])*(verde[i]-promVV);
+	denR[215]=denR[215]+(rojo215[i]-promR215)*(rojo215[i]-promR215); numRV[215]=numRV[215]+(rojo215[i]-promR[215])*(verde[i]-promVV);
+	denR[216]=denR[216]+(rojo216[i]-promR216)*(rojo216[i]-promR216); numRV[216]=numRV[216]+(rojo216[i]-promR[216])*(verde[i]-promVV);
+	denR[217]=denR[217]+(rojo217[i]-promR217)*(rojo217[i]-promR217); numRV[217]=numRV[217]+(rojo217[i]-promR[217])*(verde[i]-promVV);
+	denR[218]=denR[218]+(rojo218[i]-promR218)*(rojo218[i]-promR218); numRV[218]=numRV[218]+(rojo218[i]-promR[218])*(verde[i]-promVV);
+	denR[219]=denR[219]+(rojo219[i]-promR219)*(rojo219[i]-promR219); numRV[219]=numRV[219]+(rojo219[i]-promR[219])*(verde[i]-promVV);
+	denR[220]=denR[220]+(rojo220[i]-promR220)*(rojo220[i]-promR220); numRV[220]=numRV[220]+(rojo220[i]-promR[220])*(verde[i]-promVV);
+	denR[221]=denR[221]+(rojo221[i]-promR221)*(rojo221[i]-promR221); numRV[221]=numRV[221]+(rojo221[i]-promR[221])*(verde[i]-promVV);
+	denR[222]=denR[222]+(rojo222[i]-promR222)*(rojo222[i]-promR222); numRV[222]=numRV[222]+(rojo222[i]-promR[222])*(verde[i]-promVV);
+	denR[223]=denR[223]+(rojo223[i]-promR223)*(rojo223[i]-promR223); numRV[223]=numRV[223]+(rojo223[i]-promR[223])*(verde[i]-promVV);
+	denR[224]=denR[224]+(rojo224[i]-promR224)*(rojo224[i]-promR224); numRV[224]=numRV[224]+(rojo224[i]-promR[224])*(verde[i]-promVV);
+	denR[225]=denR[225]+(rojo225[i]-promR225)*(rojo225[i]-promR225); numRV[225]=numRV[225]+(rojo225[i]-promR[225])*(verde[i]-promVV);
+	denR[226]=denR[226]+(rojo226[i]-promR226)*(rojo226[i]-promR226); numRV[226]=numRV[226]+(rojo226[i]-promR[226])*(verde[i]-promVV);
+	denR[227]=denR[227]+(rojo227[i]-promR227)*(rojo227[i]-promR227); numRV[227]=numRV[227]+(rojo227[i]-promR[227])*(verde[i]-promVV);
+	denR[228]=denR[228]+(rojo228[i]-promR228)*(rojo228[i]-promR228); numRV[228]=numRV[228]+(rojo228[i]-promR[228])*(verde[i]-promVV);
+	denR[229]=denR[229]+(rojo229[i]-promR229)*(rojo229[i]-promR229); numRV[229]=numRV[229]+(rojo229[i]-promR[229])*(verde[i]-promVV);
+	denR[230]=denR[230]+(rojo230[i]-promR230)*(rojo230[i]-promR230); numRV[230]=numRV[230]+(rojo230[i]-promR[230])*(verde[i]-promVV);
+	denR[231]=denR[231]+(rojo231[i]-promR231)*(rojo231[i]-promR231); numRV[231]=numRV[231]+(rojo231[i]-promR[231])*(verde[i]-promVV);
+	denR[232]=denR[232]+(rojo232[i]-promR232)*(rojo232[i]-promR232); numRV[232]=numRV[232]+(rojo232[i]-promR[232])*(verde[i]-promVV);
+	denR[233]=denR[233]+(rojo233[i]-promR233)*(rojo233[i]-promR233); numRV[233]=numRV[233]+(rojo233[i]-promR[233])*(verde[i]-promVV);
+	denR[234]=denR[234]+(rojo234[i]-promR234)*(rojo234[i]-promR234); numRV[234]=numRV[234]+(rojo234[i]-promR[234])*(verde[i]-promVV);
+	denR[235]=denR[235]+(rojo235[i]-promR235)*(rojo235[i]-promR235); numRV[235]=numRV[235]+(rojo235[i]-promR[235])*(verde[i]-promVV);
+	denR[236]=denR[236]+(rojo236[i]-promR236)*(rojo236[i]-promR236); numRV[236]=numRV[236]+(rojo236[i]-promR[236])*(verde[i]-promVV);
+	denR[237]=denR[237]+(rojo237[i]-promR237)*(rojo237[i]-promR237); numRV[237]=numRV[237]+(rojo237[i]-promR[237])*(verde[i]-promVV);
+	denR[238]=denR[238]+(rojo238[i]-promR238)*(rojo238[i]-promR238); numRV[238]=numRV[238]+(rojo238[i]-promR[238])*(verde[i]-promVV);
+	denR[239]=denR[239]+(rojo239[i]-promR239)*(rojo239[i]-promR239); numRV[239]=numRV[239]+(rojo239[i]-promR[239])*(verde[i]-promVV);
+	denR[240]=denR[240]+(rojo240[i]-promR240)*(rojo240[i]-promR240); numRV[240]=numRV[240]+(rojo240[i]-promR[240])*(verde[i]-promVV);
+	denR[241]=denR[241]+(rojo241[i]-promR241)*(rojo241[i]-promR241); numRV[241]=numRV[241]+(rojo241[i]-promR[241])*(verde[i]-promVV);
+	denR[242]=denR[242]+(rojo242[i]-promR242)*(rojo242[i]-promR242); numRV[242]=numRV[242]+(rojo242[i]-promR[242])*(verde[i]-promVV);
+	denR[243]=denR[243]+(rojo243[i]-promR243)*(rojo243[i]-promR243); numRV[243]=numRV[243]+(rojo243[i]-promR[243])*(verde[i]-promVV);
+	denR[244]=denR[244]+(rojo244[i]-promR244)*(rojo244[i]-promR244); numRV[244]=numRV[244]+(rojo244[i]-promR[244])*(verde[i]-promVV);
+	denR[245]=denR[245]+(rojo245[i]-promR245)*(rojo245[i]-promR245); numRV[245]=numRV[245]+(rojo245[i]-promR[245])*(verde[i]-promVV);
+	denR[246]=denR[246]+(rojo246[i]-promR246)*(rojo246[i]-promR246); numRV[246]=numRV[246]+(rojo246[i]-promR[246])*(verde[i]-promVV);
+	denR[247]=denR[247]+(rojo247[i]-promR247)*(rojo247[i]-promR247); numRV[247]=numRV[247]+(rojo247[i]-promR[247])*(verde[i]-promVV);
+	denR[248]=denR[248]+(rojo248[i]-promR248)*(rojo248[i]-promR248); numRV[248]=numRV[248]+(rojo248[i]-promR[248])*(verde[i]-promVV);
+	denR[249]=denR[249]+(rojo249[i]-promR249)*(rojo249[i]-promR249); numRV[249]=numRV[249]+(rojo249[i]-promR[249])*(verde[i]-promVV);
+	denR[250]=denR[250]+(rojo250[i]-promR250)*(rojo250[i]-promR250); numRV[250]=numRV[250]+(rojo250[i]-promR[250])*(verde[i]-promVV);
+	denR[251]=denR[251]+(rojo251[i]-promR251)*(rojo251[i]-promR251); numRV[251]=numRV[251]+(rojo251[i]-promR[251])*(verde[i]-promVV);
+	denR[252]=denR[252]+(rojo252[i]-promR252)*(rojo252[i]-promR252); numRV[252]=numRV[252]+(rojo252[i]-promR[252])*(verde[i]-promVV);
+	denR[253]=denR[253]+(rojo253[i]-promR253)*(rojo253[i]-promR253); numRV[253]=numRV[253]+(rojo253[i]-promR[253])*(verde[i]-promVV);
+	denR[254]=denR[254]+(rojo254[i]-promR254)*(rojo254[i]-promR254); numRV[254]=numRV[254]+(rojo254[i]-promR[254])*(verde[i]-promVV);
+	denR[255]=denR[255]+(rojo255[i]-promR255)*(rojo255[i]-promR255); numRV[255]=numRV[255]+(rojo255[i]-promR[255])*(verde[i]-promVV);
+
+	denRR=denRR+(rojo[i]-promRR)*(rojo[i]-promRR);
+	
+		denV[1]=denV[1]+(verde1[i]-promV1)*(verde1[i]-promV1); numVR[1]=numVR[1]+(verde1[i]-promV[1])*(rojo[i]-promRR);                                                                        
+	denV[2]=denV[2]+(verde2[i]-promV2)*(verde2[i]-promV2); numVR[2]=numVR[2]+(verde2[i]-promV[2])*(rojo[i]-promRR);
+	denV[3]=denV[3]+(verde3[i]-promV3)*(verde3[i]-promV3); numVR[3]=numVR[3]+(verde3[i]-promV[3])*(rojo[i]-promRR);
+	denV[4]=denV[4]+(verde4[i]-promV4)*(verde4[i]-promV4); numVR[4]=numVR[4]+(verde4[i]-promV[4])*(rojo[i]-promRR);
+	denV[5]=denV[5]+(verde5[i]-promV5)*(verde5[i]-promV5); numVR[5]=numVR[5]+(verde5[i]-promV[5])*(rojo[i]-promRR);
+	denV[6]=denV[6]+(verde6[i]-promV6)*(verde6[i]-promV6); numVR[6]=numVR[6]+(verde6[i]-promV[6])*(rojo[i]-promRR);
+	denV[7]=denV[7]+(verde7[i]-promV7)*(verde7[i]-promV7); numVR[7]=numVR[7]+(verde7[i]-promV[7])*(rojo[i]-promRR);
+	denV[8]=denV[8]+(verde8[i]-promV8)*(verde8[i]-promV8); numVR[8]=numVR[8]+(verde8[i]-promV[8])*(rojo[i]-promRR);
+	denV[9]=denV[9]+(verde9[i]-promV9)*(verde9[i]-promV9); numVR[9]=numVR[9]+(verde9[i]-promV[9])*(rojo[i]-promRR);
+	denV[10]=denV[10]+(verde10[i]-promV10)*(verde10[i]-promV10); numVR[10]=numVR[10]+(verde10[i]-promV[10])*(rojo[i]-promRR);
+	denV[11]=denV[11]+(verde11[i]-promV11)*(verde11[i]-promV11); numVR[11]=numVR[11]+(verde11[i]-promV[11])*(rojo[i]-promRR);
+	denV[12]=denV[12]+(verde12[i]-promV12)*(verde12[i]-promV12); numVR[12]=numVR[12]+(verde12[i]-promV[12])*(rojo[i]-promRR);
+	denV[13]=denV[13]+(verde13[i]-promV13)*(verde13[i]-promV13); numVR[13]=numVR[13]+(verde13[i]-promV[13])*(rojo[i]-promRR);
+	denV[14]=denV[14]+(verde14[i]-promV14)*(verde14[i]-promV14); numVR[14]=numVR[14]+(verde14[i]-promV[14])*(rojo[i]-promRR);
+	denV[15]=denV[15]+(verde15[i]-promV15)*(verde15[i]-promV15); numVR[15]=numVR[15]+(verde15[i]-promV[15])*(rojo[i]-promRR);
+	denV[16]=denV[16]+(verde16[i]-promV16)*(verde16[i]-promV16); numVR[16]=numVR[16]+(verde16[i]-promV[16])*(rojo[i]-promRR);
+	denV[17]=denV[17]+(verde17[i]-promV17)*(verde17[i]-promV17); numVR[17]=numVR[17]+(verde17[i]-promV[17])*(rojo[i]-promRR);
+	denV[18]=denV[18]+(verde18[i]-promV18)*(verde18[i]-promV18); numVR[18]=numVR[18]+(verde18[i]-promV[18])*(rojo[i]-promRR);
+	denV[19]=denV[19]+(verde19[i]-promV19)*(verde19[i]-promV19); numVR[19]=numVR[19]+(verde19[i]-promV[19])*(rojo[i]-promRR);
+	denV[20]=denV[20]+(verde20[i]-promV20)*(verde20[i]-promV20); numVR[20]=numVR[20]+(verde20[i]-promV[20])*(rojo[i]-promRR);
+	denV[21]=denV[21]+(verde21[i]-promV21)*(verde21[i]-promV21); numVR[21]=numVR[21]+(verde21[i]-promV[21])*(rojo[i]-promRR);
+	denV[22]=denV[22]+(verde22[i]-promV22)*(verde22[i]-promV22); numVR[22]=numVR[22]+(verde22[i]-promV[22])*(rojo[i]-promRR);
+	denV[23]=denV[23]+(verde23[i]-promV23)*(verde23[i]-promV23); numVR[23]=numVR[23]+(verde23[i]-promV[23])*(rojo[i]-promRR);
+	denV[24]=denV[24]+(verde24[i]-promV24)*(verde24[i]-promV24); numVR[24]=numVR[24]+(verde24[i]-promV[24])*(rojo[i]-promRR);
+	denV[25]=denV[25]+(verde25[i]-promV25)*(verde25[i]-promV25); numVR[25]=numVR[25]+(verde25[i]-promV[25])*(rojo[i]-promRR);
+	denV[26]=denV[26]+(verde26[i]-promV26)*(verde26[i]-promV26); numVR[26]=numVR[26]+(verde26[i]-promV[26])*(rojo[i]-promRR);
+	denV[27]=denV[27]+(verde27[i]-promV27)*(verde27[i]-promV27); numVR[27]=numVR[27]+(verde27[i]-promV[27])*(rojo[i]-promRR);
+	denV[28]=denV[28]+(verde28[i]-promV28)*(verde28[i]-promV28); numVR[28]=numVR[28]+(verde28[i]-promV[28])*(rojo[i]-promRR);
+	denV[29]=denV[29]+(verde29[i]-promV29)*(verde29[i]-promV29); numVR[29]=numVR[29]+(verde29[i]-promV[29])*(rojo[i]-promRR);
+	denV[30]=denV[30]+(verde30[i]-promV30)*(verde30[i]-promV30); numVR[30]=numVR[30]+(verde30[i]-promV[30])*(rojo[i]-promRR);
+	denV[31]=denV[31]+(verde31[i]-promV31)*(verde31[i]-promV31); numVR[31]=numVR[31]+(verde31[i]-promV[31])*(rojo[i]-promRR);
+	denV[32]=denV[32]+(verde32[i]-promV32)*(verde32[i]-promV32); numVR[32]=numVR[32]+(verde32[i]-promV[32])*(rojo[i]-promRR);
+	denV[33]=denV[33]+(verde33[i]-promV33)*(verde33[i]-promV33); numVR[33]=numVR[33]+(verde33[i]-promV[33])*(rojo[i]-promRR);
+	denV[34]=denV[34]+(verde34[i]-promV34)*(verde34[i]-promV34); numVR[34]=numVR[34]+(verde34[i]-promV[34])*(rojo[i]-promRR);
+	denV[35]=denV[35]+(verde35[i]-promV35)*(verde35[i]-promV35); numVR[35]=numVR[35]+(verde35[i]-promV[35])*(rojo[i]-promRR);
+	denV[36]=denV[36]+(verde36[i]-promV36)*(verde36[i]-promV36); numVR[36]=numVR[36]+(verde36[i]-promV[36])*(rojo[i]-promRR);
+	denV[37]=denV[37]+(verde37[i]-promV37)*(verde37[i]-promV37); numVR[37]=numVR[37]+(verde37[i]-promV[37])*(rojo[i]-promRR);
+	denV[38]=denV[38]+(verde38[i]-promV38)*(verde38[i]-promV38); numVR[38]=numVR[38]+(verde38[i]-promV[38])*(rojo[i]-promRR);
+	denV[39]=denV[39]+(verde39[i]-promV39)*(verde39[i]-promV39); numVR[39]=numVR[39]+(verde39[i]-promV[39])*(rojo[i]-promRR);
+	denV[40]=denV[40]+(verde40[i]-promV40)*(verde40[i]-promV40); numVR[40]=numVR[40]+(verde40[i]-promV[40])*(rojo[i]-promRR);
+	denV[41]=denV[41]+(verde41[i]-promV41)*(verde41[i]-promV41); numVR[41]=numVR[41]+(verde41[i]-promV[41])*(rojo[i]-promRR);
+	denV[42]=denV[42]+(verde42[i]-promV42)*(verde42[i]-promV42); numVR[42]=numVR[42]+(verde42[i]-promV[42])*(rojo[i]-promRR);
+	denV[43]=denV[43]+(verde43[i]-promV43)*(verde43[i]-promV43); numVR[43]=numVR[43]+(verde43[i]-promV[43])*(rojo[i]-promRR);
+	denV[44]=denV[44]+(verde44[i]-promV44)*(verde44[i]-promV44); numVR[44]=numVR[44]+(verde44[i]-promV[44])*(rojo[i]-promRR);
+	denV[45]=denV[45]+(verde45[i]-promV45)*(verde45[i]-promV45); numVR[45]=numVR[45]+(verde45[i]-promV[45])*(rojo[i]-promRR);
+	denV[46]=denV[46]+(verde46[i]-promV46)*(verde46[i]-promV46); numVR[46]=numVR[46]+(verde46[i]-promV[46])*(rojo[i]-promRR);
+	denV[47]=denV[47]+(verde47[i]-promV47)*(verde47[i]-promV47); numVR[47]=numVR[47]+(verde47[i]-promV[47])*(rojo[i]-promRR);
+	denV[48]=denV[48]+(verde48[i]-promV48)*(verde48[i]-promV48); numVR[48]=numVR[48]+(verde48[i]-promV[48])*(rojo[i]-promRR);
+	denV[49]=denV[49]+(verde49[i]-promV49)*(verde49[i]-promV49); numVR[49]=numVR[49]+(verde49[i]-promV[49])*(rojo[i]-promRR);
+	denV[50]=denV[50]+(verde50[i]-promV50)*(verde50[i]-promV50); numVR[50]=numVR[50]+(verde50[i]-promV[50])*(rojo[i]-promRR);
+	denV[51]=denV[51]+(verde51[i]-promV51)*(verde51[i]-promV51); numVR[51]=numVR[51]+(verde51[i]-promV[51])*(rojo[i]-promRR);
+	denV[52]=denV[52]+(verde52[i]-promV52)*(verde52[i]-promV52); numVR[52]=numVR[52]+(verde52[i]-promV[52])*(rojo[i]-promRR);
+	denV[53]=denV[53]+(verde53[i]-promV53)*(verde53[i]-promV53); numVR[53]=numVR[53]+(verde53[i]-promV[53])*(rojo[i]-promRR);
+	denV[54]=denV[54]+(verde54[i]-promV54)*(verde54[i]-promV54); numVR[54]=numVR[54]+(verde54[i]-promV[54])*(rojo[i]-promRR);
+	denV[55]=denV[55]+(verde55[i]-promV55)*(verde55[i]-promV55); numVR[55]=numVR[55]+(verde55[i]-promV[55])*(rojo[i]-promRR);
+	denV[56]=denV[56]+(verde56[i]-promV56)*(verde56[i]-promV56); numVR[56]=numVR[56]+(verde56[i]-promV[56])*(rojo[i]-promRR);
+	denV[57]=denV[57]+(verde57[i]-promV57)*(verde57[i]-promV57); numVR[57]=numVR[57]+(verde57[i]-promV[57])*(rojo[i]-promRR);
+	denV[58]=denV[58]+(verde58[i]-promV58)*(verde58[i]-promV58); numVR[58]=numVR[58]+(verde58[i]-promV[58])*(rojo[i]-promRR);
+	denV[59]=denV[59]+(verde59[i]-promV59)*(verde59[i]-promV59); numVR[59]=numVR[59]+(verde59[i]-promV[59])*(rojo[i]-promRR);
+	denV[60]=denV[60]+(verde60[i]-promV60)*(verde60[i]-promV60); numVR[60]=numVR[60]+(verde60[i]-promV[60])*(rojo[i]-promRR);
+	denV[61]=denV[61]+(verde61[i]-promV61)*(verde61[i]-promV61); numVR[61]=numVR[61]+(verde61[i]-promV[61])*(rojo[i]-promRR);
+	denV[62]=denV[62]+(verde62[i]-promV62)*(verde62[i]-promV62); numVR[62]=numVR[62]+(verde62[i]-promV[62])*(rojo[i]-promRR);
+	denV[63]=denV[63]+(verde63[i]-promV63)*(verde63[i]-promV63); numVR[63]=numVR[63]+(verde63[i]-promV[63])*(rojo[i]-promRR);
+	denV[64]=denV[64]+(verde64[i]-promV64)*(verde64[i]-promV64); numVR[64]=numVR[64]+(verde64[i]-promV[64])*(rojo[i]-promRR);
+	denV[65]=denV[65]+(verde65[i]-promV65)*(verde65[i]-promV65); numVR[65]=numVR[65]+(verde65[i]-promV[65])*(rojo[i]-promRR);
+	denV[66]=denV[66]+(verde66[i]-promV66)*(verde66[i]-promV66); numVR[66]=numVR[66]+(verde66[i]-promV[66])*(rojo[i]-promRR);
+	denV[67]=denV[67]+(verde67[i]-promV67)*(verde67[i]-promV67); numVR[67]=numVR[67]+(verde67[i]-promV[67])*(rojo[i]-promRR);
+	denV[68]=denV[68]+(verde68[i]-promV68)*(verde68[i]-promV68); numVR[68]=numVR[68]+(verde68[i]-promV[68])*(rojo[i]-promRR);
+	denV[69]=denV[69]+(verde69[i]-promV69)*(verde69[i]-promV69); numVR[69]=numVR[69]+(verde69[i]-promV[69])*(rojo[i]-promRR);
+	denV[70]=denV[70]+(verde70[i]-promV70)*(verde70[i]-promV70); numVR[70]=numVR[70]+(verde70[i]-promV[70])*(rojo[i]-promRR);
+	denV[71]=denV[71]+(verde71[i]-promV71)*(verde71[i]-promV71); numVR[71]=numVR[71]+(verde71[i]-promV[71])*(rojo[i]-promRR);
+	denV[72]=denV[72]+(verde72[i]-promV72)*(verde72[i]-promV72); numVR[72]=numVR[72]+(verde72[i]-promV[72])*(rojo[i]-promRR);
+	denV[73]=denV[73]+(verde73[i]-promV73)*(verde73[i]-promV73); numVR[73]=numVR[73]+(verde73[i]-promV[73])*(rojo[i]-promRR);
+	denV[74]=denV[74]+(verde74[i]-promV74)*(verde74[i]-promV74); numVR[74]=numVR[74]+(verde74[i]-promV[74])*(rojo[i]-promRR);
+	denV[75]=denV[75]+(verde75[i]-promV75)*(verde75[i]-promV75); numVR[75]=numVR[75]+(verde75[i]-promV[75])*(rojo[i]-promRR);
+	denV[76]=denV[76]+(verde76[i]-promV76)*(verde76[i]-promV76); numVR[76]=numVR[76]+(verde76[i]-promV[76])*(rojo[i]-promRR);
+	denV[77]=denV[77]+(verde77[i]-promV77)*(verde77[i]-promV77); numVR[77]=numVR[77]+(verde77[i]-promV[77])*(rojo[i]-promRR);
+	denV[78]=denV[78]+(verde78[i]-promV78)*(verde78[i]-promV78); numVR[78]=numVR[78]+(verde78[i]-promV[78])*(rojo[i]-promRR);
+	denV[79]=denV[79]+(verde79[i]-promV79)*(verde79[i]-promV79); numVR[79]=numVR[79]+(verde79[i]-promV[79])*(rojo[i]-promRR);
+	denV[80]=denV[80]+(verde80[i]-promV80)*(verde80[i]-promV80); numVR[80]=numVR[80]+(verde80[i]-promV[80])*(rojo[i]-promRR);
+	denV[81]=denV[81]+(verde81[i]-promV81)*(verde81[i]-promV81); numVR[81]=numVR[81]+(verde81[i]-promV[81])*(rojo[i]-promRR);
+	denV[82]=denV[82]+(verde82[i]-promV82)*(verde82[i]-promV82); numVR[82]=numVR[82]+(verde82[i]-promV[82])*(rojo[i]-promRR);
+	denV[83]=denV[83]+(verde83[i]-promV83)*(verde83[i]-promV83); numVR[83]=numVR[83]+(verde83[i]-promV[83])*(rojo[i]-promRR);
+	denV[84]=denV[84]+(verde84[i]-promV84)*(verde84[i]-promV84); numVR[84]=numVR[84]+(verde84[i]-promV[84])*(rojo[i]-promRR);
+	denV[85]=denV[85]+(verde85[i]-promV85)*(verde85[i]-promV85); numVR[85]=numVR[85]+(verde85[i]-promV[85])*(rojo[i]-promRR);
+	denV[86]=denV[86]+(verde86[i]-promV86)*(verde86[i]-promV86); numVR[86]=numVR[86]+(verde86[i]-promV[86])*(rojo[i]-promRR);
+	denV[87]=denV[87]+(verde87[i]-promV87)*(verde87[i]-promV87); numVR[87]=numVR[87]+(verde87[i]-promV[87])*(rojo[i]-promRR);
+	denV[88]=denV[88]+(verde88[i]-promV88)*(verde88[i]-promV88); numVR[88]=numVR[88]+(verde88[i]-promV[88])*(rojo[i]-promRR);
+	denV[89]=denV[89]+(verde89[i]-promV89)*(verde89[i]-promV89); numVR[89]=numVR[89]+(verde89[i]-promV[89])*(rojo[i]-promRR);
+	denV[90]=denV[90]+(verde90[i]-promV90)*(verde90[i]-promV90); numVR[90]=numVR[90]+(verde90[i]-promV[90])*(rojo[i]-promRR);
+	denV[91]=denV[91]+(verde91[i]-promV91)*(verde91[i]-promV91); numVR[91]=numVR[91]+(verde91[i]-promV[91])*(rojo[i]-promRR);
+	denV[92]=denV[92]+(verde92[i]-promV92)*(verde92[i]-promV92); numVR[92]=numVR[92]+(verde92[i]-promV[92])*(rojo[i]-promRR);
+	denV[93]=denV[93]+(verde93[i]-promV93)*(verde93[i]-promV93); numVR[93]=numVR[93]+(verde93[i]-promV[93])*(rojo[i]-promRR);
+	denV[94]=denV[94]+(verde94[i]-promV94)*(verde94[i]-promV94); numVR[94]=numVR[94]+(verde94[i]-promV[94])*(rojo[i]-promRR);
+	denV[95]=denV[95]+(verde95[i]-promV95)*(verde95[i]-promV95); numVR[95]=numVR[95]+(verde95[i]-promV[95])*(rojo[i]-promRR);
+	denV[96]=denV[96]+(verde96[i]-promV96)*(verde96[i]-promV96); numVR[96]=numVR[96]+(verde96[i]-promV[96])*(rojo[i]-promRR);
+	denV[97]=denV[97]+(verde97[i]-promV97)*(verde97[i]-promV97); numVR[97]=numVR[97]+(verde97[i]-promV[97])*(rojo[i]-promRR);
+	denV[98]=denV[98]+(verde98[i]-promV98)*(verde98[i]-promV98); numVR[98]=numVR[98]+(verde98[i]-promV[98])*(rojo[i]-promRR);
+	denV[99]=denV[99]+(verde99[i]-promV99)*(verde99[i]-promV99); numVR[99]=numVR[99]+(verde99[i]-promV[99])*(rojo[i]-promRR);
+	denV[100]=denV[100]+(verde100[i]-promV100)*(verde100[i]-promV100); numVR[100]=numVR[100]+(verde100[i]-promV[100])*(rojo[i]-promRR);
+	denV[101]=denV[101]+(verde101[i]-promV101)*(verde101[i]-promV101); numVR[101]=numVR[101]+(verde101[i]-promV[101])*(rojo[i]-promRR);
+	denV[102]=denV[102]+(verde102[i]-promV102)*(verde102[i]-promV102); numVR[102]=numVR[102]+(verde102[i]-promV[102])*(rojo[i]-promRR);
+	denV[103]=denV[103]+(verde103[i]-promV103)*(verde103[i]-promV103); numVR[103]=numVR[103]+(verde103[i]-promV[103])*(rojo[i]-promRR);
+	denV[104]=denV[104]+(verde104[i]-promV104)*(verde104[i]-promV104); numVR[104]=numVR[104]+(verde104[i]-promV[104])*(rojo[i]-promRR);
+	denV[105]=denV[105]+(verde105[i]-promV105)*(verde105[i]-promV105); numVR[105]=numVR[105]+(verde105[i]-promV[105])*(rojo[i]-promRR);
+	denV[106]=denV[106]+(verde106[i]-promV106)*(verde106[i]-promV106); numVR[106]=numVR[106]+(verde106[i]-promV[106])*(rojo[i]-promRR);
+	denV[107]=denV[107]+(verde107[i]-promV107)*(verde107[i]-promV107); numVR[107]=numVR[107]+(verde107[i]-promV[107])*(rojo[i]-promRR);
+	denV[108]=denV[108]+(verde108[i]-promV108)*(verde108[i]-promV108); numVR[108]=numVR[108]+(verde108[i]-promV[108])*(rojo[i]-promRR);
+	denV[109]=denV[109]+(verde109[i]-promV109)*(verde109[i]-promV109); numVR[109]=numVR[109]+(verde109[i]-promV[109])*(rojo[i]-promRR);
+	denV[110]=denV[110]+(verde110[i]-promV110)*(verde110[i]-promV110); numVR[110]=numVR[110]+(verde110[i]-promV[110])*(rojo[i]-promRR);
+	denV[111]=denV[111]+(verde111[i]-promV111)*(verde111[i]-promV111); numVR[111]=numVR[111]+(verde111[i]-promV[111])*(rojo[i]-promRR);
+	denV[112]=denV[112]+(verde112[i]-promV112)*(verde112[i]-promV112); numVR[112]=numVR[112]+(verde112[i]-promV[112])*(rojo[i]-promRR);
+	denV[113]=denV[113]+(verde113[i]-promV113)*(verde113[i]-promV113); numVR[113]=numVR[113]+(verde113[i]-promV[113])*(rojo[i]-promRR);
+	denV[114]=denV[114]+(verde114[i]-promV114)*(verde114[i]-promV114); numVR[114]=numVR[114]+(verde114[i]-promV[114])*(rojo[i]-promRR);
+	denV[115]=denV[115]+(verde115[i]-promV115)*(verde115[i]-promV115); numVR[115]=numVR[115]+(verde115[i]-promV[115])*(rojo[i]-promRR);
+	denV[116]=denV[116]+(verde116[i]-promV116)*(verde116[i]-promV116); numVR[116]=numVR[116]+(verde116[i]-promV[116])*(rojo[i]-promRR);
+	denV[117]=denV[117]+(verde117[i]-promV117)*(verde117[i]-promV117); numVR[117]=numVR[117]+(verde117[i]-promV[117])*(rojo[i]-promRR);
+	denV[118]=denV[118]+(verde118[i]-promV118)*(verde118[i]-promV118); numVR[118]=numVR[118]+(verde118[i]-promV[118])*(rojo[i]-promRR);
+	denV[119]=denV[119]+(verde119[i]-promV119)*(verde119[i]-promV119); numVR[119]=numVR[119]+(verde119[i]-promV[119])*(rojo[i]-promRR);
+	denV[120]=denV[120]+(verde120[i]-promV120)*(verde120[i]-promV120); numVR[120]=numVR[120]+(verde120[i]-promV[120])*(rojo[i]-promRR);
+	denV[121]=denV[121]+(verde121[i]-promV121)*(verde121[i]-promV121); numVR[121]=numVR[121]+(verde121[i]-promV[121])*(rojo[i]-promRR);
+	denV[122]=denV[122]+(verde122[i]-promV122)*(verde122[i]-promV122); numVR[122]=numVR[122]+(verde122[i]-promV[122])*(rojo[i]-promRR);
+	denV[123]=denV[123]+(verde123[i]-promV123)*(verde123[i]-promV123); numVR[123]=numVR[123]+(verde123[i]-promV[123])*(rojo[i]-promRR);
+	denV[124]=denV[124]+(verde124[i]-promV124)*(verde124[i]-promV124); numVR[124]=numVR[124]+(verde124[i]-promV[124])*(rojo[i]-promRR);
+	denV[125]=denV[125]+(verde125[i]-promV125)*(verde125[i]-promV125); numVR[125]=numVR[125]+(verde125[i]-promV[125])*(rojo[i]-promRR);
+	denV[126]=denV[126]+(verde126[i]-promV126)*(verde126[i]-promV126); numVR[126]=numVR[126]+(verde126[i]-promV[126])*(rojo[i]-promRR);
+	denV[127]=denV[127]+(verde127[i]-promV127)*(verde127[i]-promV127); numVR[127]=numVR[127]+(verde127[i]-promV[127])*(rojo[i]-promRR);
+	denV[128]=denV[128]+(verde128[i]-promV128)*(verde128[i]-promV128); numVR[128]=numVR[128]+(verde128[i]-promV[128])*(rojo[i]-promRR);
+	denV[129]=denV[129]+(verde129[i]-promV129)*(verde129[i]-promV129); numVR[129]=numVR[129]+(verde129[i]-promV[129])*(rojo[i]-promRR);
+	denV[130]=denV[130]+(verde130[i]-promV130)*(verde130[i]-promV130); numVR[130]=numVR[130]+(verde130[i]-promV[130])*(rojo[i]-promRR);
+	denV[131]=denV[131]+(verde131[i]-promV131)*(verde131[i]-promV131); numVR[131]=numVR[131]+(verde131[i]-promV[131])*(rojo[i]-promRR);
+	denV[132]=denV[132]+(verde132[i]-promV132)*(verde132[i]-promV132); numVR[132]=numVR[132]+(verde132[i]-promV[132])*(rojo[i]-promRR);
+	denV[133]=denV[133]+(verde133[i]-promV133)*(verde133[i]-promV133); numVR[133]=numVR[133]+(verde133[i]-promV[133])*(rojo[i]-promRR);
+	denV[134]=denV[134]+(verde134[i]-promV134)*(verde134[i]-promV134); numVR[134]=numVR[134]+(verde134[i]-promV[134])*(rojo[i]-promRR);
+	denV[135]=denV[135]+(verde135[i]-promV135)*(verde135[i]-promV135); numVR[135]=numVR[135]+(verde135[i]-promV[135])*(rojo[i]-promRR);
+	denV[136]=denV[136]+(verde136[i]-promV136)*(verde136[i]-promV136); numVR[136]=numVR[136]+(verde136[i]-promV[136])*(rojo[i]-promRR);
+	denV[137]=denV[137]+(verde137[i]-promV137)*(verde137[i]-promV137); numVR[137]=numVR[137]+(verde137[i]-promV[137])*(rojo[i]-promRR);
+	denV[138]=denV[138]+(verde138[i]-promV138)*(verde138[i]-promV138); numVR[138]=numVR[138]+(verde138[i]-promV[138])*(rojo[i]-promRR);
+	denV[139]=denV[139]+(verde139[i]-promV139)*(verde139[i]-promV139); numVR[139]=numVR[139]+(verde139[i]-promV[139])*(rojo[i]-promRR);
+	denV[140]=denV[140]+(verde140[i]-promV140)*(verde140[i]-promV140); numVR[140]=numVR[140]+(verde140[i]-promV[140])*(rojo[i]-promRR);
+	denV[141]=denV[141]+(verde141[i]-promV141)*(verde141[i]-promV141); numVR[141]=numVR[141]+(verde141[i]-promV[141])*(rojo[i]-promRR);
+	denV[142]=denV[142]+(verde142[i]-promV142)*(verde142[i]-promV142); numVR[142]=numVR[142]+(verde142[i]-promV[142])*(rojo[i]-promRR);
+	denV[143]=denV[143]+(verde143[i]-promV143)*(verde143[i]-promV143); numVR[143]=numVR[143]+(verde143[i]-promV[143])*(rojo[i]-promRR);
+	denV[144]=denV[144]+(verde144[i]-promV144)*(verde144[i]-promV144); numVR[144]=numVR[144]+(verde144[i]-promV[144])*(rojo[i]-promRR);
+	denV[145]=denV[145]+(verde145[i]-promV145)*(verde145[i]-promV145); numVR[145]=numVR[145]+(verde145[i]-promV[145])*(rojo[i]-promRR);
+	denV[146]=denV[146]+(verde146[i]-promV146)*(verde146[i]-promV146); numVR[146]=numVR[146]+(verde146[i]-promV[146])*(rojo[i]-promRR);
+	denV[147]=denV[147]+(verde147[i]-promV147)*(verde147[i]-promV147); numVR[147]=numVR[147]+(verde147[i]-promV[147])*(rojo[i]-promRR);
+	denV[148]=denV[148]+(verde148[i]-promV148)*(verde148[i]-promV148); numVR[148]=numVR[148]+(verde148[i]-promV[148])*(rojo[i]-promRR);
+	denV[149]=denV[149]+(verde149[i]-promV149)*(verde149[i]-promV149); numVR[149]=numVR[149]+(verde149[i]-promV[149])*(rojo[i]-promRR);
+	denV[150]=denV[150]+(verde150[i]-promV150)*(verde150[i]-promV150); numVR[150]=numVR[150]+(verde150[i]-promV[150])*(rojo[i]-promRR);
+	denV[151]=denV[151]+(verde151[i]-promV151)*(verde151[i]-promV151); numVR[151]=numVR[151]+(verde151[i]-promV[151])*(rojo[i]-promRR);
+	denV[152]=denV[152]+(verde152[i]-promV152)*(verde152[i]-promV152); numVR[152]=numVR[152]+(verde152[i]-promV[152])*(rojo[i]-promRR);
+	denV[153]=denV[153]+(verde153[i]-promV153)*(verde153[i]-promV153); numVR[153]=numVR[153]+(verde153[i]-promV[153])*(rojo[i]-promRR);
+	denV[154]=denV[154]+(verde154[i]-promV154)*(verde154[i]-promV154); numVR[154]=numVR[154]+(verde154[i]-promV[154])*(rojo[i]-promRR);
+	denV[155]=denV[155]+(verde155[i]-promV155)*(verde155[i]-promV155); numVR[155]=numVR[155]+(verde155[i]-promV[155])*(rojo[i]-promRR);
+	denV[156]=denV[156]+(verde156[i]-promV156)*(verde156[i]-promV156); numVR[156]=numVR[156]+(verde156[i]-promV[156])*(rojo[i]-promRR);
+	denV[157]=denV[157]+(verde157[i]-promV157)*(verde157[i]-promV157); numVR[157]=numVR[157]+(verde157[i]-promV[157])*(rojo[i]-promRR);
+	denV[158]=denV[158]+(verde158[i]-promV158)*(verde158[i]-promV158); numVR[158]=numVR[158]+(verde158[i]-promV[158])*(rojo[i]-promRR);
+	denV[159]=denV[159]+(verde159[i]-promV159)*(verde159[i]-promV159); numVR[159]=numVR[159]+(verde159[i]-promV[159])*(rojo[i]-promRR);
+	denV[160]=denV[160]+(verde160[i]-promV160)*(verde160[i]-promV160); numVR[160]=numVR[160]+(verde160[i]-promV[160])*(rojo[i]-promRR);
+	denV[161]=denV[161]+(verde161[i]-promV161)*(verde161[i]-promV161); numVR[161]=numVR[161]+(verde161[i]-promV[161])*(rojo[i]-promRR);
+	denV[162]=denV[162]+(verde162[i]-promV162)*(verde162[i]-promV162); numVR[162]=numVR[162]+(verde162[i]-promV[162])*(rojo[i]-promRR);
+	denV[163]=denV[163]+(verde163[i]-promV163)*(verde163[i]-promV163); numVR[163]=numVR[163]+(verde163[i]-promV[163])*(rojo[i]-promRR);
+	denV[164]=denV[164]+(verde164[i]-promV164)*(verde164[i]-promV164); numVR[164]=numVR[164]+(verde164[i]-promV[164])*(rojo[i]-promRR);
+	denV[165]=denV[165]+(verde165[i]-promV165)*(verde165[i]-promV165); numVR[165]=numVR[165]+(verde165[i]-promV[165])*(rojo[i]-promRR);
+	denV[166]=denV[166]+(verde166[i]-promV166)*(verde166[i]-promV166); numVR[166]=numVR[166]+(verde166[i]-promV[166])*(rojo[i]-promRR);
+	denV[167]=denV[167]+(verde167[i]-promV167)*(verde167[i]-promV167); numVR[167]=numVR[167]+(verde167[i]-promV[167])*(rojo[i]-promRR);
+	denV[168]=denV[168]+(verde168[i]-promV168)*(verde168[i]-promV168); numVR[168]=numVR[168]+(verde168[i]-promV[168])*(rojo[i]-promRR);
+	denV[169]=denV[169]+(verde169[i]-promV169)*(verde169[i]-promV169); numVR[169]=numVR[169]+(verde169[i]-promV[169])*(rojo[i]-promRR);
+	denV[170]=denV[170]+(verde170[i]-promV170)*(verde170[i]-promV170); numVR[170]=numVR[170]+(verde170[i]-promV[170])*(rojo[i]-promRR);
+	denV[171]=denV[171]+(verde171[i]-promV171)*(verde171[i]-promV171); numVR[171]=numVR[171]+(verde171[i]-promV[171])*(rojo[i]-promRR);
+	denV[172]=denV[172]+(verde172[i]-promV172)*(verde172[i]-promV172); numVR[172]=numVR[172]+(verde172[i]-promV[172])*(rojo[i]-promRR);
+	denV[173]=denV[173]+(verde173[i]-promV173)*(verde173[i]-promV173); numVR[173]=numVR[173]+(verde173[i]-promV[173])*(rojo[i]-promRR);
+	denV[174]=denV[174]+(verde174[i]-promV174)*(verde174[i]-promV174); numVR[174]=numVR[174]+(verde174[i]-promV[174])*(rojo[i]-promRR);
+	denV[175]=denV[175]+(verde175[i]-promV175)*(verde175[i]-promV175); numVR[175]=numVR[175]+(verde175[i]-promV[175])*(rojo[i]-promRR);
+	denV[176]=denV[176]+(verde176[i]-promV176)*(verde176[i]-promV176); numVR[176]=numVR[176]+(verde176[i]-promV[176])*(rojo[i]-promRR);
+	denV[177]=denV[177]+(verde177[i]-promV177)*(verde177[i]-promV177); numVR[177]=numVR[177]+(verde177[i]-promV[177])*(rojo[i]-promRR);
+	denV[178]=denV[178]+(verde178[i]-promV178)*(verde178[i]-promV178); numVR[178]=numVR[178]+(verde178[i]-promV[178])*(rojo[i]-promRR);
+	denV[179]=denV[179]+(verde179[i]-promV179)*(verde179[i]-promV179); numVR[179]=numVR[179]+(verde179[i]-promV[179])*(rojo[i]-promRR);
+	denV[180]=denV[180]+(verde180[i]-promV180)*(verde180[i]-promV180); numVR[180]=numVR[180]+(verde180[i]-promV[180])*(rojo[i]-promRR);
+	denV[181]=denV[181]+(verde181[i]-promV181)*(verde181[i]-promV181); numVR[181]=numVR[181]+(verde181[i]-promV[181])*(rojo[i]-promRR);
+	denV[182]=denV[182]+(verde182[i]-promV182)*(verde182[i]-promV182); numVR[182]=numVR[182]+(verde182[i]-promV[182])*(rojo[i]-promRR);
+	denV[183]=denV[183]+(verde183[i]-promV183)*(verde183[i]-promV183); numVR[183]=numVR[183]+(verde183[i]-promV[183])*(rojo[i]-promRR);
+	denV[184]=denV[184]+(verde184[i]-promV184)*(verde184[i]-promV184); numVR[184]=numVR[184]+(verde184[i]-promV[184])*(rojo[i]-promRR);
+	denV[185]=denV[185]+(verde185[i]-promV185)*(verde185[i]-promV185); numVR[185]=numVR[185]+(verde185[i]-promV[185])*(rojo[i]-promRR);
+	denV[186]=denV[186]+(verde186[i]-promV186)*(verde186[i]-promV186); numVR[186]=numVR[186]+(verde186[i]-promV[186])*(rojo[i]-promRR);
+	denV[187]=denV[187]+(verde187[i]-promV187)*(verde187[i]-promV187); numVR[187]=numVR[187]+(verde187[i]-promV[187])*(rojo[i]-promRR);
+	denV[188]=denV[188]+(verde188[i]-promV188)*(verde188[i]-promV188); numVR[188]=numVR[188]+(verde188[i]-promV[188])*(rojo[i]-promRR);
+	denV[189]=denV[189]+(verde189[i]-promV189)*(verde189[i]-promV189); numVR[189]=numVR[189]+(verde189[i]-promV[189])*(rojo[i]-promRR);
+	denV[190]=denV[190]+(verde190[i]-promV190)*(verde190[i]-promV190); numVR[190]=numVR[190]+(verde190[i]-promV[190])*(rojo[i]-promRR);
+	denV[191]=denV[191]+(verde191[i]-promV191)*(verde191[i]-promV191); numVR[191]=numVR[191]+(verde191[i]-promV[191])*(rojo[i]-promRR);
+	denV[192]=denV[192]+(verde192[i]-promV192)*(verde192[i]-promV192); numVR[192]=numVR[192]+(verde192[i]-promV[192])*(rojo[i]-promRR);
+	denV[193]=denV[193]+(verde193[i]-promV193)*(verde193[i]-promV193); numVR[193]=numVR[193]+(verde193[i]-promV[193])*(rojo[i]-promRR);
+	denV[194]=denV[194]+(verde194[i]-promV194)*(verde194[i]-promV194); numVR[194]=numVR[194]+(verde194[i]-promV[194])*(rojo[i]-promRR);
+	denV[195]=denV[195]+(verde195[i]-promV195)*(verde195[i]-promV195); numVR[195]=numVR[195]+(verde195[i]-promV[195])*(rojo[i]-promRR);
+	denV[196]=denV[196]+(verde196[i]-promV196)*(verde196[i]-promV196); numVR[196]=numVR[196]+(verde196[i]-promV[196])*(rojo[i]-promRR);
+	denV[197]=denV[197]+(verde197[i]-promV197)*(verde197[i]-promV197); numVR[197]=numVR[197]+(verde197[i]-promV[197])*(rojo[i]-promRR);
+	denV[198]=denV[198]+(verde198[i]-promV198)*(verde198[i]-promV198); numVR[198]=numVR[198]+(verde198[i]-promV[198])*(rojo[i]-promRR);
+	denV[199]=denV[199]+(verde199[i]-promV199)*(verde199[i]-promV199); numVR[199]=numVR[199]+(verde199[i]-promV[199])*(rojo[i]-promRR);
+	denV[200]=denV[200]+(verde200[i]-promV200)*(verde200[i]-promV200); numVR[200]=numVR[200]+(verde200[i]-promV[200])*(rojo[i]-promRR);
+	denV[201]=denV[201]+(verde201[i]-promV201)*(verde201[i]-promV201); numVR[201]=numVR[201]+(verde201[i]-promV[201])*(rojo[i]-promRR);
+	denV[202]=denV[202]+(verde202[i]-promV202)*(verde202[i]-promV202); numVR[202]=numVR[202]+(verde202[i]-promV[202])*(rojo[i]-promRR);
+	denV[203]=denV[203]+(verde203[i]-promV203)*(verde203[i]-promV203); numVR[203]=numVR[203]+(verde203[i]-promV[203])*(rojo[i]-promRR);
+	denV[204]=denV[204]+(verde204[i]-promV204)*(verde204[i]-promV204); numVR[204]=numVR[204]+(verde204[i]-promV[204])*(rojo[i]-promRR);
+	denV[205]=denV[205]+(verde205[i]-promV205)*(verde205[i]-promV205); numVR[205]=numVR[205]+(verde205[i]-promV[205])*(rojo[i]-promRR);
+	denV[206]=denV[206]+(verde206[i]-promV206)*(verde206[i]-promV206); numVR[206]=numVR[206]+(verde206[i]-promV[206])*(rojo[i]-promRR);
+	denV[207]=denV[207]+(verde207[i]-promV207)*(verde207[i]-promV207); numVR[207]=numVR[207]+(verde207[i]-promV[207])*(rojo[i]-promRR);
+	denV[208]=denV[208]+(verde208[i]-promV208)*(verde208[i]-promV208); numVR[208]=numVR[208]+(verde208[i]-promV[208])*(rojo[i]-promRR);
+	denV[209]=denV[209]+(verde209[i]-promV209)*(verde209[i]-promV209); numVR[209]=numVR[209]+(verde209[i]-promV[209])*(rojo[i]-promRR);
+	denV[210]=denV[210]+(verde210[i]-promV210)*(verde210[i]-promV210); numVR[210]=numVR[210]+(verde210[i]-promV[210])*(rojo[i]-promRR);
+	denV[211]=denV[211]+(verde211[i]-promV211)*(verde211[i]-promV211); numVR[211]=numVR[211]+(verde211[i]-promV[211])*(rojo[i]-promRR);
+	denV[212]=denV[212]+(verde212[i]-promV212)*(verde212[i]-promV212); numVR[212]=numVR[212]+(verde212[i]-promV[212])*(rojo[i]-promRR);
+	denV[213]=denV[213]+(verde213[i]-promV213)*(verde213[i]-promV213); numVR[213]=numVR[213]+(verde213[i]-promV[213])*(rojo[i]-promRR);
+	denV[214]=denV[214]+(verde214[i]-promV214)*(verde214[i]-promV214); numVR[214]=numVR[214]+(verde214[i]-promV[214])*(rojo[i]-promRR);
+	denV[215]=denV[215]+(verde215[i]-promV215)*(verde215[i]-promV215); numVR[215]=numVR[215]+(verde215[i]-promV[215])*(rojo[i]-promRR);
+	denV[216]=denV[216]+(verde216[i]-promV216)*(verde216[i]-promV216); numVR[216]=numVR[216]+(verde216[i]-promV[216])*(rojo[i]-promRR);
+	denV[217]=denV[217]+(verde217[i]-promV217)*(verde217[i]-promV217); numVR[217]=numVR[217]+(verde217[i]-promV[217])*(rojo[i]-promRR);
+	denV[218]=denV[218]+(verde218[i]-promV218)*(verde218[i]-promV218); numVR[218]=numVR[218]+(verde218[i]-promV[218])*(rojo[i]-promRR);
+	denV[219]=denV[219]+(verde219[i]-promV219)*(verde219[i]-promV219); numVR[219]=numVR[219]+(verde219[i]-promV[219])*(rojo[i]-promRR);
+	denV[220]=denV[220]+(verde220[i]-promV220)*(verde220[i]-promV220); numVR[220]=numVR[220]+(verde220[i]-promV[220])*(rojo[i]-promRR);
+	denV[221]=denV[221]+(verde221[i]-promV221)*(verde221[i]-promV221); numVR[221]=numVR[221]+(verde221[i]-promV[221])*(rojo[i]-promRR);
+	denV[222]=denV[222]+(verde222[i]-promV222)*(verde222[i]-promV222); numVR[222]=numVR[222]+(verde222[i]-promV[222])*(rojo[i]-promRR);
+	denV[223]=denV[223]+(verde223[i]-promV223)*(verde223[i]-promV223); numVR[223]=numVR[223]+(verde223[i]-promV[223])*(rojo[i]-promRR);
+	denV[224]=denV[224]+(verde224[i]-promV224)*(verde224[i]-promV224); numVR[224]=numVR[224]+(verde224[i]-promV[224])*(rojo[i]-promRR);
+	denV[225]=denV[225]+(verde225[i]-promV225)*(verde225[i]-promV225); numVR[225]=numVR[225]+(verde225[i]-promV[225])*(rojo[i]-promRR);
+	denV[226]=denV[226]+(verde226[i]-promV226)*(verde226[i]-promV226); numVR[226]=numVR[226]+(verde226[i]-promV[226])*(rojo[i]-promRR);
+	denV[227]=denV[227]+(verde227[i]-promV227)*(verde227[i]-promV227); numVR[227]=numVR[227]+(verde227[i]-promV[227])*(rojo[i]-promRR);
+	denV[228]=denV[228]+(verde228[i]-promV228)*(verde228[i]-promV228); numVR[228]=numVR[228]+(verde228[i]-promV[228])*(rojo[i]-promRR);
+	denV[229]=denV[229]+(verde229[i]-promV229)*(verde229[i]-promV229); numVR[229]=numVR[229]+(verde229[i]-promV[229])*(rojo[i]-promRR);
+	denV[230]=denV[230]+(verde230[i]-promV230)*(verde230[i]-promV230); numVR[230]=numVR[230]+(verde230[i]-promV[230])*(rojo[i]-promRR);
+	denV[231]=denV[231]+(verde231[i]-promV231)*(verde231[i]-promV231); numVR[231]=numVR[231]+(verde231[i]-promV[231])*(rojo[i]-promRR);
+	denV[232]=denV[232]+(verde232[i]-promV232)*(verde232[i]-promV232); numVR[232]=numVR[232]+(verde232[i]-promV[232])*(rojo[i]-promRR);
+	denV[233]=denV[233]+(verde233[i]-promV233)*(verde233[i]-promV233); numVR[233]=numVR[233]+(verde233[i]-promV[233])*(rojo[i]-promRR);
+	denV[234]=denV[234]+(verde234[i]-promV234)*(verde234[i]-promV234); numVR[234]=numVR[234]+(verde234[i]-promV[234])*(rojo[i]-promRR);
+	denV[235]=denV[235]+(verde235[i]-promV235)*(verde235[i]-promV235); numVR[235]=numVR[235]+(verde235[i]-promV[235])*(rojo[i]-promRR);
+	denV[236]=denV[236]+(verde236[i]-promV236)*(verde236[i]-promV236); numVR[236]=numVR[236]+(verde236[i]-promV[236])*(rojo[i]-promRR);
+	denV[237]=denV[237]+(verde237[i]-promV237)*(verde237[i]-promV237); numVR[237]=numVR[237]+(verde237[i]-promV[237])*(rojo[i]-promRR);
+	denV[238]=denV[238]+(verde238[i]-promV238)*(verde238[i]-promV238); numVR[238]=numVR[238]+(verde238[i]-promV[238])*(rojo[i]-promRR);
+	denV[239]=denV[239]+(verde239[i]-promV239)*(verde239[i]-promV239); numVR[239]=numVR[239]+(verde239[i]-promV[239])*(rojo[i]-promRR);
+	denV[240]=denV[240]+(verde240[i]-promV240)*(verde240[i]-promV240); numVR[240]=numVR[240]+(verde240[i]-promV[240])*(rojo[i]-promRR);
+	denV[241]=denV[241]+(verde241[i]-promV241)*(verde241[i]-promV241); numVR[241]=numVR[241]+(verde241[i]-promV[241])*(rojo[i]-promRR);
+	denV[242]=denV[242]+(verde242[i]-promV242)*(verde242[i]-promV242); numVR[242]=numVR[242]+(verde242[i]-promV[242])*(rojo[i]-promRR);
+	denV[243]=denV[243]+(verde243[i]-promV243)*(verde243[i]-promV243); numVR[243]=numVR[243]+(verde243[i]-promV[243])*(rojo[i]-promRR);
+	denV[244]=denV[244]+(verde244[i]-promV244)*(verde244[i]-promV244); numVR[244]=numVR[244]+(verde244[i]-promV[244])*(rojo[i]-promRR);
+	denV[245]=denV[245]+(verde245[i]-promV245)*(verde245[i]-promV245); numVR[245]=numVR[245]+(verde245[i]-promV[245])*(rojo[i]-promRR);
+	denV[246]=denV[246]+(verde246[i]-promV246)*(verde246[i]-promV246); numVR[246]=numVR[246]+(verde246[i]-promV[246])*(rojo[i]-promRR);
+	denV[247]=denV[247]+(verde247[i]-promV247)*(verde247[i]-promV247); numVR[247]=numVR[247]+(verde247[i]-promV[247])*(rojo[i]-promRR);
+	denV[248]=denV[248]+(verde248[i]-promV248)*(verde248[i]-promV248); numVR[248]=numVR[248]+(verde248[i]-promV[248])*(rojo[i]-promRR);
+	denV[249]=denV[249]+(verde249[i]-promV249)*(verde249[i]-promV249); numVR[249]=numVR[249]+(verde249[i]-promV[249])*(rojo[i]-promRR);
+	denV[250]=denV[250]+(verde250[i]-promV250)*(verde250[i]-promV250); numVR[250]=numVR[250]+(verde250[i]-promV[250])*(rojo[i]-promRR);
+	denV[251]=denV[251]+(verde251[i]-promV251)*(verde251[i]-promV251); numVR[251]=numVR[251]+(verde251[i]-promV[251])*(rojo[i]-promRR);
+	denV[252]=denV[252]+(verde252[i]-promV252)*(verde252[i]-promV252); numVR[252]=numVR[252]+(verde252[i]-promV[252])*(rojo[i]-promRR);
+	denV[253]=denV[253]+(verde253[i]-promV253)*(verde253[i]-promV253); numVR[253]=numVR[253]+(verde253[i]-promV[253])*(rojo[i]-promRR);
+	denV[254]=denV[254]+(verde254[i]-promV254)*(verde254[i]-promV254); numVR[254]=numVR[254]+(verde254[i]-promV[254])*(rojo[i]-promRR);
+	denV[255]=denV[255]+(verde255[i]-promV255)*(verde255[i]-promV255); numVR[255]=numVR[255]+(verde255[i]-promV[255])*(rojo[i]-promRR);
+	}
+
+
+ejeX=newArray(256);		
+denVRR=newArray(256);
+denRVV=newArray(256);
+pearsonRV=newArray(256);
+pearsonVR=newArray(256);
+for(i=1; i<256; i++)
+{ 
+ejeX[i]=i;
+denRVV[i]=sqrt(denR[i]*denVV);
+denVRR[i]=sqrt(denV[i]*denRR);
+pearsonRV[i]=numRV[i]/denRVV[i];
+pearsonVR[i]=numVR[i]/denVRR[i];
+}
+
+
+
+Plot.create("Channel 1 deconstruction", "Histogram", "Pearson", ejeX, pearsonRV);
+Plot.create("Channel 2 deconstruction", "Histogram", "Pearson", ejeX, pearsonVR);
+
+
+}
+
+
+
+
+
+

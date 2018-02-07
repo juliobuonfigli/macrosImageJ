@@ -1,0 +1,200 @@
+//  LiSU (Linear Spectral Unmixing) 
+
+
+macro "Triple LiSU [w]" 
+{	
+
+requires("1.29p");              
+
+id1=getImageID();          
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+ 
+  Dialog.create("LiSU");
+Dialog.addChoice("Entry:", newArray("Lambda stacks", "Coefficients"));
+ Dialog.show();
+   	entry=Dialog.getChoice();
+
+if(entry=="Lambda stacks")
+   	{
+ Dialog.create("LiSU");                                                          
+  Dialog.addMessage("Load the lambda stacks"); 
+  Dialog.addChoice("Control 1:", figura);         
+  Dialog.addChoice("Control 2:", figura);          
+  Dialog.addChoice("Control 3:", figura);    
+  Dialog.addMessage("Load the three fluorophores stack");
+  Dialog.addChoice("Fluorophores stack:", figura);
+  Dialog.addCheckbox("Create a coefficients image: ", true); 
+  Dialog.addCheckbox("Show coefficients: ", true); 
+  
+         Dialog.show();
+   	control1=Dialog.getChoice();
+   	control2=Dialog.getChoice();
+   	control3=Dialog.getChoice();
+   	fs=Dialog.getChoice();
+   	cicb=Dialog.getCheckbox();
+   	sc=Dialog.getCheckbox();
+   	
+selectWindow(control1);
+run("Select None");
+run("32-bit");
+selectWindow(control2);
+run("Select None");
+run("32-bit");
+selectWindow(control3);
+run("Select None"); 
+run("32-bit");
+
+w = getWidth;                         
+h = getHeight;
+
+function Prom(ventana)           //Funcion promedio de intensidades 
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		suma=suma+a[i];
+		i++;
+		}
+	}
+prom=suma/(w*h);
+return prom;
+}
+
+selectWindow(control1)
+setSlice(1); AA=Prom(control1); 
+setSlice(2); AV=Prom(control1);
+setSlice(3); AR=Prom(control1);
+
+selectWindow(control2)
+setSlice(1); VA=Prom(control2); 
+setSlice(2); VV=Prom(control2);
+setSlice(3); VR=Prom(control2);
+
+selectWindow(control3)
+setSlice(1); RA=Prom(control3); 
+setSlice(2); AR=Prom(control3);
+setSlice(3); RR=Prom(control3);
+
+VenA=VA/VV;
+RenA=RA/RR;
+AenV=AV/AA;
+RenV=RV/RR;
+AenR=AR/AA;
+VenR=VR/VV;
+
+if(cicb==true)
+{
+newImage("CoefficientImage", "32-bit black", 6, 1, 1);
+selectWindow("CoefficientImage");
+setPixel(1,1,VenA);
+setPixel(2,1,RenA);
+setPixel(3,1,AenV);
+setPixel(4,1,RenV);
+setPixel(5,1,AenR);
+setPixel(6,1,VenR);
+}}
+
+if(entry=="coefficients")
+{
+Dialog.create("LiSU");                                                          
+    Dialog.addChoice("Fluorophores stack:", figura);
+    Dialog.addChoice("Coefficients image:", figura);
+    Dialog.addCheckbox("Show coefficients: ", true); 
+  
+         Dialog.show();
+   	fs=Dialog.getChoice();
+   	ci=Dialog.getChoice();
+   	sc=Dialog.getCheckbox();	
+
+selectWindow("ci");
+VenA=getPixel(1,1);
+RenA=getPixel(2,1);
+AenV=getPixel(3,1);
+RenV=getPixel(4,1);
+AenR=getPixel(5,1);
+VenR=getPixel(6,1);
+
+}
+
+selectWindow(fs);
+setSlice(2);
+run("Duplicate...", "fs2");
+run("Multiply...", "value=VenA");
+setSlice(3);
+run("Duplicate...", "fs3");
+run("Multiply...", "value=RenA")
+imageCalculator("Add", "fs2", "fs3");
+rename("residuo");
+selectWindow(fs);
+setSlice(1);
+run("Duplicate...", "fs1");
+imageCalculator("Subtract", "fs1","residuo");
+rename("CleanChannel1");
+if(isOpen("fs2")){selectWindow("fs2"); close();}
+if(isOpen("fs1")){selectWindow("fs1"); close();}
+if(isOpen("fs3")){selectWindow("fs3"); close();}
+if(isOpen("residuo")){selectWindow("residuo"); close();}
+
+selectWindow(fs);
+setSlice(1);
+run("Duplicate...", "fs1");
+run("Multiply...", "value=AenV");
+setSlice(3);
+run("Duplicate...", "fs3");
+run("Multiply...", "value=RenV")
+imageCalculator("Add", "fs1", "fs3");
+rename("residuo");
+selectWindow(fs);
+setSlice(2);
+run("Duplicate...", "fs2");
+imageCalculator("Subtract", "fs2","residuo");
+rename("CleanChannel2");
+if(isOpen("fs2")){selectWindow("fs2"); close();}
+if(isOpen("fs1")){selectWindow("fs1"); close();}
+if(isOpen("fs3")){selectWindow("fs3"); close();}
+if(isOpen("residuo")){selectWindow("residuo"); close();}
+
+selectWindow(fs);
+setSlice(1);
+run("Duplicate...", "fs1");
+run("Multiply...", "value=AenR");
+setSlice(2);
+run("Duplicate...", "fs3");
+run("Multiply...", "value=VenR")
+imageCalculator("Add", "fs1", "fs2");
+rename("residuo");
+selectWindow(fs);
+setSlice(3);
+run("Duplicate...", "fs3");
+imageCalculator("Subtract", "fs3","residuo");
+rename("CleanChannel3");
+if(isOpen("fs2")){selectWindow("fs2"); close();}
+if(isOpen("fs1")){selectWindow("fs1"); close();}
+if(isOpen("fs3")){selectWindow("fs3"); close();}
+if(isOpen("residuo")){selectWindow("residuo"); close();}
+
+if(sc==true)
+{
+print("Green in blue: "+VenA+"\n");
+print("Red in blue: "+RenA+"\n");
+print("Blue in green: "+AenV+"\n");
+print("Red in green: "+RenV+"\n");
+print("Blue in Red: "+AenR+"\n");
+print("Green in Red: "+VenR+"\n");
+}

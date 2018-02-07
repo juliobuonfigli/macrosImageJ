@@ -1,0 +1,81 @@
+iter=1;
+w = 175;              
+h = 175; 
+ww=1/w;
+wh=w*h;
+wh2=wh-1;
+size=sqrt(w*w+h*h);
+
+newImage("Res", "8-bit black", w, h, 1);        // imagen final: merge de estas tres
+
+
+function VECTORIZAR(imagenAvectorizar, w, h)     //1: funcion para vectorizar imagenes                    
+{
+selectWindow(imagenAvectorizar);
+vector=newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		vector[i] = getPixel(x,y);
+		i++;
+		}
+	}
+return vector;
+}
+a=newArray(w*h+1);
+a=VECTORIZAR("Res", w, h) ;
+
+for(i=0; i<iter; i++)
+	{
+	ii=round(w*h/2);  
+	//ii=round(random*(wh2));  
+	Xi=ii%w;
+	Yi=floor(ii*ww);
+	for(j=0; j<5000; j++)
+		 {
+		rand1=random;
+		rand2=random;
+		if(rand1<0.29)
+			{r=6; alfa=2*PI*rand2; xd=round(r*cos(alfa)); yd=round(r*sin(alfa)); inc=1;} 
+		if(rand1>0.29 && rand1<0.53)
+			{r=5; alfa=2*PI*rand2; xd=round(r*cos(alfa)); yd=round(r*sin(alfa)); inc=2;} 
+		if(rand1>0.53 && rand1<0.72)
+			{r=4; alfa=2*PI*rand2; xd=round(r*cos(alfa)); yd=round(r*sin(alfa)); inc=3;} 
+		if(rand1>0.72 && rand1<0.85)
+			{r=3; alfa=2*PI*rand2; xd=round(r*cos(alfa)); yd=round(r*sin(alfa)); inc=4;} 
+		if(rand1>0.85 && rand1<0.95)
+			{r=2; alfa=2*PI*rand2; xd=round(r*cos(alfa)); yd=round(r*sin(alfa)); inc=5;} 
+		if(rand1>0.95)
+			{r=1; alfa=2*PI*rand2; xd=round(r*cos(alfa)); yd=round(r*sin(alfa)); inc=6;} 
+		
+		Xf=Xi+xd;
+		Yf=Yi+yd;
+		if(Xf>w-1 || Xf<0)
+			inc=0;
+		fi=w*Yf+Xf;  	
+		
+		if(fi>wh2)
+			{fi=wh2; inc=0;}
+		if(fi<0)
+			{fi=0; inc=0;}
+		
+		a[ii]=255;
+		a[fi]=a[fi]+inc;
+		}  
+			
+	showStatus(i);
+	}                       
+
+selectWindow("Res");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, a[i]);
+		i++;
+		}
+	} 
+         

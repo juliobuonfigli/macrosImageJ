@@ -1,0 +1,8 @@
+macro "Tracking set [w]" 
+{
+run("8-bit");
+setThreshold(88, 255);
+setOption("BlackBackground", false);
+run("Convert to Mask", "method=MaxEntropy background=Dark");
+run("MTrack2 ", "minimum=12 maximum=80 maximum_=9 minimum_=5 display");
+}

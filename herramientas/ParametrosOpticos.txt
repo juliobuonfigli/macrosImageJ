@@ -1,0 +1,64 @@
+﻿macro "Longitud focal" 
+{	
+
+ Dialog.create("Parametros geometricos");   
+Dialog.addChoice("Material:", newArray("Lente Delgada", "Espejo"));  
+  
+          Dialog.show();
+   	
+   	M=Dialog.getChoice();
+   	
+if(M=="Espejo"){
+  Dialog.create("Espejo");   
+                                                                    
+    Dialog.addChoice("Tipo de superficie:", newArray("concava", "convexa"));  
+    Dialog.addNumber("Altura en mm:", 0); 
+   
+       Dialog.show();
+   	
+   	CoC=Dialog.getChoice();
+   	h=Dialog.getNumber();
+
+if(CoC=="concava")
+{
+	R=1/2*(h+(((16.6+17.6)/2)*((16.6+17.6)/2))/h);
+	P=1000*2/R;
+}
+else
+{
+	R=1/2*(h+(((13.7+14.2)/2)*((13.7+14.2)/2))/h);
+	P=-1000*2/R;
+}
+
+print("R es igual a: "+R+"; F es igual a: "+R/2+"; P es igual a: "+P); 
+
+}
+else
+{
+Dialog.create("Lente Delgada");   
+                                                                    
+    Dialog.addNumber("Altura de la cara 1 (negativa si es concava):", 1); 
+    Dialog.addNumber("Altura de la cara 2 (negativa si es concava):", 1); 
+    Dialog.addNumber("Indice de Refraccion:", 1); 
+       
+       Dialog.show();
+   	
+   	A1=Dialog.getNumber();
+	A2=Dialog.getNumber();
+	ir=Dialog.getNumber();
+
+if(A1>0)
+{R1=1/2*(A1+(((16.6+17.6)/2)*((16.6+17.6)/2))/A1);}
+else
+{R1=-1/2*(A1+(((13.7+14.2)/2)*((13.7+14.2)/2))/A1);}
+
+if(A2>0)
+{R2=-1/2*(A2+(((16.6+17.6)/2)*((16.6+17.6)/2))/A2);}
+else
+{R2=1/2*(A2+(((13.7+14.2)/2)*((13.7+14.2)/2))/A2);}
+
+F=1/((ir-1)*(1/R1-1/R2));
+
+print("F es igual a: "+F+"; P es igual a: "+1000/F);
+
+}}

@@ -1,0 +1,164 @@
+
+/*
+Triple Pearson
+Julio Buonfigli
+*/
+
+
+macro "Triple Pearson" 
+{	
+
+
+requires("1.29p");              //muestra un mensaje si la versión de imagej usada no es compatible
+
+id1=getImageID();          //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+
+ Dialog.create("Triple Pearson");    //genero ventana de inicio                                                      
+  Dialog.addChoice("Red:", figura);         
+  Dialog.addChoice("Green:", figura);          
+  Dialog.addChoice("Blue:", figura);    
+  
+  
+       Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	azul=Dialog.getChoice();
+   	
+	
+selectWindow(rojo);
+run("8-bit");
+selectWindow(verde);
+run("8-bit");
+selectWindow(azul);
+run("8-bit");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+
+function sumarPixInt(ventana)                     //Declaro una función que suma intensidades de todos los pixeles
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		suma=suma+a[i];
+		i++;
+		}
+	}
+return suma;
+}
+	
+
+function raizCubica(w)                     
+{
+   x = w;
+   y = 1;
+   e = 0.000001; /* e decides the accuracy level*/
+  while(x - y > e)
+  {
+    x = (2*x + y)/3;
+    y = w/(x*x);
+  }
+return x;
+}
+
+
+selectWindow(rojo);	           //vectorizo cada canal
+  r =newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		r[i] = getPixel(x,y);
+		i++;
+		}
+	}
+
+selectWindow(verde);	
+  v = newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		v[i] = getPixel(x,y);
+		i++;
+		}
+	}
+
+selectWindow(azul);	
+  az = newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		az[i] = getPixel(x,y);
+		i++;
+		}
+	}
+
+
+sumRojo=sumarPixInt(rojo);                   
+sumVerde=sumarPixInt(verde);
+sumAzul=sumarPixInt(azul);
+pr=sumRojo/(h*w);                                    //calculo promedios de intensidad para cada imagen 
+pv=sumVerde/(h*w);
+pa=sumAzul/(h*w);
+
+   numRVA=0;                        //inicializo variables de coeficiente de pearson
+   denR=0;                                                                 //Pearson                                          
+   denV=0;
+   denA=0;
+   num=newArray(h*w);
+   denAr=newArray(h*w);    
+   den2=0;
+
+for(i=1; i<w*h; i++)                                                                                //calculo todas las series             
+	{
+	num[i]=abs((v[i]-pv)*(az[i]-pa)*(r[i]-pr));
+	if(v[i]-pv>0 && az[i]-pa>0 && r[i]-pr>0)  
+		{}
+		else
+		{
+		if(v[i]-pv<0 && az[i]-pa<0 && r[i]-pr<0)
+			{}
+			else		
+			{num[i]=0-num[i];}
+		}
+	numRVA=numRVA+num[i];
+	denR=denR+abs(r[i]-pr)*abs(r[i]-pr)*abs(r[i]-pr); 
+        denV=denV+abs(v[i]-pv)*abs(v[i]-pv)*abs(v[i]-pv);
+        denA=denA+abs(az[i]-pa)*abs(az[i]-pa)*abs(az[i]-pa);
+
+	}
+
+
+denRVA=denR*denV*denA;                             //calculo coeficientes de Pearson
+denRVAcubicaR=raizCubica(denRVA);
+
+
+PrRVA=numRVA/denRVAcubicaR;
+print("Pearson: "+PrRVA);
+
+}
+

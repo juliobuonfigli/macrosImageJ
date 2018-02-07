@@ -1,0 +1,602 @@
+// MMM
+
+macro "Image Improver [i]" 
+{
+
+
+
+
+function VECTORIZAR(imagenAvectorizar, w, h)     //1: funcion para vectorizar imagenes                    
+{
+selectWindow(imagenAvectorizar);
+vector=newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		vector[i] = getPixel(x,y);
+		i++;
+		}
+	}
+return vector;
+}
+
+function DENOMINATORS(r, g, b, w, h)             //2: calcula todos los denominadores de todos los coeficientes 
+	{
+	denR=0; denG=0; denB=0;   
+	for (i=0; i<w*h; i++)
+		{
+		denR=denR+r[i];
+		denG=denG+g[i];
+		denB=denB+b[i];
+		}
+DEN=newArray(7);
+DEN[0]=denR*denG;
+DEN[1]=denR*denB;
+DEN[2]=denG*denB;
+DEN[3]=denR*denR*denR;
+DEN[4]=denG*denG*denG;
+DEN[5]=denB*denB*denB;
+DEN[6]=denR*denG*denB;
+return DEN;
+	}
+
+function RG(r, g, w, h)           //3,4,5,6: calcula los numeradores de los coeficientes       
+{
+numRG=0;    
+for(i=0; i<w*h; i++)                                                                                              
+	numRG=numRG+(r[i])*(g[i]);
+return numRG;
+}
+
+function RB(r, b, w, h)       
+{
+numRB=0;    
+for(i=0; i<w*h; i++)                                                                                              
+	numRB=numRB+(r[i])*(b[i]);
+return numRB;
+}
+
+function GB(g, b, w, h)       
+{
+numGB=0;    
+for(i=0; i<w*h; i++)                                                                                              
+	numGB=numGB+(g[i])*(b[i]);
+return numGB;
+}
+
+function RGB(r, g, b, w, h)      
+{
+numRGB=0;   
+for(i=0; i<w*h; i++)                                                                                              
+	numRGB=numRGB+r[i]*g[i]*b[i];
+return numRGB;
+}
+
+function NUMERATORS(r, g, b, w, h)
+{
+num=newArray(4);
+num[0]=0; num[1]=0;  num[2]=0; num[3]=0;
+for(i=0; i<w*h; i++)     
+	{                                                                                         
+	num[0]=num[0]+(r[i])*(g[i]);	
+	num[1]=num[1]+(r[i])*(b[i]);
+	num[2]=num[2]+(b[i])*(g[i]);
+	num[3]=num[3]+(r[i])*(g[i])*(b[i]);
+	}
+return num;
+}
+
+function NUMERATORS2(r, g, b, ranR, ranG, ranB, w, h)
+{
+num=newArray(4);
+num[0]=0; num[1]=0;  num[2]=0; num[3]=0; num[4]=0;  num[5]=0; num[6]=0;
+for(i=0; i<w*h; i++)     
+	{                                                                                         
+	num[0]=num[0]+(ranr[i])*(rang[i]);	
+	num[1]=num[1]+(ranr[i])*(ranb[i]);
+	num[2]=num[2]+(ranb[i])*(rang[i]);
+	num[3]=num[3]+(ranr[i])*(g[i])*(b[i]);
+	num[4]=num[4]+(r[i])*(rang[i])*(b[i]);
+	num[5]=num[5]+(r[i])*(g[i])*(ranb[i]);
+	num[6]=num[6]+(ranr[i])*(rang[i])*(ranb[i]);
+	}
+return num;
+}
+
+
+function SS(actual, tail1, tail2)  //7: compara la colo obtenida con la gausiana
+{
+if(actual<tail1)
+	ss=-1;
+	else
+	{
+	if(actual>tail2)
+		ss=1;
+		else
+		ss=0;
+	}
+return ss;
+}
+
+function LETTERtoNUMBER(a)      
+{
+if(a=="SC")
+	b=1;
+if(a=="NS")
+	b=0;
+if(a=="SE")
+	b=-1;
+return b;
+}
+
+function RANDOMIZAR(virginVector, w, h)   //8: randomiza un vector
+{
+random("seed", round(random*w*h));
+	
+	pointer=newArray(w*h);                                                               
+	for(i=0; i<w*h; i++)
+		pointer[i]=true;
+
+	randomVector=newArray(w*h);
+	i=0;	
+	while(i<w*h)
+		{
+		e=round(random*(w*h-1));
+		if(pointer[e]==true)
+			{
+			randomVector[i]=virginVector[e];
+			pointer[e]=false;
+			i++;
+			}
+		}
+return randomVector;
+}	
+
+
+function SIGNIFICANCE(r, g, b, deno, rg, rb, gb, tr, tg, tb, rgb, w, h)   //9: calcula significancia estadística, devuelve un vector de cadena de caracteres (SC, NS, SE)
+{
+
+//zCola=-2.32635;  //significancia de 0,01
+zCola=-1.64486;    //significancia de 0,05
+rRG=newArray(30);  rRB=newArray(30);  rGB=newArray(30);   rTR=newArray(30);  rTG=newArray(30);     rTB=newArray(30);    rRGB=newArray(30);
+sumRG=0;sumRB=0;sumGB=0;sum2RG=0;sum2RB=0;sum2GB=0;RsumTriple=0;GsumTriple=0;BsumTriple=0;RGBsumTriple=0;Rsum2Triple=0;Gsum2Triple=0;Bsum2Triple=0;RGBsum2Triple=0;
+
+for(i=0; i<30; i++)                       //aleatorización de imágenes, cálculo de coeficientes y sumas para promedios 
+	{
+	ranr=RANDOMIZAR(r, w, h);	
+	rang=RANDOMIZAR(g, w, h);
+	ranb=RANDOMIZAR(b, w, h);
+	rRG[i]=RG(ranr, rang, w, h)/deno[0];	
+	rRB[i]=RB(ranr, ranb, w, h)/deno[1];
+	rGB[i]=GB(rang, ranb, w, h)/deno[2];
+	rTR[i]=RGB(ranr, g, b, w, h)/deno[3];
+	rTG[i]=RGB(r, rang, b, w, h)/deno[4];
+	rTB[i]=RGB(r, g, ranb, w, h)/deno[5];
+	rRGB[i]=RGB(ranr, rang, ranb, w, h)/deno[6];
+	sumRG=sumRG+rRG[i];	
+	sumRB=sumRB+rRB[i];
+	sumGB=sumGB+rGB[i];
+	RsumTriple=RsumTriple+rTR[i];
+	GsumTriple=GsumTriple+rTG[i];
+	BsumTriple=BsumTriple+rTB[i];
+	RGBsumTriple=RGBsumTriple+rRGB[i];
+	}
+
+sumRG=sumRG/30;	
+sumRB=sumRB/30;
+sumGB=sumGB/30;
+RsumTriple=RsumTriple/30;
+GsumTriple=GsumTriple/30;
+BsumTriple=BsumTriple/30;
+RGBsumTriple=RGBsumTriple/30;
+
+  
+for(i=0; i<30; i++)                                  //desviación estandar                  
+	{	
+	sum2RG=sum2RG+(rRG[i]-sumRG)*(rRG[i]-sumRG);
+	sum2RB=sum2RB+(rRB[i]-sumRB)*(rRB[i]-sumRB);
+	sum2GB=sum2GB+(rGB[i]-sumGB)*(rGB[i]-sumGB);
+	Rsum2Triple=Rsum2Triple+(rTR[i]-RsumTriple)*(rTR[i]-RsumTriple);
+	Gsum2Triple=Gsum2Triple+(rTG[i]-GsumTriple)*(rTG[i]-GsumTriple);
+	Bsum2Triple=Bsum2Triple+(rTB[i]-BsumTriple)*(rTB[i]-BsumTriple);
+	RGBsum2Triple=RGBsum2Triple+(rRGB[i]-RGBsumTriple)*(rRGB[i]-RGBsumTriple);
+	}
+
+xnRG=zCola*sqrt(sum2RG/30)+sumRG;    //colas negativas                                
+xnRB=zCola*sqrt(sum2RB/30)+sumRB;
+xnGB=zCola*sqrt(sum2GB/30)+sumGB;
+RxnTriple=zCola*sqrt(Rsum2Triple/30)+RsumTriple;
+GxnTriple=zCola*sqrt(Gsum2Triple/30)+GsumTriple;
+BxnTriple=zCola*sqrt(Bsum2Triple/30)+BsumTriple;
+RGBxnTriple=zCola*sqrt(RGBsum2Triple/30)+RGBsumTriple;
+
+xpRG=abs(zCola)*sqrt(sum2RG/30)+sumRG;       //colas positivas                              
+xpRB=abs(zCola)*sqrt(sum2RB/30)+sumRB;
+xpGB=abs(zCola)*sqrt(sum2GB/30)+sumGB;
+RxpTriple=abs(zCola)*sqrt(Rsum2Triple/30)+RsumTriple;
+GxpTriple=abs(zCola)*sqrt(Gsum2Triple/30)+GsumTriple;
+BxpTriple=abs(zCola)*sqrt(Bsum2Triple/30)+BsumTriple;
+RGBxpTriple=abs(zCola)*sqrt(RGBsum2Triple/30)+RGBsumTriple;
+
+ss=newArray(7);                      //vector de salida
+ss[0]=SS(rg, xnRG, xpRG);
+ss[1]=SS(rb, xnRB, xpRB);
+ss[2]=SS(gb, xnGB, xpGB);
+ss[3]=SS(tr, RxnTriple, RxpTriple);
+ss[4]=SS(tg, GxnTriple, GxpTriple);
+ss[5]=SS(tb, BxnTriple, BxpTriple);
+ss[6]=SS(rgb, RGBxnTriple, RGBxpTriple);
+
+return ss;
+}
+
+
+
+
+
+
+
+id1=getImageID();                                            //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+
+
+Dialog.create("Image Improver");                    //genero ventana de inicio                                                      
+  Dialog.addChoice("Select a task: ", newArray("Get the source RGB Overlap Relationships", "Transform the source RGB according a control RGB", "Transform the source RGB according a set of relationships"));  
+  Dialog.addChoice("Source RGB:", figura);         
+       Dialog.show();
+   	task=Dialog.getChoice();
+  	SRGB=Dialog.getChoice();
+
+if(task=="Get the source RGB Overlap Relationships")    // si solo quiero analizar una imagen  
+{
+selectWindow(SRGB);
+rename("SRGB");
+run("Duplicate...", "title=SRGB");
+w = getWidth;              
+h = getHeight;                                                 
+run("Split Channels");
+r=VECTORIZAR("SRGB (red)", w, h);
+g=VECTORIZAR("SRGB (green)", w, h);
+b=VECTORIZAR("SRGB (blue)", w, h);
+selectWindow("SRGB (red)");
+close();
+selectWindow("SRGB (green)");
+close();
+selectWindow("SRGB (blue)");
+close();
+deno=DENOMINATORS(r, g, b, w, h);             
+rg=RG(r, g, w, h)/deno[0];       
+rb=RB(r, b, w, h)/deno[1];     
+gb=GB(g, b, w, h)/deno[2];       
+tr=RGB(r, g, b, w, h)/deno[3];
+tg=RGB(r, g, b, w, h)/deno[4];
+tb=RGB(r, g, b, w, h)/deno[5];
+rgb=RGB(r, g, b, w, h)/deno[6];      
+ss=SIGNIFICANCE(r, g, b, deno, rg, rb, gb, tr, tg, tb, rgb, w, h);
+
+titulo1 = "Results";                                            // cuadro de resultados
+titulo2 = "["+titulo1+"]";
+  f = titulo2;
+ if (isOpen(titulo1))
+    print(f, "\\Clear");
+ else
+run("Table...", "name="+titulo1+" width=250 height=600");
+print(f, "\\Headings:for\tOverlap\t  Significance");
+print(f, " Red and green"+"\t  "+rg+"\t  "+ss[0]);
+print(f, " Red and blue"+"\t  "+rb+"\t  "+ss[1]);
+print(f, " Blue and green"+"\t  "+gb+"\t  "+ss[2]);
+print(f, " RED in green and blue"+"\t  "+tr+"\t  "+ss[3]);
+print(f, " GREEN in red and blue"+"\t  "+tg+"\t  "+ss[4]);
+print(f, " BLUE in red and green"+"\t  "+tb+"\t  "+ss[5]);
+print(f, " Red, green and blue"+"\t  "+rgb+"\t  "+ss[6]);
+
+//setBatchMode("exit and display"); 
+}
+else
+{
+if(task=="Transform the source RGB according a control RGB")
+{
+
+Dialog.create("Control Image");                    //ventana de carga de imagen control                                                      
+    Dialog.addChoice("Control RGB:", figura);         
+    Dialog.addNumber("Iteration's limit (x100000): ", 10);   
+    Dialog.addNumber("Read significances each x iterations. x: ", 100);	
+	Dialog.show();
+   	CRGB=Dialog.getChoice();
+	iLimit=Dialog.getNumber()*1000;
+	pLimit=Dialog.getNumber();
+
+
+selectWindow(CRGB);                           //relaciones de imagen control
+rename("CRGB");
+run("Duplicate...", "title=CRGB");
+w = getWidth;              
+h = getHeight;                                                 
+run("Split Channels");
+r=newArray(w*h);
+g=newArray(w*h);
+b=newArray(w*h);
+r=VECTORIZAR("CRGB (red)", w, h);
+g=VECTORIZAR("CRGB (green)", w, h);
+b=VECTORIZAR("CRGB (blue)", w, h);
+//setBatchMode(true);
+selectWindow("CRGB (red)");
+close();
+selectWindow("CRGB (green)");
+close();
+selectWindow("CRGB (blue)");
+close();
+deno=DENOMINATORS(r, g, b, w, h);             
+crg=RG(r, g, w, h)/deno[0];       
+crb=RB(r, b, w, h)/deno[1];     
+cgb=GB(g, b, w, h)/deno[2];       
+ctr=RGB(r, g, b, w, h)/deno[3];
+ctg=RGB(r, g, b, w, h)/deno[4];
+ctb=RGB(r, g, b, w, h)/deno[5];
+crgb=RGB(r, g, b, w, h)/deno[6];      
+ssc=SIGNIFICANCE(r, g, b, deno, crg, crb, cgb, ctr, ctg, ctb, crgb, w, h);
+}
+else
+{
+sS=newArray("SC", "SE", "NS");
+Dialog.create("Load relationships");                    //ventana de carga de relaciones                                                      
+  Dialog.addChoice("Red and Green: ", sS);  
+  Dialog.addChoice("Red and Blue:", sS);         
+  Dialog.addChoice("Green and Blue: ", sS);  
+  Dialog.addChoice("RED with green and blue:", sS);   
+  Dialog.addChoice("GREEN with red and blue:", sS);         
+  Dialog.addChoice("BLUE with red and green: ", sS);  
+  Dialog.addChoice("Red, Green and Blue:", sS);   
+  Dialog.addNumber("Iteration's limit (x100000): ", 10);   
+  Dialog.addNumber("Read significances each x iterations. x: ", 100);
+
+Dialog.show();
+   	RaG=Dialog.getChoice();
+  	RaB=Dialog.getChoice();
+	GaB=Dialog.getChoice();
+  	RwGB=Dialog.getChoice();
+	GwRB=Dialog.getChoice();
+  	BwRG=Dialog.getChoice();
+	RGaB=Dialog.getChoice();
+	iLimit=Dialog.getNumber()*10;
+	pLimit=Dialog.getNumber();
+
+
+ssc=newArray(7);
+ssc[0]=LETTERtoNUMBER(RaG);
+ssc[1]=LETTERtoNUMBER(RaB);
+ssc[2]=LETTERtoNUMBER(GaB);
+ssc[3]=LETTERtoNUMBER(RwGB);
+ssc[4]=LETTERtoNUMBER(GwRB);
+ssc[5]=LETTERtoNUMBER(BwRG);
+ssc[6]=LETTERtoNUMBER(RGaB);
+}
+
+selectWindow(SRGB);                           // Comienza Montecarlo. Estados de colo de imagena a tratar 
+rename("SRGB");
+run("Duplicate...", "title=SRGB");
+w = getWidth;              
+h = getHeight;                                                 
+run("Split Channels");
+r=newArray(w*h);
+g=newArray(w*h);
+b=newArray(w*h);
+r=VECTORIZAR("SRGB (red)", w, h);
+g=VECTORIZAR("SRGB (green)", w, h);
+b=VECTORIZAR("SRGB (blue)", w, h);
+selectWindow("SRGB (red)");
+close();
+selectWindow("SRGB (green)");
+close();
+selectWindow("SRGB (blue)");
+close();
+deno=DENOMINATORS(r, g, b, w, h);             
+rg=RG(r, g, w, h)/deno[0];       
+rb=RB(r, b, w, h)/deno[1];     
+gb=GB(g, b, w, h)/deno[2];       
+tr=RGB(r, g, b, w, h)/deno[3];
+tg=RGB(r, g, b, w, h)/deno[4];
+tb=RGB(r, g, b, w, h)/deno[5];
+rgb=RGB(r, g, b, w, h)/deno[6];      
+ss=SIGNIFICANCE(r, g, b, deno, rg, rb, gb, tr, tg, tb, rgb, w, h);
+setBatchMode(true);
+
+ranr=newArray(w*h);	
+rang=newArray(w*h);
+ranb=newArray(w*h);
+
+for(i=0; i<30; i++)                       //aleatorización de imágenes, cálculo de coeficientes y sumas para promedios 
+	{
+	ranr[i]=RANDOMIZAR(r, w, h);	
+	rang[i]=RANDOMIZAR(g, w, h);
+	ranb[i]=RANDOMIZAR(b, w, h);
+	}
+
+random("seed", round(random*w*h));
+
+	total=0; condition=false; positives=0; po=0; pos=0;       // comienza do while
+        
+	do    {
+	
+	do {
+	iir=round(random*(w*h-1));  
+	fir=round(random*(w*h-1));  	
+	} while(r[fir]>254 || r[iir]<5 || r[iir]>=r[fir]) 
+	
+	r[fir]=r[fir]+1;
+	r[iir]=r[iir]-1;
+	
+	num3=NUMERATORS(r, g, b, w, h);     
+	rg3=num3[0]/deno[0];       
+	rb3=num3[1]/deno[1];     
+	gb3=num3[2]/deno[2];       
+	tr3=num3[3]/deno[3];
+	tg3=num3[3]/deno[4];
+	tb3=num3[3]/deno[5];
+	rgb3=num3[3]/deno[6]; 
+	ss=SIGNIFICANCE(r, g, b, deno, rg3, rb3, gb3, tr3, tg3, tb3, rgb3, w, h);
+	
+	if(ss[0]==ssc[0] && ss[1]==ssc[1] && ss[2]==ssc[2] && ss[3]==ssc[3] && ss[4]==ssc[4] && ss[5]==ssc[5] && ss[6]==ssc[6])
+		{
+		condition=true;
+		positives++;
+		}
+		else
+		condition=false;	
+	
+	                               
+	do {
+	iig=round(random*(w*h-1));  
+	fig=round(random*(w*h-1)); 	
+	} while(g[fig]>254 || g[iig]<5 || g[iig]>=g[fig])
+		                                 
+	do {
+	iib=round(random*(w*h-1));  
+	fib=round(random*(w*h-1));
+	} while(b[fib]>254 || b[iib]<5 || b[iib]>=b[fib])
+	
+	r[fir]=r[fir]+1;
+	r[iir]=r[iir]-1;
+
+	g[fig]=g[fig]+1;
+	g[iig]=g[iig]-1;
+
+	b[fib]=b[fib]+1;
+	b[iib]=b[iib]-1;
+	                             
+	total++;
+
+	num2=NUMERATORS(r, g, b, w, h);
+	
+	randIndex=round(random*30);
+		
+	if(abs(num1[0]-crg)>=abs(num2[0]-crg))
+		{A=true;}   else  {A=false;} 
+ 	if(abs(num1[0]-crb)>=abs(num2[0]-crb))
+		{B=true;}  else  {B=false;}
+ 	if(abs(num2[0]-cgb)>=abs(gb2-cgb))
+		{C=true;}  else  {C=false;}
+ 	if(abs(rgb1-crgb)>=abs(rgb2-crgb))
+		{D=true;}  else  {D=false;}
+	if(abs(tr1-ctr)>=abs(tr2-ctr))
+		{E=true;}  else  {E=false;}
+	if(abs(tg1-ctg)>=abs(tg2-ctg))
+		{F=true;}  else  {F=false;} 
+	if(abs(tb1-ctb)>=abs(tb2-ctb))
+		{G=true;}  else  {G=false;}
+	if(A+B+C+D+E+F+G>5)
+		{
+		positives++;		
+		}     
+		else 	
+		{
+		//if(proof1==true) 
+		//	{
+			r[fir]=r[fir]-1;
+			r[iir]=r[iir]+1;
+		//	}
+		//if(proof2==true) 
+		//	{
+			g[fig]=g[fig]-1;
+			g[iig]=g[iig]+1;
+		//	}
+		//if(proof3==true) 
+		//	{
+			b[fib]=b[fib]-1;
+			b[iib]=b[iib]+1;
+		//	}
+		}
+	//}
+
+	if(total%pLimit==0)                       //vuelvo a calcular estados de colo cada pLimit iteraciones
+	{
+	if(pos==positives)
+		po++;
+		else
+		po=0;
+	
+	pos=positives;
+	
+	num3=NUMERATORS(r, g, b, w, h);     
+	rg3=num3[0]/deno[0];       
+	rb3=num3[1]/deno[1];     
+	gb3=num3[2]/deno[2];       
+	tr3=num3[3]/deno[3];
+	tg3=num3[3]/deno[4];
+	tb3=num3[3]/deno[5];
+	rgb3=num3[3]/deno[6]; 
+	ss=SIGNIFICANCE(r, g, b, deno, rg3, rb3, gb3, tr3, tg3, tb3, rgb3, w, h);
+	
+	if(ss[0]==ssc[0] && ss[1]==ssc[1] && ss[2]==ssc[2] && ss[3]==ssc[3] && ss[4]==ssc[4] && ss[5]==ssc[5] && ss[6]==ssc[6])
+		{
+		condition=true;
+		conver="yes";
+		}
+		else
+		{
+		condition=false;
+		conver="no";
+		}
+	
+	showStatus("Iterations: "+total+"  Movements: "+positives);	
+	}
+	}
+	while(condition==false && total<iLimit && po<4)
+
+ 	
+print("Iterations: "+total+"  Movements: "+positives+"  Convergene: "+conver);
+
+newImage("Red", "8-bit black", w, h, 1);        // imagen final: merge de estas tres
+selectWindow("Red");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, r[i]);
+		i++;
+		}
+	} 
+
+newImage("Green", "8-bit black", w, h, 1);        
+selectWindow("Green");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, g[i]);
+		i++;
+		}
+	} 
+
+newImage("Blue", "8-bit black", w, h, 1);        
+selectWindow("Blue");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, b[i]);
+		i++;
+		}
+	} 
+
+run("Merge Channels...", "c1=Red c2=Green c3=Blue create");
+setBatchMode("exit and display");
+
+}    //FIN
+

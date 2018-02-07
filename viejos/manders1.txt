@@ -1,0 +1,150 @@
+
+// CARGA DE DATOS
+
+id1=getImageID();          //identificación de IDs
+tamano=0;
+figura=newArray(12);
+for(i=id1-1000; i<id1+1000; i++)
+	{
+	if(isOpen(i))
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+  Dialog.create("SETC");    //genero ventana de inicio
+                                                                    
+  Dialog.addChoice("Rojo:", figura);         
+  Dialog.addChoice("Verde:", figura);          
+  Dialog.addChoice("Azul:", figura);    
+  Dialog.addChoice("Máscara:", figura);    
+  
+      Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	azul=Dialog.getChoice();
+   	mascara=Dialog.getChoice();
+   	
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+
+function sumarPixInt(ventana)                     //Declaro una función que suma intensidades de todos los pixeles
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	suma=suma+a[i];
+	}
+return suma;
+}
+
+setBatchMode(true);                   //por si quiero ver como se procesan las imágenes
+
+imageCalculator("AND create", rojo, mascara);    //opero imagenes con la máscara
+rename("rojoAndMascara");
+imageCalculator("AND create", verde, mascara);  
+rename("verdeAndMascara");
+imageCalculator("AND create", azul, mascara);  
+rename("azulAndMascara");
+
+sumRojo=sumarPixInt("rojoAndMascara");                     //sumo intensidades en cada imagen
+sumVerde=sumarPixInt("verdeAndMascara");
+sumAzul=sumarPixInt("azulAndMascara");
+
+numMRt=0;
+numMVt=0;
+numMAt=0;
+numMRv=0;
+numMVr=0;
+numMRa=0;
+numMAr=0;
+numMVa=0;
+numMAv=0;
+
+selectWindow("rojoAndMascara");        //obtengo el valor de cada pixel para cada imagen y los transformo en vectores unidimensionales	
+   r = newArray(w*h);    
+   i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		r[i++] = getPixel(x,y);
+	}
+
+selectWindow("verdeAndMascara");	
+  v = newArray(w*h);
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		v[i++] = getPixel(x,y);
+	}
+
+selectWindow("azulAndMascara");	   
+  a = newArray(w*h);
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+
+
+
+for(i=0; i<w*h; i++)                                     //calculo todas la series                
+	{
+	if(r[i]*v[i]*a[i] != 0)
+		{
+		numMRt=numMRt+r[i];
+		numMVt=numMVt+v[i];
+		numMAt=numMAt+a[i];
+		}
+	if(r[i]*v[i] != 0)
+		{
+		numMRv=numMRv+r[i];
+		numMVr=numMVr+v[i];
+		}	
+	if(r[i]*a[i] != 0)
+		{
+		numMRa=numMRa+r[i];
+		numMAr=numMAr+a[i];
+		}	
+	if(a[i]*v[i] != 0)
+		{
+		numMAv=numMAv+a[i];
+		numMVa=numMVa+v[i];
+		}	
+
+	}
+
+MRt=numMRt/sumRojo;
+MVt=numMVt/sumVerde;
+MAt=numMAt/sumAzul;
+MRv=numMRv/sumRojo;
+MVr=numMVr/sumVerde;
+MRa=numMRa/sumRojo;
+MAr=numMAr/sumAzul;
+MVa=numMVa/sumVerde;
+MAv=numMAv/sumAzul;
+
+print("MRt: " +MRt);
+print("MVt: " +MVt);
+print("MAt: " +MAt);
+print("MRv: " +MRv);
+print("MVr: " +MVr);
+print("MRa: " +MRa);
+print("MAr: " +MAr);
+print("MVa: " +MVa);
+print("MAv: " +MAv);
+

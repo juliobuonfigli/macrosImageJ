@@ -1,0 +1,10 @@
+
+for (x=0; x<10000000; x++)
+{
+f = random;
+suma=suma+f;
+}
+
+res=suma/10000000;
+print(res);
+

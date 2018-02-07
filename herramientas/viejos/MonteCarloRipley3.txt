@@ -1,0 +1,193 @@
+// Montecarlo y Ripley
+
+w = getWidth;         //declaracion e inicializacion de variables                             
+h = getHeight;
+rMax=w*h*w*h;
+ipSeteada=50;
+a = newArray(w*h);
+umbral=30;
+i = 0;
+ripley=0;
+suma=0;
+
+
+for (y=0; y<h; y++)                   //vectorizo y calculo la intensidad promedio de la imagen
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		suma=suma+a[i];
+		i++;
+		}	
+	}
+
+ip=suma/(w*h);
+
+for(i=0; i<w*h; i++)                                           // hago que la intensidad promedio de la imagen sea igual a la intensidad promedio seteada                  
+	a[i]=round(a[i]*(ipSeteada/ip));
+
+
+for(i=0; i<w*h; i++)             // calculo el coeficiente de Ripley de la imgen
+	{
+	if(a[i]>30)
+	{
+	if(i==0)
+	        ripley=ripley+(a[1]*a[1]+a[w]*a[w]+a[w+1]*a[w+1]+a[0]*a[0])/4;
+	if(i>0 && i<w-1)
+            	ripley=ripley+(a[i]*a[i]+a[i-1]*a[i-1]+a[i+1]*a[i+1]+a[i+w-1]*a[i+w-1]+a[i+w]*a[i+w]+a[i+w+1]*a[i+w+1])/6;
+            if(i==w-1)
+		ripley=ripley+(a[i-1]*a[i-1]+a[i]*a[i]+a[i+w-1]*a[i+w-1]+a[i+w]*a[i+w])/4;
+	if(i%w==0 && i!=w*h-w && i!=0)
+		ripley=ripley+(a[i]*a[i]+a[i+1]*a[i+1]+a[i+w]*a[i+w]+a[i+w+1]*a[i+w+1]+a[i-w+1]*a[i-w+1]+a[i-w]*a[i-w])/6;
+	if((i+1)%w==0 && i!=w-1 && i!=h*w-1)
+		ripley=ripley+(a[i]*a[i]+a[i+w]*a[i+w]+a[i-w-1]*a[i-w-1]-a[i-w]*a[i-w]+a[i+w-1]*a[i+w-1]+a[i-1]*a[i-1])/6;
+	if(i==h*w-w)
+		ripley=ripley+(a[i]*a[i]+a[i+1]*a[i+1]+a[i-w]*a[i-w]+a[i-w+1]*a[i-w+1])/4;
+	if(i>h*w-w && i<h*w-1)
+		ripley=ripley+(a[i]*a[i]+a[i-w-1]*a[i-w-1]+a[i-w]*a[i-w]+a[i-w+1]*a[i-w+1]+a[i-1]*a[i-1]+a[i+1]*a[i+1])/6;
+	if(i==h*w-1)
+		ripley=ripley+(a[i]*a[i]+a[i-1]*a[i-1]+a[i-w]*a[i-w]+a[i-w-1]*a[i-w-1])/4;
+	if(i>w && i<h*w-w-1 && i%w!=0 && (i+1)%w!=0)
+		ripley=ripley+(a[i]*a[i]+a[i-w-1]*a[i-w-1]+a[i-w]*a[i-w]+a[i-w+1]*a[i-w+1]+a[i-1]*a[i-1]+a[i+1]*a[i+1]+a[i+w-1]*a[i+w-1]+a[i+w]*a[i+w]+a[i+w+1]*a[i+w+1])/9;
+
+	}
+        }
+
+//print(ripley)
+
+	k=0;
+	j=0;
+        do                                  // Comienza Montecarlo
+	{
+        do 	{                                                          //evita que las dos posiciones elegidas al azar sean la misma                                         
+	i1=round(random*(w*h-1));
+	i2=round(random*(h*w-1)); 
+	} 	while(i1==i2)
+            
+	i=0;
+
+         for(y=0; y<h; y++)                                //calcula la distancia entre las dos pixels escogidos al azar
+		{
+		for(x=0; x<w; x++)
+			{
+			if(i==i1)
+				{
+				x=x1;
+				y=y1;
+				}
+			if(i==i2)
+				{
+				x=x2;
+				y=y2;
+				}
+			i++;					
+			}
+		}
+	r=(x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)+1;
+	
+         
+	rand=random;
+ 	if(r<rand*rand*rMax)	{      //Solo ejecuta si la distancia entre pixels es menor que randcuadradoxrMax
+            ripley1=0;
+            ripley2=0; 
+
+	if(i1==0)
+	        ripley1=ripley1+(a[1]*a[1]+a[w]*a[w]+a[w+1]*a[w+1]+a[0]*a[0])/4;
+	if(i1>0 && i1<w-1)
+            	ripley1=ripley1+(a[i1]*a[i1]+a[i1-1]*a[i1-1]+a[i1+1]*a[i1+1]+a[i1+w-1]*a[i1+w-1]+a[i1+w]*a[i1+w]+a[i1+w+1]*a[i1+w+1])/6;
+            if(i1==w-1)
+		ripley1=ripley1+(a[i1-1]*a[i1-1]+a[i1]*a[i1]+a[i1+w-1]*a[i1+w-1]+a[i1+w]*a[i1+w])/4;
+	if(i1%w==0 && i1!=w*h-w && i1!=0)
+		ripley1=ripley1+(a[i1]*a[i1]+a[i1+1]*a[i1+1]+a[i1+w]*a[i1+w]+a[i1+w+1]*a[i1+w+1]+a[i1-w+1]*a[i1-w+1]+a[i1-w]*a[i1-w])/6;
+	if((i1+1)%w==0 && i1!=w-1 && i1!=h*w-1)
+		ripley1=ripley1+(a[i1]*a[i1]+a[i1+w]*a[i1+w]+a[i1-w-1]*a[i1-w-1]-a[i1-w]*a[i1-w]+a[i1+w-1]*a[i1+w-1]+a[i1-1]*a[i1-1])/6;
+	if(i1==h*w-w)
+		ripley1=ripley1+(a[i1]*a[i1]+a[i1+1]*a[i1+1]+a[i1-w]*a[i1-w]+a[i1-w+1]*a[i1-w+1])/4;
+	if(i1>h*w-w && i1<h*w-1)
+		ripley1=ripley1+(a[i1]*a[i1]+a[i1-w-1]*a[i1-w-1]+a[i1-w]*a[i1-w]+a[i1-w+1]*a[i1-w+1]+a[i1-1]*a[i1-1]+a[i1+1]*a[i1+1])/6;
+	if(i1==h*w-1)
+		ripley1=ripley1+(a[i1]*a[i1]+a[i1-1]*a[i1-1]+a[i1-w]*a[i1-w]+a[i1-w-1]*a[i1-w-1])/4;
+	if(i1>w && i1<h*w-w-1 && i1%w!=0 && (i1+1)%w!=0)
+		ripley1=ripley1+(a[i1]*a[i1]+a[i1-w-1]*a[i1-w-1]+a[i1-w]*a[i1-w]+a[i1-w+1]*a[i1-w+1]+a[i1-1]*a[i1-1]+a[i1+1]*a[i1+1]+a[i1+w-1]*a[i1+w-1]+a[i1+w]*a[i1+w]+a[i1+w+1]*a[i1+w+1])/9;
+
+	if(i2==0)
+	        ripley2=ripley2+(a[1]*a[1]+a[w]*a[w]+a[w+1]*a[w+1]+a[0]*a[0])/4;
+	if(i2>0 && i2<w-1)
+            	ripley2=ripley2+(a[i2]*a[i2]+a[i2-1]*a[i2-1]+a[i2+1]*a[i2+1]+a[i2+w-1]*a[i2+w-1]+a[i2+w]*a[i2+w]+a[i2+w+1]*a[i2+w+1])/6;
+            if(i2==w-1)
+		ripley2=ripley2+(a[i2-1]*a[i2-1]+a[i2]*a[i2]+a[i2+w-1]*a[i2+w-1]+a[i2+w]*a[i2+w])/4;
+	if(i2%w==0 && i2!=w*h-w && i2!=0)
+		ripley2=ripley2+(a[i2]*a[i2]+a[i2+1]*a[i2+1]+a[i2+w]*a[i2+w]+a[i2+w+1]*a[i2+w+1]+a[i2-w+1]*a[i2-w+1]+a[i2-w]*a[i2-w])/6;
+	if((i2+1)%w==0 && i2!=w-1 && i2!=h*w-1)
+		ripley2=ripley2+(a[i2]*a[i2]+a[i2+w]*a[i2+w]+a[i2-w-1]*a[i2-w-1]-a[i2-w]*a[i2-w]+a[i2+w-1]*a[i2+w-1]+a[i2-1]*a[i2-1])/6;
+	if(i2==h*w-w)
+		ripley2=ripley2+(a[i2]*a[i2]+a[i2+1]*a[i2+1]+a[i2-w]*a[i2-w]+a[i2-w+1]*a[i2-w+1])/4;
+	if(i2>h*w-w && i2<h*w-1)
+		ripley2=ripley2+(a[i2]*a[i2]+a[i2-w-1]*a[i2-w-1]+a[i2-w]*a[i2-w]+a[i2-w+1]*a[i2-w+1]+a[i2-1]*a[i2-1]+a[i2+1]*a[i2+1])/6;
+	if(i2==h*w-1)
+		ripley2=ripley2+(a[i2]*a[i2]+a[i2-1]*a[i2-1]+a[i2-w]*a[i2-w]+a[i2-w-1]*a[i2-w-1])/4;
+	if(i2>w && i2<h*w-w-1 && i2%w!=0 && (i2+1)%w!=0)
+		ripley2=ripley2+(a[i2]*a[i2]+a[i2-w-1]*a[i2-w-1]+a[i2-w]*a[i2-w]+a[i2-w+1]*a[i2-w+1]+a[i2-1]*a[i2-1]+a[i2+1]*a[i2+1]+a[i2+w-1]*a[i2+w-1]+a[i2+w]*a[i2+w]+a[i2+w+1]*a[i2+w+1])/9;
+
+                               
+	if(ripley1>ripley2 && a[i1]<255 && a[i2]>0)    //la movida es aceptada solo si se eleva el factor de ripley
+		{
+		a[i1]=a[i1]+1;
+		a[i2]=a[i2]-1;
+        		k++;
+                        }
+	}	
+
+if(k%100==0)                              //el coeficiente de Ripley de la imagen total se calcula cada 10000 iteraciones
+{
+ripley3=0;
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]>umbral)
+	{
+	if(i==0)
+	        ripley3=ripley3+(a[1]*a[1]+a[w]*a[w]+a[w+1]*a[w+1]+a[0]*a[0])/4;
+	if(i>0 && i<w-1)
+            	ripley3=ripley3+(a[i]*a[i]+a[i-1]*a[i-1]+a[i+1]*a[i+1]+a[i+w-1]*a[i+w-1]+a[i+w]*a[i+w]+a[i+w+1]*a[i+w+1])/6;
+            if(i==w-1)
+		ripley3=ripley3+(a[i-1]*a[i-1]+a[i]*a[i]+a[i+w-1]*a[i+w-1]+a[i+w]*a[i+w])/4;
+	if(i%w==0 && i!=w*h-w && i!=0)
+		ripley3=ripley3+(a[i]*a[i]+a[i+1]*a[i+1]+a[i+w]*a[i+w]+a[i+w+1]*a[i+w+1]+a[i-w+1]*a[i-w+1]+a[i-w]*a[i-w])/6;
+	if((i+1)%w==0 && i!=w-1 && i!=h*w-1)
+		ripley3=ripley3+(a[i]*a[i]+a[i+w]*a[i+w]+a[i-w-1]*a[i-w-1]-a[i-w]*a[i-w]+a[i+w-1]*a[i+w-1]+a[i-1]*a[i-1])/6;
+	if(i==h*w-w)
+		ripley3=ripley3+(a[i]*a[i]+a[i+1]*a[i+1]+a[i-w]*a[i-w]+a[i-w+1]*a[i-w+1])/4;
+	if(i>h*w-w && i<h*w-1)
+		ripley3=ripley3+(a[i]*a[i]+a[i-w-1]*a[i-w-1]+a[i-w]*a[i-w]+a[i-w+1]*a[i-w+1]+a[i-1]*a[i-1]+a[i+1]*a[i+1])/6;
+	if(i==h*w-1)
+		ripley3=ripley3+(a[i]*a[i]+a[i-1]*a[i-1]+a[i-w]*a[i-w]+a[i-w-1]*a[i-w-1])/4;
+	if(i>w && i<h*w-w-1 && i%w!=0 && (i+1)%w!=0)
+		ripley3=ripley3+(a[i]*a[i]+a[i-w-1]*a[i-w-1]+a[i-w]*a[i-w]+a[i-w+1]*a[i-w+1]+a[i-1]*a[i-1]+a[i+1]*a[i+1]+a[i+w-1]*a[i+w-1]+a[i+w]*a[i+w]+a[i+w+1]*a[i+w+1])/9;
+
+	}}}
+
+
+
+j++;
+showStatus("vuelta"+j);
+}
+while(ripley3<13992946.9 && j<3000000)    //condición de Montecarlo hasta alcanzar el factor de Ripley cargado o hasta alcanzar ciertp número de iteraciones
+
+print(13992946.9);
+print(ripley3);
+
+
+newImage("Resultado", "8-bit black", w, h, 1);       //genera la nuva imagen 
+selectWindow("Resultado");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, a[i]);
+		i++;
+		}
+	} 
+
+
+

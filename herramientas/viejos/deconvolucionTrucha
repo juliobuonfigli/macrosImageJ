@@ -1,0 +1,152 @@
+/*Una de las ventajas de estos métodos a diferencia del natura que leí se hace evidente en movies ya que acá se puede arrancar de una imagen (no necesito stack) por lo que puedo lograr 
+mejores resoluciones temporales
+Suma al pixel central y resta a otro en la vecindad de la PSF si la mayoría de los vecinos en ese radio son menores que el central. El vecino seleccionado no necesariamente debe ser menor que 
+que el central*/ 
+
+//Probar: primero incremento y después decremento
+//disminuir decremento cuando se hace en las primeras pasadas
+//decrementos aleatorios en toda la corrida
+
+//aumentar incrementos y decrementos pero aunmentar el número de slices
+//decrementos aleatorios, incrementos en islas, decrementos en los mayores cuando a mayoría son menores 
+//heterogeneidad (nodo) u homogeneidad (fuente) de vecinos, comparación por restas sucesivas y promedios, si fuente: suma fuente, resta toda la psf, nodo: resta nodo  
+//umbral de pixel a considerar, solo resta PSFs si encuentra el central 
+//sin umbral, resta a pixels individuales si estos no son centros de PSF 
+
+//funciones de peso para PSF: 
+/*que el pixel central sea mayor que el resto
+grado de correlacion
+seguidilla de pixels del mismo valor
+aumento de intensidad centripeta
+ausencia de ceros
+los de mayor peso restan más*/
+
+w = getWidth;              
+h = getHeight;
+ww=1/w;
+peso=13;
+tolerancia=2;
+
+function VECTORIZAR(imagenAvectorizar, w, h)                      
+{
+selectWindow(imagenAvectorizar);
+vector=newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		vector[i] = getPixel(x,y);
+		i++;
+		}
+	}
+return vector;
+}
+
+
+a=newArray(w*h);
+vec=newArray(8);
+a=VECTORIZAR("ggg1", w, h) ;
+
+dowhile=0;
+do
+	{
+	cond2=0;
+	dowhile++;
+	for(i=0; i<w*h; i++)
+		{
+		Xi=i%w;
+		Yi=floor(i*ww);
+		if(Xi>4 && Xi<w-4 && Yi>4 && Yi<h-4)
+			{	
+			V=newArray(32);
+			for(k=0; k<32; k++)
+				{
+				alfa=2*PI*k/32; 
+				x=round(4*cos(alfa)); 
+				y=round(4*sin(alfa)); 
+				X=Xi+x;
+				Y=Yi+y;
+				ind=w*Y+X;
+				V[k]=a[ind];  	
+				}	
+
+			cont=0;
+			cond=false;
+			for(k=1; k<32; k++)
+				{
+				resta=V[k]-V[k-1]; 
+				if(V[k-1]<1 || V[k]<1)      //si la resta da lo mismo
+					resta=tolerancia;
+				if(resta<tolerancia)
+					cont++;
+				else
+					cont=0;
+				if(cont==peso)
+					{cond=true; cond2++;}	
+				}
+
+			if(cond==true)
+				{
+				for(k=0; k<32; k++)
+					{
+					alfa=2*PI*k/32; 
+					x=round(4*cos(alfa)); 
+					y=round(4*sin(alfa)); 
+					X=Xi+x;
+					Y=Yi+y;
+					ind=w*Y+X;
+					a[ind]=a[ind]-8;  	
+					}	
+				for(k=0; k<16; k++)
+					{
+					alfa=2*PI*k/16; 
+					x=round(3*cos(alfa)); 
+					y=round(3*sin(alfa)); 
+					X=Xi+x;
+					Y=Yi+y;
+					ind=w*Y+X;
+					a[ind]=a[ind]-16;  	
+					}		
+				for(k=0; k<12; k++)
+					{
+					alfa=2*PI*k/12; 
+					x=round(2*cos(alfa)); 
+					y=round(2*sin(alfa)); 
+					X=Xi+x;
+					Y=Yi+y;
+					ind=w*Y+X;
+					a[ind]=a[ind]-30;  	
+					}	
+				for(k=0; k<8; k++)
+					{
+					alfa=2*PI*k/8; 
+					x=round(cos(alfa)); 
+					y=round(sin(alfa)); 
+					X=Xi+x;
+					Y=Yi+y;
+					ind=w*Y+X;
+					a[ind]=a[ind]-60;  
+					}	
+				a[i]=a[i]+200;
+				}
+			}                       
+		showStatus(dowhile+"    "+cond2);
+		}	
+	}  while(cond2>0)
+
+	newImage("Res", "8-bit random", w, h, 1);
+	selectWindow("Res");
+	i=0;
+	for (y=0; y<h; y++)
+		{
+		for (x=0; x<w; x++)
+			{
+			setPixel(x,y, a[i]);
+			i++;
+			}
+		} 
+	  
+
+
+       

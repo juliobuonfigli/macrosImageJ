@@ -1,0 +1,41 @@
+
+w=getWidth;
+h=getHeight;
+
+selectWindow("2");	           //vectorizo cada canal
+  r = newArray(w*h);
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		r[i] = getPixel(x,y);
+		i++;
+		}
+	}
+
+
+i=0;
+for(y1=0; y1<h; y1++)
+	{
+	for(x1=0; x1<w; x1++)
+		{
+		newImage("1", "8-bit black", h, w, 1);
+		selectWindow("1");
+		for(y2=0; y2<h; y2++)
+			{
+			for(x2=0; x2<w; x2++)
+				{
+				if(x1==x2 && y1==y2)
+					{setPixel(x2, y2, 0);}
+					else
+					{setPixel(x2, y2, round(r[i]* 0.5/sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))));}
+				}
+			}
+		imageCalculator("OR", "2", "1");
+		rename("2");
+		selectWindow("1");
+		close();
+		i++;
+		}
+	}

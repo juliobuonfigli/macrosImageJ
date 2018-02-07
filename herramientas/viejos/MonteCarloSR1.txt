@@ -1,0 +1,111 @@
+// Entropía de una imagen
+
+w = getWidth;                                  
+h = getHeight;
+
+a = newArray(w*h);
+   
+i = 0;
+   entropia=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+
+for(i=0; i<w*h; i++)
+	{
+	if(i==0)
+	            entropia=entropia+((a[i]-a[1])*(a[i]-a[1])+(a[i]-a[w])*(a[i]-a[w])+(a[i]-a[w+1])*(a[i]-a[w+1]))/3;
+	if(i>0 && i<w-1)
+            	entropia=entropia+((a[i]-a[i-1])*(a[i]-a[i-1])+(a[i]-a[i+1])*(a[i]-a[i+1])+(a[i]-a[i+w-1])*(a[i]-a[i+w-1])+(a[i]-a[i+w])*(a[i]-a[i+w])+(a[i]-a[i+w+1])*(a[i]-a[i+w+1]))/5;
+            if(i==w-1)
+		entropia=entropia+((a[i]-a[i-1])*(a[i]-a[i-1])+(a[i]-a[i+w-1])*(a[i]-a[i+w-1])+(a[i]-a[i+w])*(a[i]-a[i+w]))/3;
+	if(i%w==0 && i!=w*h-w && i!=0)
+		entropia=entropia+((a[i]-a[i+1])*(a[i]-a[i+1])+(a[i]-a[i+w])*(a[i]-a[i+w])+(a[i]-a[i+w+1])*(a[i]-a[i+w+1])+(a[i]-a[i-w+1])*(a[i]-a[i-w+1])+(a[i]-a[i-w])*(a[i]-a[i-w]))/5;
+	if((i+1)%w==0 && i!=w-1 && i!=h*w-1)
+		entropia=entropia+((a[i]-a[i+w])*(a[i]-a[i+w])+(a[i]-a[i-w-1])*(a[i]-a[i-w-1])+(a[i]-a[i-w])*(a[i]-a[i-w])+(a[i]-a[i+w-1])*(a[i]-a[i+w-1])+(a[i]-a[i-1])*(a[i]-a[i-1]))/5;
+	if(i==h*w-w)
+		entropia=entropia+((a[i]-a[i+1])*(a[i]-a[i+1])+(a[i]-a[i-w])*(a[i]-a[i-w])+(a[i]-a[i-w+1])*(a[i]-a[i-w+1]))/3;
+	if(i>h*w-w && i<h*w-1)
+		entropia=entropia+((a[i]-a[i-w-1])*(a[i]-a[i-w-1])+(a[i]-a[i-w])*(a[i]-a[i-w])+(a[i]-a[i-w+1])*(a[i]-a[i-w+1])+(a[i]-a[i-1])*(a[i]-a[i-1])+(a[i]-a[i+1])*(a[i]-a[i+1]))/5;
+	if(i==h*w-1)
+		entropia=entropia+((a[i]-a[i-1])*(a[i]-a[i-1])+(a[i]-a[i-w])*(a[i]-a[i-w])+(a[i]-a[i-w-1])*(a[i]-a[i-w-1]))/3;
+	if(i>w && i<h*w-w-1 && i%w!=0 && (i+1)%w!=0)
+		entropia=entropia+((a[i]-a[i-w-1])*(a[i]-a[i-w-1])+(a[i]-a[i-w])*(a[i]-a[i-w])+(a[i]-a[i-w+1])*(a[i]-a[i-w+1])+(a[i]-a[i-1])*(a[i]-a[i-1])+(a[i]-a[i+1])*(a[i]-a[i+1])+(a[i]-a[i+w-1])*(a[i]-a[i+w-1])+(a[i]-a[i+w])*(a[i]-a[i+w])+(a[i]-a[i+w+1])*(a[i]-a[i+w+1]))/8;
+
+	}
+oriEntro=entropia;
+//print(entropia)
+
+
+	j=0;
+            do
+	{
+            do
+	{
+	index1=round(random*(w*h-1));
+	index2=round(random*(h*w-1));
+	}
+	while(index1==index2)
+            traspaso1=a[index1];
+	traspaso2=a[index2];
+	a[index1]=traspaso2;
+	a[index2]=traspaso1;
+
+
+for(i=0; i<w*h; i++)
+	{
+	if(i==0)
+	            entropia=entropia+((a[i]-a[1])*(a[i]-a[1])+(a[i]-a[w])*(a[i]-a[w])+(a[i]-a[w+1])*(a[i]-a[w+1]))/3;
+	if(i>0 && i<w-1)
+            	entropia=entropia+((a[i]-a[i-1])*(a[i]-a[i-1])+(a[i]-a[i+1])*(a[i]-a[i+1])+(a[i]-a[i+w-1])*(a[i]-a[i+w-1])+(a[i]-a[i+w])*(a[i]-a[i+w])+(a[i]-a[i+w+1])*(a[i]-a[i+w+1]))/5;
+            if(i==w-1)
+		entropia=entropia+((a[i]-a[i-1])*(a[i]-a[i-1])+(a[i]-a[i+w-1])*(a[i]-a[i+w-1])+(a[i]-a[i+w])*(a[i]-a[i+w]))/3;
+	if(i%w==0 && i!=w*h-w && i!=0)
+		entropia=entropia+((a[i]-a[i+1])*(a[i]-a[i+1])+(a[i]-a[i+w])*(a[i]-a[i+w])+(a[i]-a[i+w+1])*(a[i]-a[i+w+1])+(a[i]-a[i-w+1])*(a[i]-a[i-w+1])+(a[i]-a[i-w])*(a[i]-a[i-w]))/5;
+	if((i+1)%w==0 && i!=w-1 && i!=h*w-1)
+		entropia=entropia+((a[i]-a[i+w])*(a[i]-a[i+w])+(a[i]-a[i-w-1])*(a[i]-a[i-w-1])+(a[i]-a[i-w])*(a[i]-a[i-w])+(a[i]-a[i+w-1])*(a[i]-a[i+w-1])+(a[i]-a[i-1])*(a[i]-a[i-1]))/5;
+	if(i==h*w-w)
+		entropia=entropia+((a[i]-a[i+1])*(a[i]-a[i+1])+(a[i]-a[i-w])*(a[i]-a[i-w])+(a[i]-a[i-w+1])*(a[i]-a[i-w+1]))/3;
+	if(i>h*w-w && i<h*w-1)
+		entropia=entropia+((a[i]-a[i-w-1])*(a[i]-a[i-w-1])+(a[i]-a[i-w])*(a[i]-a[i-w])+(a[i]-a[i-w+1])*(a[i]-a[i-w+1])+(a[i]-a[i-1])*(a[i]-a[i-1])+(a[i]-a[i+1])*(a[i]-a[i+1]))/5;
+	if(i==h*w-1)
+		entropia=entropia+((a[i]-a[i-1])*(a[i]-a[i-1])+(a[i]-a[i-w])*(a[i]-a[i-w])+(a[i]-a[i-w-1])*(a[i]-a[i-w-1]))/3;
+	if(i>w && i<h*w-w-1 && i%w!=0 && (i+1)%w!=0)
+		entropia=entropia+((a[i]-a[i-w-1])*(a[i]-a[i-w-1])+(a[i]-a[i-w])*(a[i]-a[i-w])+(a[i]-a[i-w+1])*(a[i]-a[i-w+1])+(a[i]-a[i-1])*(a[i]-a[i-1])+(a[i]-a[i+1])*(a[i]-a[i+1])+(a[i]-a[i+w-1])*(a[i]-a[i+w-1])+(a[i]-a[i+w])*(a[i]-a[i+w])+(a[i]-a[i+w+1])*(a[i]-a[i+w+1]))/8;
+
+	}
+
+if(oriEntro<=entropia)
+{
+a[index1]=traspaso1;
+a[index2]=traspaso2;
+}
+else
+{
+print(entropia);
+oriEntro=entropia;
+}
+entropia=0;
+j++;
+showStatus("vuelta"+j);
+}
+while(oriEntro>2178338)
+
+
+newImage("Resultado", "8-bit black", w, h, 1);
+selectWindow("Resultado");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, a[i]);
+		i++;
+		}
+	} 
+
+
+
+

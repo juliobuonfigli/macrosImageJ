@@ -1,0 +1,189 @@
+
+selectWindow("mascara")
+//rename("mascara");
+selectWindow("Result of 01b.tif (blue)-1");
+rename("canal");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		sumador++;
+	}
+return sumador;
+}
+
+
+function sumarPixInt(ventana)                     //Declaro una función que suma intensidades de todos los pixeles
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	suma=suma+a[i];
+	}
+return suma;
+}
+
+
+function cantPixInt(ventana)                     //Declaro una función que cuenta pixeles distintos de cero
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+		
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i] != 0)
+		suma++;
+	}
+return suma;
+}
+
+
+function contarCeros(ventana)                     //Declaro una función que cuenta ceros
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==0)
+		sumador++;
+	}
+return sumador;
+}
+
+
+
+valoresC=cantPixInt("canal");
+sumaCanal=sumarPixInt("canal");
+unosMascara=contarUnos("mascara");
+cerosMascara=contarCeros("mascara");
+cerosCanal=contarCeros("canal");
+cerosCanalSM=cerosCanal-cerosMascara;
+
+pc2=sumaCanal/valoresC;                                    //calculo promedios de intensidad para cada imagen 
+
+
+selectWindow(mascara);                            //genero una imagen aleatoria para el canal rojo
+	run("Duplicate...", "title=RandRojo");
+
+	i=0;
+	while(i<w*h)
+	{
+	f=0;
+	l=0;
+   	for (y=0; y<h; y++)
+		{
+      		for (x=0; x<w; x++)
+			{
+          			l = getPixel(x, y);
+			if(l == 255)
+				{
+				if(r[i] != 0)
+					{
+					f= random;
+					if(f> valoresC/unosMascara)
+						{
+						setPixel(x, y, r[i]);
+						i++;
+						}					
+					}
+					else
+					i++;
+				}
+			}
+		}
+	}
+	updateDisplay();
+
+
+
+
+
+
+
+/*
+selectWindow("mascara");                            //genero una imagen aleatoria para el canal rojo
+	run("Duplicate...", "title=RandRojo");
+	
+            f=0;
+	l=0;
+   	for (y=0; y<h; y++)
+		{
+      		for (x=0; x<w; x++)
+			{
+          			l = getPixel(x, y);
+			if(l == 255)
+				{
+				f= random;
+				if(f >= cerosCanalSM/unosMascara)
+ 					{
+					f=random;
+					setPixel(x, y, round(2*(pc2-0.5)*f+0.5));				
+					}
+					else
+					setPixel(x, y, 0);
+				}
+			}
+		}
+
+		l=0;
+   	for (y=0; y<h; y++)
+		{
+      		for (x=0; x<w; x++)
+			{
+          			l = getPixel(x, y);
+			f=random;
+			if(f < cerosCanalSM/unosMascara) 
+				setPixel(x, y, 0);
+			}
+		}
+
+*/		
+	updateDisplay();
+
+cerosRandRojos=contarCeros("RandRojo");
+cerosRandRojosSM=cerosRandRojos-cerosMascara;
+prom=sumarPixInt("RandRojo");
+
+print(cerosRandRojosSM);
+//print(cerosCanalSM);
+print(prom);
+//print(sumaCanal);
+//print(unosMascara);
+
+

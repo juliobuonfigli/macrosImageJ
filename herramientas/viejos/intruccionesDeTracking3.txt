@@ -1,0 +1,19 @@
+macro "Tracking set [e]" 
+{
+run("8-bit");
+for(i=1; i<62; i++)
+{
+setSlice(i);
+run("Mexican Hat Filter", "radius=3");
+}
+
+setAutoThreshold("Default dark");
+setAutoThreshold("Minimum dark");
+setOption("BlackBackground", false);
+run("Convert to Mask", "method=Minimum background=Dark");
+
+//run("Watershed", "stack");
+
+run("MTrack2 ", "minimum=12 maximum=50 maximum_=10 minimum_=15 display");
+
+}

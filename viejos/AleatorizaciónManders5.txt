@@ -1,0 +1,111 @@
+w = getWidth;
+h = getHeight;
+
+
+selectWindow("Mask-1");                 //cuento unos de la mascara   
+   a = newArray(w*h);
+   i = 0;
+   unosMascara=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		unosMascara++;
+	}
+
+
+selectWindow("Result of 01b.tif (green)-1");        //sumo intensidades en la imagen
+   a = newArray(w*h);
+   i = 0;
+   sum=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	sum=sum+a[i];
+
+b=newArray(w*h);                               //genero un vector que contiene solo los valores distintos de cero
+s=0;
+for(i=0; i<w*h; i++)
+	{
+	if(a[i] != 0)
+		{
+		b[s]=a[i];
+		s++;
+		}
+	}
+
+
+
+//a partir de acá se hace entoda pasada
+
+u=newArray(w*h);                          //desordeno aleatoriamente el vector
+i=0;
+for(i=0; i<w*h; i++)
+	u[i]=true;
+
+bd=newArray(w*h);
+i=0;	
+while(i<s)
+	{
+	e=round(random*s);
+        	if(u[e]==true)
+		{
+		bd[i]=b[e];
+		u[e]=false;
+		i++;
+		}
+	}
+	
+
+r=s/unosMascara;                                //pongo los valores en la mascara
+selectWindow("Mask-1");
+suma=0;
+i=0;
+while(suma<sum-255)
+	{
+	beep();
+	for (y=0; y<h; y++)
+		{
+		for (x=0; x<w; x++)
+			{
+			p=random;
+			l=getPixel(x, y);
+			if(l==255 && p <= r)
+				{
+				setPixel(x, y, bd[i]);
+				suma=suma+bd[i];
+				i++;
+				}
+			}
+		}
+	}
+
+for (y=0; y<h; y++)                                      //cambio unos por ceros
+	{
+	for (x=0; x<w; x++)
+		{
+		l=getPixel(x, y);
+		if(l == 255)
+			setPixel(x, y, 0);
+		}
+	}
+
+//agregar coeficiente de utilidad de Manders
+updateDisplay();
+
+print("fin");
+
+print(s);
+print(unosMascara);
+
+
+
+
+	

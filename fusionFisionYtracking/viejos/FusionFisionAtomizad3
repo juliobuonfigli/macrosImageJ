@@ -1,0 +1,224 @@
+frames=62;
+run("Set Measurements...", "centroid bounding redirect=None decimal=0");
+run("Measure");
+cx=getResult("X", 0);
+cy=getResult("Y", 0);
+ow=getResult("Width", 0);
+oh=getResult("Height", 0);
+run("Clear Results"); 
+run("Select None");
+w = getWidth;              
+h = getHeight;
+size=1/(w*h);
+ipp=newArray(frames);
+pi=3.141592653589793;
+frag=45;
+dt=2*pi/frag;
+t=0;
+fA=1.2;
+fA2=1.2;
+
+/*
+//Normalizacion
+run("8-bit");
+rename("blanco");
+run("Duplicate...", "title=masc duplicate");
+run("Duplicate...", "title=Final duplicate");
+selectWindow("masc");
+setAutoThreshold("Default dark");
+setOption("BlackBackground", false);
+run("Convert to Mask", "method=Default background=Dark calculate black");
+imageCalculator("AND create stack", "blanco","masc");
+selectWindow("blanco");
+close();
+selectWindow("masc");
+close();
+
+for(i=1; i<frames; i++)
+	{
+	setSlice(i);
+	ipp[i]=0;
+	for(y=0; y<h; y++)
+		{
+		for(x=0; x<w; x++)
+			{
+			ipp[i]=ipp[i]+getPixel(x,y);
+			}
+		}
+	ipp[i]=ipp[i]*size;
+	}
+
+ip=0;
+for(i=1; i<frames; i++)
+	ip=ip+ipp[i];
+	
+ip=ip/frames;
+
+selectWindow("Result of blanco");
+close();
+selectWindow("Final");
+
+for(i=1; i<frames; i++)
+	{
+	setSlice(i);
+	fac=ip/ipp[i];
+	for(y=0; y<h; y++)
+		{
+		for(x=0; x<w; x++)
+			{
+			pix=getPixel(x,y);
+			setPixel(x, y, pix*fac); 
+			}
+		}
+	updateDisplay();
+	}
+*/
+
+rename("Final");
+
+// Centroide de inclusion
+selectWindow("Final");
+run("Select None");
+run("Duplicate...", "title=Nodo duplicate");
+run("Unsharp Mask...", "radius=12 mask=0.99 stack");
+setAutoThreshold("Minimum dark");
+setOption("BlackBackground", false);
+run("Convert to Mask", "method=Minimum background=Dark calculate");
+makeOval(cx-1.5*ow/2, cy-1.5*oh/2, 1.5*ow, 1.5*oh);
+run("Make Inverse");
+//run("Fill Holes", "stack");
+//run("Watershed", "stack");
+setForegroundColor(0, 0, 0);
+for(i=1; i<frames; i++)
+	{
+	setSlice(i);
+	run("Fill", "slice");
+	}
+run("Select None");
+run("Median...", "radius=1 stack");
+//run("Close-", "stack");
+//run("Close-", "stack");
+CX=newArray(frames+1);
+CY=newArray(frames+1);
+run("Set Measurements...", "centroid redirect=None decimal=2");
+for(i=1; i<frames; i++)
+	{
+	setSlice(i);
+	doWand(cx, cy);
+	run("Measure");
+	CX[i]=getResult("X", i-1);
+	CX[i]=round(CX[i]);
+	CY[i]=getResult("Y", i-1);
+	CY[i]=round(CY[i]);
+	//wait(60);
+	}
+selectWindow("Nodo");
+close();
+run("Clear Results");
+
+selectWindow("Final");
+run("Unsharp Mask...", "radius=3 mask=0.90 stack");
+
+
+//Perfiles
+//en sentido horario desde las 3
+//run("Plots...", "width=450 height=200 font=12 draw draw_ticks fixed minimum=0 maximum=3 interpolate");
+run("Plots...", "width=450 height=200 font=12 draw draw_ticks auto-close fixed minimum=0 maximum=3");
+run("Set Measurements...", "mean redirect=None decimal=3");
+for(i=1; i<frag+1; i++)
+	{
+	selectWindow("Final");
+	run("Select None");
+	for(j=1; j<frames; j++)
+		{
+		selectWindow("Final");
+		setSlice(j);
+		run("Select None");
+		xa=(ow/2)*cos(t)+CX[j];
+		ya=(oh/2)*sin(t)+CY[j];
+		xb=(ow/2)*cos(t+dt)+CX[j];
+		yb=(oh/2)*sin(t+dt)+CY[j];
+		xc=(ow/2)*cos(t+2*dt)+CX[j];
+		yc=(oh/2)*sin(t+2*dt)+CY[j];
+		XA=fA*(ow/2)*cos(t)+CX[j];
+		YA=fA*(oh/2)*sin(t)+CY[j];
+		XB=fA*(ow/2)*cos(t+dt)+CX[j];
+		YB=fA*(oh/2)*sin(t+dt)+CY[j];
+		XC=fA*(ow/2)*cos(t+2*dt)+CX[j];
+		YC=fA*(oh/2)*sin(t+2*dt)+CY[j];
+		makePolygon(xa,ya,xb,yb,xc,yc,XC,YC,XB,YB,XA,YA);
+		run("Measure");
+		wait(40);
+		run("Select None");
+		}
+	for(j=1; j<frames; j++)
+		{
+		selectWindow("Final");
+		setSlice(j);
+		run("Select None");
+		xa=fA*(ow/2)*cos(t)+CX[j];
+		ya=fA*(oh/2)*sin(t)+CY[j];
+		xb=fA*(ow/2)*cos(t+dt)+CX[j];
+		yb=fA*(oh/2)*sin(t+dt)+CY[j];
+		xc=fA*(ow/2)*cos(t+2*dt)+CX[j];
+		yc=fA*(oh/2)*sin(t+2*dt)+CY[j];
+		XA=fA2*fA*(ow/2)*cos(t)+CX[j];
+		YA=fA2*fA*(oh/2)*sin(t)+CY[j];
+		XB=fA2*fA*(ow/2)*cos(t+dt/fA2)+CX[j];
+		YB=fA2*fA*(oh/2)*sin(t+dt/fA2)+CY[j];
+		XC=fA2*fA*(ow/2)*cos(t+2*dt/fA2)+CX[j];
+		YC=fA2*fA*(oh/2)*sin(t+2*dt/fA2)+CY[j];
+		makePolygon(xa,ya,xb,yb,xc,yc,XC,YC,XB,YB,XA,YA);
+		run("Measure");
+		wait(40);
+		run("Select None");
+		}
+		/*
+		wait(30);
+		if(j%1==0)
+			{
+			run("Capture Image");
+			rename(33333000+100*i+j);
+			}
+		*/
+	
+	s=frames-1;
+	q=newArray(frames-1);
+	w=newArray(frames-1);
+	e=newArray(frames-1);
+	for(k=0; k<frames-1; k++)
+		{
+		q[k]=getResult("Mean", s)/getResult("Mean", k);	
+		s++;
+		} 
+	for(k=0; k<frames-1; k++)
+		w[k]=getResult("Mean", k)/255;	
+	s=frames-1;	
+	for(k=0; k<frames-1; k++)
+		{
+		e[k]=getResult("Mean", s)/255;	
+		s++;
+		} 
+	 n = q.length;
+ 	 a = Array.getSequence(n);
+	Plot.create("Plot", "Frame", "Intensity");
+	Plot.setLimits(0, n, 0, 1.5);
+	Plot.setColor("green", "green");
+    Plot.add("line", a, w);
+	Plot.setColor("black");
+    Plot.add("line", a, q);
+	Plot.setColor("red", "red");
+    Plot.add("line", a, e);
+	Plot.makeHighResolution("Plot",1.0,"disable");
+    rename(frag*1000+i);
+	run("Clear Results"); 
+	t=t+dt;
+	}
+//run("Images to Stack", "name=movie title=3333 use");	
+run("Images to Stack", "name=Stack title=45 use");
+
+
+
+
+
+

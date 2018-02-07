@@ -1,0 +1,85 @@
+//Compactador de objetos pixel vecino
+
+ 
+iter=3000;
+w = getWidth;              
+h = getHeight; 
+
+
+function NEIGHBOURPIXEL(ia, w, h)       //selecciona un pixel vecino al azar
+{
+do    {	
+	ran=random;
+	if(ran>0 && ran<0.125)
+		ib=ia-w-1;
+	if(ran>0.125 && ran<0.250)
+		ib=ia-w;
+	if(ran>0.250 && ran<0.375)
+		ib=ia-w+1;
+	if(ran>0.375 && ran<0.500)
+		ib=ia-1;
+	if(ran>0.500 && ran<0.625)
+		ib=ia+1;
+	if(ran>0.625 && ran<0.750)
+		ib=ia+w-1;
+	if(ran>0.750 && ran<0.875)
+		ib=ia+w;
+	if(ran>0.875 && ran<1.05)
+		ib=ia+w+1;
+	}  while(ib<0 || ib>w*h-1)
+return ib;
+}
+
+
+
+
+function VECTORIZAR(imagenAvectorizar, w, h)     //1: funcion para vectorizar imagenes                    
+{
+selectWindow(imagenAvectorizar);
+vector=newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		vector[i] = getPixel(x,y);
+		i++;
+		}
+	}
+return vector;
+}
+
+newImage("Res", "8-bit black", w, h, 300); 
+for(j=1; j<301; j++)
+{
+a=newArray(w*h);
+a=VECTORIZAR("green", w, h) ;
+
+selectWindow("Res");
+setSlice(j);
+selectWindow("green");
+for(i=0; i<iter; i++)
+	{
+	do {
+	ii=round(random*(w*h-1));  
+	fi=NEIGHBOURPIXEL(ii, w, h);
+	} while(a[fi]>254 || a[ii]<1 || a[ii]>a[fi]) 
+	
+	a[fi]=a[fi]+1;
+	a[ii]=a[ii]-1;
+	
+	showStatus(i);
+	}                       
+
+ 
+selectWindow("Res");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, a[i]);
+		i++;
+		}
+	} 
+}

@@ -1,0 +1,1391 @@
+
+
+
+
+macro "Image Deconstructor [r]" 
+{
+
+requires("1.29p");                      
+
+id1=getImageID();                        //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+
+ Dialog.create("ImageDeco");    //genero ventana de inicio                                                      
+  Dialog.addChoice("Red:", figura);         
+  Dialog.addChoice("Green:", figura);          
+  Dialog.addChoice("Mask:", figura);  
+  
+       Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	mascara=Dialog.getChoice();
+   	
+
+selectWindow(mascara);
+run("Select None");
+
+selectWindow(rojo);
+run("8-bit");
+selectWindow(verde);
+run("8-bit");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==255)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+unosMascara=contarUnos(mascara);
+
+imageCalculator("AND create", verde, mascara);     //opero imágenes con la máscara
+rename("verdeAndMascara");
+imageCalculator("AND create", rojo, mascara);   
+rename("rojoAndMascara");
+
+
+selectWindow(mascara);	           //vectorizo la máscara
+ masc = newArray(w*h);
+ i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		masc[i] = getPixel(x,y);
+		i++;
+		}
+	}
+
+unosMascara=contarUnos(mascara);                        //cuento unos
+
+
+
+
+selectWindow("rojoAndMascara");	                     //vectorizo cada canal
+  r = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			r[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+
+selectWindow("verdeAndMascara");	
+  v = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			v[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+
+selectWindow("verdeAndMascara");
+close();
+selectWindow("rojoAndMascara");
+close();
+
+m=0;
+rf=newArray(unosMascara);
+
+r1=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=true;
+d=0;
+do 
+{
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(r[i]==m && rf[i]==true)
+		{
+		r1[i]=m;
+		rf[i]=false;
+		d++;
+		}
+		else
+		{
+		if(rf[i]==true)
+			r1[i]=0;
+		}
+	}
+
+}
+while(d<unosMascara/25 && m<256)
+
+
+r2=newArray(unosMascara);
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(r[i]==m)
+		{
+		r2[i]=m;
+		d++;
+		}
+		else
+		r2[i]=0;
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r3=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r3[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r3[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r4=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r4[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r4[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r5=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r5[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r5[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+
+r6=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r6[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r6[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r7=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r7[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r7[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r8=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r8[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r8[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r9=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r9[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r9[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r10=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r10[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r10[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r11=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r11[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r11[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r12=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r12[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r12[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+
+r13=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r13[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r13[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r14=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r14[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r14[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r15=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r15[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r15[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r16=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r16[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r16[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r17=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r17[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r17[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r18=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r18[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r18[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r19=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r19[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r19[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r20=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r20[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r20[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r21=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r21[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r21[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r22=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r22[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r22[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r23=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r23[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r23[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r24=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r24[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r24[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+r25=newArray(unosMascara);
+rf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+rf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=rf[d])
+	{r25[i]=m;rf[d]=i;d++;}
+		else
+		{
+		if(i==rf[d]){}
+			else
+			{r25[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+
+
+m=0;
+v1=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v1[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v1[i]=0;}
+		}
+	}
+
+}
+//print(m+"     "+d);
+while(d<unosMascara/25 && m<256)
+
+
+v2=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v2[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v2[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v3=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v3[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v3[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v4=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v4[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v4[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v5=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v5[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v5[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+
+v6=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v6[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v6[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v7=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v7[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v7[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v8=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v8[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v8[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v9=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v9[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v9[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v10=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v10[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v10[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v11=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v11[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v11[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v12=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v12[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v12[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+
+v13=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v13[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v13[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v14=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v14[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v14[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v15=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v15[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v15[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v16=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v16[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v16[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v17=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v17[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v17[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v18=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v18[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v18[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v19=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v19[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v19[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v20=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v20[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v20[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v21=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v21[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v21[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v22=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v22[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v22[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v23=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v23[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v23[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v24=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v24[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v24[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+v25=newArray(unosMascara);
+vf=newArray(unosMascara);
+for(i=0; i<unosMascara; i++)
+vf[i]=300;
+d=0;
+do {
+m++;
+for(i=0; i<unosMascara; i++)
+	{
+	if(m==r[i] && i!=vf[d])
+	{v25[i]=m;vf[d]=i;d++;}
+		else
+		{
+		if(i==vf[d]){}
+			else
+			{v25[i]=0;}
+		}
+	}
+}
+while(d<unosMascara/25 && m<256)
+
+
+sumaV=newArray(25);
+sumaR=newArray(25);
+for(i=0; i<25; i++){
+sumaR[i]=0;
+sumaV[i]=0;}
+
+for(i=0; i<unosMascara; i++)
+{
+sumaR[0]=sumaR[0]+r1[i];
+sumaR[1]=sumaR[1]+r2[i];	
+sumaR[2]=sumaR[2]+r3[i];
+sumaR[3]=sumaR[3]+r4[i];
+sumaR[4]=sumaR[4]+r5[i];
+sumaR[5]=sumaR[5]+r6[i];	
+sumaR[6]=sumaR[6]+r7[i];
+sumaR[7]=sumaR[7]+r8[i];
+sumaR[8]=sumaR[8]+r9[i];
+sumaR[9]=sumaR[9]+r10[i];	
+sumaR[10]=sumaR[10]+r11[i];
+sumaR[11]=sumaR[11]+r12[i];
+sumaR[12]=sumaR[12]+r13[i];
+sumaR[13]=sumaR[13]+r14[i];	
+sumaR[14]=sumaR[14]+r15[i];
+sumaR[15]=sumaR[15]+r16[i];
+sumaR[16]=sumaR[16]+r17[i];
+sumaR[17]=sumaR[17]+r18[i];
+sumaR[18]=sumaR[18]+r19[i];
+sumaR[19]=sumaR[19]+r20[i];	
+sumaR[20]=sumaR[20]+r21[i];
+sumaR[21]=sumaR[21]+r22[i];
+sumaR[22]=sumaR[22]+r23[i];
+sumaR[23]=sumaR[23]+r24[i];	
+sumaR[24]=sumaR[24]+r25[i];
+sumaV[0]=sumaV[0]+v1[i];
+sumaV[1]=sumaV[1]+v2[i];	
+sumaV[2]=sumaV[2]+v3[i];
+sumaV[3]=sumaV[3]+v4[i];
+sumaV[4]=sumaV[4]+v5[i];
+sumaV[5]=sumaV[5]+v6[i];	
+sumaV[6]=sumaV[6]+v7[i];
+sumaV[7]=sumaV[7]+v8[i];
+sumaV[8]=sumaV[8]+v9[i];
+sumaV[9]=sumaV[9]+v10[i];	
+sumaV[10]=sumaV[10]+v11[i];
+sumaV[11]=sumaV[11]+v12[i];
+sumaV[12]=sumaV[12]+v13[i];
+sumaV[13]=sumaV[13]+v14[i];	
+sumaV[14]=sumaV[14]+v15[i];
+sumaV[15]=sumaV[15]+v16[i];
+sumaV[16]=sumaV[16]+v17[i];
+sumaV[17]=sumaV[17]+v18[i];
+sumaV[18]=sumaV[18]+v19[i];
+sumaV[19]=sumaV[19]+v20[i];	
+sumaV[20]=sumaV[20]+v21[i];
+sumaV[21]=sumaV[21]+v22[i];
+sumaV[22]=sumaV[22]+v23[i];
+sumaV[23]=sumaV[23]+v24[i];	
+sumaV[24]=sumaV[24]+v25[i];
+}
+numRV=newArray(25);
+denR=newArray(25);
+denV=newArray(25);
+promV=newArray(25);
+promR=newArray(25);
+denRV=newArray(25);
+for(i=0; i<25; i++){
+promR[i]=sumaR[i]/unosMascara;
+promV[i]=sumaV[i]/unosMascara;
+numRV[i]=0;
+denR[i]=0;
+denV[i]=0;
+promV[i]=0;
+promR[i]=0;
+//denRV[i]=0;
+
+}
+
+
+for(i=0; i<unosMascara; i++)                                     //calculo todas las series                
+	{
+	showStatus("Calculating Pearson coefficient..."+i);
+	denR[0]=denR[0]+(r1[i]-promR[0])*(r1[i]-promR[0]);                                                                                                        
+	denV[0]=denV[0]+(v1[i]-promV[0])*(v1[i]-promV[0]);
+	numRV[0]=numRV[0]+(r1[i]-promR[0])*(v1[i]-promV[0]);
+	denR[1]=denR[1]+(r2[i]-promR[1])*(r2[i]-promR[1]);                                                                                                        
+	denV[1]=denV[1]+(v2[i]-promV[1])*(v2[i]-promV[1]);
+	numRV[1]=numRV[1]+(r2[i]-promR[1])*(v2[i]-promV[1]);
+	denR[2]=denR[2]+(r3[i]-promR[2])*(r3[i]-promR[2]);                                                                                                        
+        denV[2]=denV[2]+(v3[i]-promV[2])*(v3[i]-promV[2]);
+        numRV[2]=numRV[2]+(r3[i]-promR[2])*(v3[i]-promV[2]);
+	denR[3]=denR[3]+(r4[i]-promR[3])*(r4[i]-promR[3]);                                                                                                        
+        denV[3]=denV[3]+(v4[i]-promV[3])*(v4[i]-promV[3]);
+        numRV[3]=numRV[3]+(r4[i]-promR[3])*(v4[i]-promV[3]);
+	denR[4]=denR[4]+(r5[i]-promR[4])*(r5[i]-promR[4]);                                                                                                        
+        denV[4]=denV[4]+(v5[i]-promV[4])*(v5[i]-promV[4]);
+        numRV[4]=numRV[4]+(r5[i]-promR[4])*(v5[i]-promV[4]);
+	denR[5]=denR[5]+(r6[i]-promR[5])*(r6[i]-promR[5]);                                                                                                        
+        denV[5]=denV[5]+(v6[i]-promV[5])*(v6[i]-promV[5]);
+        numRV[5]=numRV[5]+(r6[i]-promR[5])*(v6[i]-promV[5]);
+	denR[6]=denR[6]+(r7[i]-promR[6])*(r7[i]-promR[6]);                                                                                                        
+        denV[6]=denV[6]+(v7[i]-promV[6])*(v7[i]-promV[6]);
+        numRV[6]=numRV[6]+(r7[i]-promR[6])*(v7[i]-promV[6]);
+	denR[7]=denR[7]+(r8[i]-promR[7])*(r8[i]-promR[7]);                                                                                                        
+        denV[7]=denV[7]+(v8[i]-promV[7])*(v8[i]-promV[7]);
+        numRV[7]=numRV[7]+(r8[i]-promR[7])*(v8[i]-promV[7]);
+	denR[8]=denR[8]+(r9[i]-promR[8])*(r9[i]-promR[8]);                                                                                                        
+        denV[8]=denV[8]+(v9[i]-promV[8])*(v9[i]-promV[8]);
+        numRV[8]=numRV[8]+(r9[i]-promR[8])*(v9[i]-promV[8]);
+	denR[9]=denR[9]+(r10[i]-promR[9])*(r10[i]-promR[9]);                                                                                                        
+        denV[9]=denV[9]+(v10[i]-promV[9])*(v10[i]-promV[9]);
+        numRV[9]=numRV[9]+(r10[i]-promR[9])*(v10[i]-promV[9]);
+	denR[10]=denR[10]+(r11[i]-promR[10])*(r11[i]-promR[10]);                                                                                                        
+        denV[10]=denV[10]+(v11[i]-promV[10])*(v11[i]-promV[10]);
+        numRV[10]=numRV[10]+(r11[i]-promR[10])*(v11[i]-promV[10]);
+	denR[11]=denR[11]+(r12[i]-promR[11])*(r12[i]-promR[11]);                                                                                                        
+        denV[11]=denV[11]+(v12[i]-promV[11])*(v12[i]-promV[11]);
+        numRV[11]=numRV[11]+(r12[i]-promR[11])*(v12[i]-promV[11]);
+	denR[12]=denR[12]+(r13[i]-promR[12])*(r13[i]-promR[12]);                                                                                                        
+        denV[12]=denV[12]+(v13[i]-promV[12])*(v13[i]-promV[12]);
+        numRV[12]=numRV[12]+(r13[i]-promR[12])*(v13[i]-promV[12]);
+	denR[13]=denR[13]+(r14[i]-promR[13])*(r14[i]-promR[13]);                                                                                                        
+        denV[13]=denV[13]+(v14[i]-promV[13])*(v14[i]-promV[13]);
+        numRV[13]=numRV[13]+(r14[i]-promR[13])*(v14[i]-promV[13]);
+        denR[14]=denR[14]+(r15[i]-promR[14])*(r15[i]-promR[14]);                                                                                                        
+        denV[14]=denV[14]+(v15[i]-promV[14])*(v15[i]-promV[14]);
+        numRV[14]=numRV[14]+(r15[i]-promR[14])*(v15[i]-promV[14]);
+	denR[15]=denR[15]+(r16[i]-promR[15])*(r16[i]-promR[15]);                                                                                                        
+        denV[15]=denV[15]+(v16[i]-promV[15])*(v16[i]-promV[15]);
+        numRV[15]=numRV[15]+(r16[i]-promR[15])*(v16[i]-promV[15]);
+        denR[16]=denR[16]+(r17[i]-promR[16])*(r17[i]-promR[16]);                                                                                                        
+        denV[16]=denV[16]+(v17[i]-promV[16])*(v17[i]-promV[16]);
+        numRV[16]=numRV[16]+(r17[i]-promR[16])*(v17[i]-promV[16]);
+	denR[17]=denR[17]+(r18[i]-promR[17])*(r18[i]-promR[17]);                                                                                                        
+        denV[17]=denV[17]+(v18[i]-promV[17])*(v18[i]-promV[17]);
+        numRV[17]=numRV[17]+(r18[i]-promR[17])*(v18[i]-promV[17]);
+        denR[18]=denR[18]+(r19[i]-promR[18])*(r19[i]-promR[18]);                                                                                                        
+        denV[18]=denV[18]+(v19[i]-promV[18])*(v19[i]-promV[18]);
+        numRV[18]=numRV[18]+(r19[i]-promR[18])*(v19[i]-promV[18]);
+        denR[19]=denR[19]+(r20[i]-promR[19])*(r20[i]-promR[19]);                                                                                                        
+        denV[19]=denV[19]+(v20[i]-promV[19])*(v20[i]-promV[19]);
+        numRV[19]=numRV[19]+(r20[i]-promR[19])*(v20[i]-promV[19]);
+	denR[20]=denR[20]+(r21[i]-promR[20])*(r21[i]-promR[20]);                                                                                                        
+        denV[20]=denV[20]+(v21[i]-promV[20])*(v21[i]-promV[20]);
+        numRV[20]=numRV[20]+(r21[i]-promR[20])*(v21[i]-promV[20]);
+        denR[21]=denR[21]+(r22[i]-promR[21])*(r22[i]-promR[21]);                                                                                                        
+        denV[21]=denV[21]+(v22[i]-promV[21])*(v22[i]-promV[21]);
+        numRV[21]=numRV[21]+(r22[i]-promR[21])*(v22[i]-promV[21]);
+        denR[22]=denR[22]+(r23[i]-promR[22])*(r23[i]-promR[22]);                                                                                                        
+        denV[22]=denV[22]+(v23[i]-promV[22])*(v23[i]-promV[22]);
+        numRV[22]=numRV[22]+(r23[i]-promR[22])*(v23[i]-promV[22]);
+        denR[23]=denR[23]+(r24[i]-promR[23])*(r24[i]-promR[23]);                                                                                                        
+        denV[23]=denV[23]+(v24[i]-promV[23])*(v24[i]-promV[23]);
+        numRV[23]=numRV[23]+(r24[i]-promR[23])*(v24[i]-promV[23]);
+        denR[24]=denR[24]+(r25[i]-promR[24])*(r25[i]-promR[24]);                                                                                                        
+        denV[24]=denV[24]+(v25[i]-promV[24])*(v25[i]-promV[24]);
+        numRV[24]=numRV[24]+(r25[i]-promR[24])*(v25[i]-promV[24]);        
+	}
+
+//denRV=newArray(25);
+Pearson=newArray(25);
+for(i=0; i<25; i++)
+denRV[i]=sqrt(denR[i]*denV[i]);                           
+
+for(i=0; i<25; i++)
+Pearson[i]=numRV[i]/denRV[i];                                     
+
+//for(i=0; i<25; i++)
+//print(Pearson[i]);                                     
+
+for(i=0; i<unosMascara; i++)
+{print(r1[i]);
+//print(v1[i]);
+}/*
+print(denV[0]);
+print(denR[0]);
+print(denRV[0]);
+*/
+print("fin");
+/*
+for(i=0; i<25; i++)
+print(denV[i]);
+for(i=0; i<25; i++)
+print(denR[i]);
+for(i=0; i<25; i++)
+print(denRV[i]);
+for(i=0; i<unosMascara; i++)
+print(v5[i]);
+*/
+}
+
+
+
+
+
+

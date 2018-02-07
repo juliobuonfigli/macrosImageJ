@@ -1,0 +1,123 @@
+
+newImage("BrownianMovement", "8-bit black", 200, 200, 45);
+
+x1=100; x2=120; x3=90; x4=78; x5=112; x6=100; x7=36; x8=140; y1=70; y2=134; y3=56; y4=89; y5=123; y6=111; y7=77; y8=60;
+
+setPixel(x1, y1, 255);
+setPixel(x2, y2, 255);
+setPixel(x3, y3, 255);
+setPixel(x4, y4, 255);
+setPixel(x5, y5,  255);
+setPixel(x6, y6, 255);
+setPixel(x7, y7, 255);
+setPixel(x8, y8,  255);
+
+pa=4;
+random("seed", 789);
+
+for(i=2; i<46; i++)
+{
+setSlice(i);
+h=round(random*pa);
+p1=(2*random-1)*h;
+x1=x1+p1;
+if(random>0.5)
+g=-1;
+else
+g=1;
+y1=y1+g*sqrt(h*h-p1*p1);
+y1=round(y1);
+x1=round(x1);
+
+h=round(random*pa);
+p2=(2*random-1)*h;
+x2=x2+p2;
+if(random>0.5)
+g=-1;
+else
+g=1;
+y2=y2+g*sqrt(h*h-p2*p2);
+y2=round(y2);
+x2=round(x2);
+
+h=round(random*pa);
+p3=(2*random-1)*h;
+x3=x3+p3;
+if(random>0.5)
+g=-1;
+else
+g=1;
+y3=y3+g*sqrt(h*h-p3*p3);
+y3=round(y3);
+x3=round(x3);
+
+h=round(random*pa);
+p4=(2*random-1)*h;
+x4=x4+p4;
+if(random>0.5)
+g=-1;
+else
+g=1;
+y4=y4+g*sqrt(h*h-p4*p4);
+y4=round(y4);
+x4=round(x4);
+
+h=round(random*pa);
+p5=(2*random-1)*h;
+x5=x5+p5;
+if(random>0.5)
+g=-1;
+else
+g=1;
+y5=y5+g*sqrt(h*h-p5*p5);
+y5=round(y5);
+x5=round(x5);
+
+h=round(random*pa);
+p6=(2*random-1)*h;
+x6=x6+p6;
+if(random>0.5)
+g=-1;
+else
+g=1;
+y6=y6+g*sqrt(h*h-p6*p6);
+y6=round(y6);
+x6=round(x6);
+
+h=round(random*pa);
+p7=(2*random-1)*h;
+x7=x7+p7;
+if(random>0.5)
+g=-1;
+else
+g=1;
+y7=y7+g*sqrt(h*h-p7*p7);
+y7=round(y7);
+x7=round(x7);
+
+h=round(random*pa);
+p8=(2*random-1)*h;
+x8=x8+p8;
+if(random>0.5)
+g=-1;
+else
+g=1;
+y8=y8+g*sqrt(h*h-p8*p8);
+y8=round(y8);
+x8=round(x8);
+
+setPixel(x1, y1, 255);
+setPixel(x2, y2, 255);
+setPixel(x3, y3, 255);
+setPixel(x4, y4, 255);
+setPixel(x5, y5,  255);
+setPixel(x6, y6, 255);
+setPixel(x7, y7, 255);
+setPixel(x8, y8, 255);
+
+
+//print(x1+"   "+x2+"   "+x3+"   "+x4+"   "+x5);
+//print(y1+"   "+y2+"   "+y3+"   "+y4+"   "+y5);
+
+}
+

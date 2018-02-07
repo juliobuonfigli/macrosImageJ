@@ -1,0 +1,27 @@
+
+run("Duplicate...", "title=Green");
+
+an=getWidth;
+al=getHeight;
+r=40;
+
+vector=newArray(an*al);
+  i = 0;
+  for (y=0; y<al; y++)
+	{
+	for (x=0; x<an; x++)
+		{
+		coef1=1; coef2=1;
+		if(x>an-r)
+			coef1=2-(an-x-1)/r;
+		if(x<r-1)
+			coef1=2-x/r;
+		if(y<r-1)
+			coef2=2-y/r;
+		if(y>al-r)
+			coef2=2-(al-y-1)/r;
+		coef=coef1*coef2;
+		setPixel(x, y, getPixel(x, y)*coef);
+		i++;
+		}
+	}

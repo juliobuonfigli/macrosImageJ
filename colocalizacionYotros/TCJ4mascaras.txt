@@ -1,0 +1,1064 @@
+
+/*
+TCJ
+Julio Buonfigli
+*/
+
+
+macro "Triple Colocalization[t]" 
+{	
+
+
+//SENTENCIAS INTRODUCTORIAS
+{
+
+
+requires("1.29p");              //muestra un mensaje si la versión de imagej usada no es compatible
+
+id1=getImageID();          //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+ Dialog.create("TCJ");    //genero ventana de inicio                                                      
+  Dialog.addChoice("Red:", figura);         
+  Dialog.addChoice("Green:", figura);          
+  Dialog.addChoice("Blue:", figura);    
+  Dialog.addChoice("Primary mask:", figura);  
+  Dialog.addCheckbox("Statistical significance", true); 
+  Dialog.addNumber("Number of generated images:", 30); 
+  Dialog.addChoice("Significance level:", newArray(0.01, 0.05)); 
+  Dialog.addCheckbox("Mask threshold", false);
+  Dialog.addCheckbox("Differenciated masks", false);
+  
+       Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	azul=Dialog.getChoice();
+   	mascara=Dialog.getChoice();
+   	generadasP=Dialog.getCheckbox();
+	numGeneradas=Dialog.getNumber();
+	nivel=Dialog.getChoice();
+	intOR=Dialog.getCheckbox();
+	dMasks=Dialog.getCheckbox();
+	
+if(numGeneradas>500)
+	exit("The number of generated images must be between 5 and 500");   
+
+setBatchMode(true);
+
+selectWindow(mascara);
+run("Select None");
+
+selectWindow(rojo);
+run("Select None");
+run("8-bit");
+selectWindow(verde);
+run("Select None");
+run("8-bit");
+selectWindow(azul);
+run("Select None");
+run("8-bit");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+if(nivel==0.05)                                        //correlaciono z con sus valores de significancia
+	zCola=-1.64486;
+	else
+	zCola=-2.32635;
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==255)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+function raizCubica(w)                     
+{
+   x = w;
+   y = 1;
+   e = 0.000001;           /* e decides the accuracy level*/
+  while(x - y > e)
+  {
+    x = (2*x + y)/3;
+    y = w/(x*x);
+  }
+return x;
+}
+
+
+function contarCeros(ventana)                     //Declaro una función que cuenta ceros
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==0)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+unosMascara=contarUnos(mascara);                        
+cerosMascara=contarCeros(mascara);
+
+if(unosMascara+cerosMascara!=w*h)
+	exit("Make the mask binary before running the application");
+
+
+imageCalculator("AND create", azul, mascara);                       //opero imagenes con la máscara
+rename("azulAndMascara");
+imageCalculator("AND create", verde, mascara);  
+rename("verdeAndMascara");
+imageCalculator("AND create", rojo, mascara);   
+rename("rojoAndMascara");
+}
+
+//MASCARA CIRCUNSCRIPTA
+{
+
+if(intOR==true)
+{
+Dialog.create("Mask Threshold"); 
+                             
+ Dialog.addNumber("Red:", 0); 
+  Dialog.addNumber("Green:", 0); 
+  Dialog.addNumber("Blue:", 0); 
+
+Dialog.show();
+	MMUR=Dialog.getNumber();
+	MMUV=Dialog.getNumber();
+	MMUA=Dialog.getNumber();
+	selectWindow("rojoAndMascara");           
+	setThreshold(MMUR, 255);
+	run("Convert to Mask");
+	selectWindow("verdeAndMascara");      
+	setThreshold(MMUV, 255);
+	run("Convert to Mask");
+	selectWindow("azulAndMascara");      
+	setThreshold(MMUA, 255);
+	run("Convert to Mask");
+	selectWindow(mascara);
+        Mascara=getTitle();
+	imageCalculator("OR create", "rojoAndMascara", "verdeAndMascara"); 
+        rename("RorV");
+	imageCalculator("OR create", "azulAndMascara", "RorV"); 
+	setThreshold(1, 255);
+	run("Convert to Mask");
+	rename("CircumscribedMask");
+	mascara=getTitle();
+	selectWindow("rojoAndMascara");           
+	close();
+	selectWindow("verdeAndMascara"); 	
+	close();
+	selectWindow("azulAndMascara"); 	
+	close();
+	selectWindow("RorV"); 	
+	close();
+	imageCalculator("AND create", verde, mascara);     
+	rename("verdeAndMascara");
+	imageCalculator("AND create", rojo, mascara);   
+	rename("rojoAndMascara");
+	imageCalculator("AND create", azul, mascara);   
+	rename("azulAndMascara");
+}
+else
+{
+MMUV=0;
+MMUR=0;
+MMUA=0;
+}
+
+selectWindow(mascara);                                      //vectorizo mascaras	   
+  masc = newArray(w*h);
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		masc[i] = getPixel(x,y);
+		i++;
+		}
+	}
+unosMascara=contarUnos(mascara);                        
+}
+
+//CALCULO OVERLAP
+{
+
+selectWindow("rojoAndMascara");	           //vectorizo cada canal
+  r = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Overlap coefficients...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			r[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+selectWindow("verdeAndMascara");	
+  v = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Overlap coefficients...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			v[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+selectWindow("azulAndMascara");	
+  az = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Overlap coefficients...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			az[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+                              
+   nunRV=0;
+   denR=0;
+   denV=0;
+   
+for(i=0; i<unosMascara; i++)                                                                                //calculo todas las series                
+	{
+	showStatus("Calculating Overlap coefficients...");
+	if(r[i]>=MMUR || v[i]>=MMUV)
+		{
+		numRV=numRV+(r[i])*(v[i]);
+		denR=denR+(r[i])*(r[i]);                                                                                                           
+		denV=denV+(v[i])*(v[i]);
+		}
+	}
+denRV=sqrt(denR*denV);                             
+RV=numRV/denRV;                                     
+
+   denR=0;
+   numRA=0;
+   denA=0;
+
+for(i=0; i<unosMascara; i++)                                                                                                
+	{
+	showStatus("Calculating Overlap coefficients...");
+	if(r[i]>=MMUR || az[i]>=MMUA)
+		{
+		numRA=numRA+(r[i])*(az[i]);
+		denR=denR+(r[i])*(r[i]);                                                                                                           
+		denA=denA+(az[i])*(az[i]);
+		}
+	}
+denRA=sqrt(denR*denA);                             
+RA=numRA/denRA;                                     
+
+   numVA=0;
+   denV=0;
+   denA=0;
+
+for(i=0; i<unosMascara; i++)                                                                                              
+	{
+	showStatus("Calculating Overlap coefficients...");
+	if(az[i]>=MMUA || v[i]>=MMUV)
+		{
+		numVA=numVA+(az[i])*(v[i]);
+		denA=denA+(az[i])*(az[i]);                                                                                                           
+		denV=denV+(v[i])*(v[i]);
+		}
+	}
+denVA=sqrt(denA*denV);                             
+VA=numVA/denVA;                                     
+
+
+   numRVA=0;                        //inicializo variables de triple
+   denRt=0;                                                                                                           
+   denVt=0;
+   denAt=0;
+      
+for(i=0; i<unosMascara; i++)                                                                                //calculo todas las series             
+	{
+	numRVA=numRVA+v[i]*az[i]*r[i];
+	denRt=denRt+r[i]*r[i]*r[i]; 
+        denVt=denVt+v[i]*v[i]*v[i];
+        denAt=denAt+az[i]*az[i]*az[i];
+	}
+
+denRVA=denRt*denVt*denAt;                             //calculo coeficientes de Pearson
+denRVAcubicaR=raizCubica(denRVA);
+RVA=numRVA/denRVAcubicaR;
+
+
+
+// SIGNIFICANCIA ESTADÍSTICA 
+{
+if(generadasP==true)
+{
+
+rRV=newArray(numGeneradas);                           //Defino arreglos para cada indice de colocalización
+rRA=newArray(numGeneradas);
+rVA=newArray(numGeneradas);
+rRVA=newArray(numGeneradas);
+vRVA=newArray(numGeneradas);
+aRVA=newArray(numGeneradas);
+tRVA=newArray(numGeneradas);
+
+for(s=0; s<numGeneradas; s++)                        //rulo para generar tantas imágenes aleatorias para cada fluoróforo como se cargue en el diálogo de entrada
+{
+showStatus("Statistical significance: "+s); 
+
+random("seed", round(random*w*h*10));
+
+
+	u=newArray(unosMascara+1);                                                                //desordeno aleatoriamente cada vector para triples 
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	rd=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			rd[i]=r[e];
+			u[e]=false;
+			i++;
+			}
+		}
+	
+                                                                
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	vd=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			vd[i]=v[e];
+			u[e]=false;
+			i++;
+			}
+		}
+
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	ad=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			ad[i]=az[e];
+			u[e]=false;
+			i++;
+			}
+		}
+
+RnumRVA=0;
+VnumRVA=0;
+AnumRVA=0;
+TnumRVA=0;
+
+for(i=1; i<unosMascara; i++)                                                                                //random Pearson según canal a randomizar             
+	{
+	RnumRVA=RnumRVA+v[i]*az[i]*rd[i];	
+	VnumRVA=VnumRVA+vd[i]*az[i]*r[i];
+	AnumRVA=AnumRVA+v[i]*ad[i]*r[i];
+	TnumRVA=TnumRVA+vd[i]*ad[i]*rd[i];
+	}
+
+rRVA[s]=RnumRVA/denRVAcubicaR;
+vRVA[s]=VnumRVA/denRVAcubicaR;
+aRVA[s]=AnumRVA/denRVAcubicaR;
+tRVA[s]=TnumRVA/denRVAcubicaR;			
+
+if(dMasks==true)
+	{
+	u=newArray(unosMascara+1);                                                                //desordeno aleatoriamente el verde para rojo y verde 
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	vd=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			if(v[e]>=MMUV || r[e]>=MMUR)
+				vd[i]=v[e];
+				else
+				vd[i]=0;
+			u[e]=false;
+			i++;
+			}
+		}	        	
+
+	u=newArray(unosMascara+1);                                                                //desordeno aleatoriamente el rojo para rojo y azul
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	rd=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			if(r[e]>=MMUR || az[e]>=MMUA)
+				rd[i]=r[e];
+				else
+				rd[i]=0;
+			u[e]=false;
+			i++;
+			}
+		}
+
+	u=newArray(unosMascara+1);                                                                //desordeno aleatoriamente el azul para azul y verde
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	ad=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			if(az[e]>=MMUA || v[e]>=MMUV)
+				ad[i]=az[e];
+				else
+				ad[i]=0;
+			u[e]=false;
+			i++;
+			}
+		}
+
+	}
+
+rNumVA=0;
+rNumRA=0;
+rNumRV=0;
+
+for(i=0; i<unosMascara; i++)                           //calculo random dobles                
+	{
+	rNumVA=rNumVA+v[i]*ad[i];
+	rNumRA=rNumRA+rd[i]*az[i];
+	rNumRV=rNumRV+r[i]*vd[i];
+	}
+
+rRV[s]=rNumRV/denRV;
+rRA[s]=rNumRA/denRA;
+rVA[s]=rNumVA/denVA;
+}
+
+showStatus("Statistical significance: "+s); 
+wait(1000);
+
+sumRV=0;                          //inicializo variables de suma para promedios
+sumRA=0;
+sumVA=0;
+sum2RV=0;                          
+sum2RA=0;
+sum2VA=0;
+RsumTriple=0;
+VsumTriple=0;
+AsumTriple=0;
+TsumTriple=0;
+Rsum2Triple=0;
+Vsum2Triple=0;
+Asum2Triple=0;
+Tsum2Triple=0;
+
+for(i=0; i<numGeneradas; i++)         //media
+	{	
+	sumRV=sumRV+rRV[i];
+	sumRA=sumRA+rRA[i];
+	sumVA=sumVA+rVA[i];
+	RsumTriple=RsumTriple+rRVA[i];
+	VsumTriple=VsumTriple+vRVA[i];
+	AsumTriple=AsumTriple+aRVA[i];
+	TsumTriple=TsumTriple+tRVA[i];
+	}
+
+promRV=sumRV/numGeneradas;                                 
+promRA=sumRA/numGeneradas; 
+promVA=sumVA/numGeneradas; 
+RpromTriple=RsumTriple/numGeneradas; 
+VpromTriple=VsumTriple/numGeneradas;
+ApromTriple=AsumTriple/numGeneradas;
+TpromTriple=TsumTriple/numGeneradas;
+  
+for(i=0; i<numGeneradas; i++)                                  //desviación estandar                  
+	{	
+	sum2RV=sum2RV+(rRV[i]-promRV)*(rRV[i]-promRV);
+	sum2RA=sum2RA+(rRA[i]-promRA)*(rRA[i]-promRA);
+	sum2VA=sum2VA+(rVA[i]-promVA)*(rVA[i]-promVA);
+	Rsum2Triple=Rsum2Triple+(rRVA[i]-RpromTriple)*(rRVA[i]-RpromTriple);
+	Vsum2Triple=Vsum2Triple+(vRVA[i]-VpromTriple)*(vRVA[i]-VpromTriple);
+	Asum2Triple=Asum2Triple+(aRVA[i]-ApromTriple)*(aRVA[i]-ApromTriple);
+	Tsum2Triple=Tsum2Triple+(tRVA[i]-TpromTriple)*(tRVA[i]-TpromTriple);
+	}
+
+devestRV=sqrt(sum2RV/numGeneradas);                                    
+devestRA=sqrt(sum2RA/numGeneradas); 
+devestVA=sqrt(sum2VA/numGeneradas); 
+RdevestTriple=sqrt(Rsum2Triple/numGeneradas); 
+VdevestTriple=sqrt(Vsum2Triple/numGeneradas);
+AdevestTriple=sqrt(Asum2Triple/numGeneradas);
+TdevestTriple=sqrt(Tsum2Triple/numGeneradas);
+
+xmRV=zCola*devestRV+promRV;                                   
+xmRA=zCola*devestRA+promRA;
+xmVA=zCola*devestVA+promVA;
+RxmTriple=zCola*RdevestTriple+RpromTriple;
+VxmTriple=zCola*VdevestTriple+VpromTriple;
+AxmTriple=zCola*AdevestTriple+ApromTriple;
+TxmTriple=zCola*TdevestTriple+TpromTriple;
+
+xRV=abs(zCola)*devestRV+promRV;                                   
+xRA=abs(zCola)*devestRA+promRA;
+xVA=abs(zCola)*devestVA+promVA;
+RxTriple=abs(zCola)*RdevestTriple+RpromTriple;
+VxTriple=abs(zCola)*VdevestTriple+VpromTriple;
+AxTriple=abs(zCola)*AdevestTriple+ApromTriple;
+TxTriple=abs(zCola)*TdevestTriple+TpromTriple;
+
+
+if(RV<xmRV)
+	SSrv="SE";
+	else
+	{
+	if(RV>xRV)
+		SSrv="SC";
+		else
+		SSrv="NS";
+	}
+
+if(RA<xmRA)
+	SSra="SE";
+	else
+	{	
+	if(RA>xRA)
+		SSra="SC";
+		else
+		SSra="NS";
+	}
+
+if(VA<xmVA)
+	SSva="SE";
+	else
+	{
+	if(VA>xVA)
+		SSva="SC";
+		else
+		SSva="NS";
+	}
+
+if(RVA<RxmTriple)
+	RSStriple="--";
+	else
+	{
+	if(RVA>RxTriple)
+		RSStriple="++";
+		else
+		RSStriple="=";
+	}
+
+if(RVA<VxmTriple)
+	VSStriple="--";
+	else
+	{
+	if(RVA>VxTriple)
+		VSStriple="++";
+		else
+		VSStriple="=";
+	}
+
+if(RVA<AxmTriple)
+	ASStriple="--";
+	else
+	{
+	if(RVA>AxTriple)
+		ASStriple="++";
+		else
+		ASStriple="=";
+	}
+
+if(RVA<TxmTriple)
+	TSStriple="--";
+	else
+	{
+	if(RVA>TxTriple)
+		TSStriple="++";
+		else
+		TSStriple="=";
+	}
+
+
+}
+}
+
+
+
+//RESULTADOS
+{
+
+
+if(generadasP==false)
+{
+SSrv=" ******";
+SSra=" ******";
+SSva=" ******";
+RSStriple=" ******";
+VSStriple=" ******";
+ASStriple=" ******";
+TSStriple=" ******";
+promRV=" ******";                            
+promRA=" ******";
+promVA=" ******";
+
+}
+
+titulo1 = "Results";                                            //genero cuadro que muestra resultados
+titulo2 = "["+titulo1+"]";
+  f = titulo2;
+ if (isOpen(titulo1))
+    print(f, "\\Clear");
+ else
+run("Table...", "name="+titulo1+" width=250 height=600");
+print(f, "\\Headings:for\tOverlap\trandom\t  Significance");
+print(f, " Red and green"+"\t  "+RV+"\t  "+promRV+"\t  "+SSrv);
+print(f, " Red and blue"+"\t  "+RA+"\t  "+promRA+"\t  "+SSra);
+print(f, " Blue and green"+"\t  "+VA+"\t  "+promVA+"\t  "+SSva);
+print(f, "");
+if(generadasP==true){
+print(f, " Random Red"+"\t  "+RVA+"\t  "+RpromTriple+"\t  "+RSStriple);
+print(f, " Random Green"+"\t  "+RVA+"\t  "+VpromTriple+"\t  "+VSStriple);
+print(f, " Random Blue"+"\t  "+RVA+"\t  "+ApromTriple+"\t  "+ASStriple);
+print(f, " Triple random"+"\t  "+RVA+"\t  "+TpromTriple+"\t  "+TSStriple);
+print(f, "");}
+setBatchMode("exit and display"); 
+
+// Resultados gráficos
+
+
+run("Merge Channels...", "c1=[rojoAndMascara] c2=[verdeAndMascara] c3=[azulAndMascara] create");    //Genero imagen de triple colocalización
+rename("Colocalization");
+updateDisplay();
+
+}}}}
+
+//fin TRIPLE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+macro "Double Colocalization [d]" 
+{
+
+// SENTENCIAS INTRODUCTORIAS
+{
+
+requires("1.29p");                      //muestra un mensaje si la versión de imagej usada no es compatible
+
+id1=getImageID();                        //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+
+ Dialog.create("TCJ");    //genero ventana de inicio                                                      
+  Dialog.addChoice("Red:", figura);         
+  Dialog.addChoice("Green:", figura);          
+  Dialog.addChoice("Primary mask:", figura);  
+  Dialog.addCheckbox("Statistical significance", false); 
+  Dialog.addNumber("Number of generated images:", 30); 
+  Dialog.addChoice("Significance level:", newArray(0.01, 0.05)); 
+  Dialog.addCheckbox("Mask threshold", false);
+  
+       Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	mascara=Dialog.getChoice();
+   	generadasP=Dialog.getCheckbox();
+	numGeneradas=Dialog.getNumber();
+	nivel=Dialog.getChoice();
+	intOR=Dialog.getCheckbox();
+   	
+if(numGeneradas>1000)
+	exit("The number of generated images must be between 5 and 1000");   
+
+setBatchMode(true);
+	
+selectWindow(mascara);
+run("Select None");
+
+selectWindow(rojo);
+run("8-bit");
+selectWindow(verde);
+run("8-bit");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+if(nivel==0.05)                                    //correlaciono z con sus valores de significancia
+	zCola=-1.64486;
+	else
+	zCola=-2.32635;
+
+
+
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==255)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+unosMascara=contarUnos(mascara);
+
+
+
+imageCalculator("AND create", verde, mascara);     //opero imágenes con la máscara
+rename("verdeAndMascara");
+imageCalculator("AND create", rojo, mascara);   
+rename("rojoAndMascara");
+
+
+if(intOR==true)
+{
+ Dialog.create("Mask Threshold");                             
+ Dialog.addNumber("Red:", 0); 
+  Dialog.addNumber("Green:", 0); 
+
+Dialog.show();
+	MMUR=Dialog.getNumber();
+	MMUV=Dialog.getNumber();
+
+
+	selectWindow("rojoAndMascara");           
+	setThreshold(MMUR, 255);
+	run("Convert to Mask");
+	unosMascaraRoja=contarUnos("rojoAndMascara");               
+	selectWindow("verdeAndMascara");      
+	setThreshold(MMUV, 255);
+	run("Convert to Mask");
+	unosMascaraVerde=contarUnos("verdeAndMascara");
+	selectWindow(mascara);
+        Mascara=getTitle();
+	imageCalculator("OR create", "rojoAndMascara", "verdeAndMascara"); 
+        setThreshold(1, 255);
+	run("Convert to Mask");
+	rename("CircumscribedMask");
+	mascara=getTitle();
+	selectWindow("rojoAndMascara");           
+	close();
+	selectWindow("verdeAndMascara"); 	
+	close();
+	imageCalculator("AND create", verde, mascara);     //opero imágenes con la máscara
+	rename("verdeAndMascara");
+	imageCalculator("AND create", rojo, mascara);   
+	rename("rojoAndMascara");
+	}
+
+
+function contarCeros(ventana)                     //Declaro una función que cuenta ceros
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==0)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+selectWindow(mascara);	           //vectorizo la máscara
+  masc = newArray(w*h);
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		masc[i] = getPixel(x,y);
+		i++;
+		}
+	}
+
+unosMascara=contarUnos(mascara);                        //cuento unos y ceros en la mascara
+cerosMascara=contarCeros(mascara);
+
+if(unosMascara+cerosMascara!=w*h)                                     
+	exit("Make the mask binary before running the application");
+
+} 
+
+
+// CALCULO OVERLAP
+{
+
+
+selectWindow("rojoAndMascara");	                     //vectorizo cada canal
+  r = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Overlap coefficient...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			r[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+	
+
+selectWindow("verdeAndMascara");	
+  v = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Overlap coefficient...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			v[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+
+   numRV=0;
+   denR=0;
+   denV=0;
+
+for(i=0; i<unosMascara; i++)                                     //calculo todas las series                
+	{
+	showStatus("Calculating Overlap coefficient...");
+	denR=denR+r[i]*r[i];                                                                 //Pearson                                          
+	denV=denV+v[i]*v[i];
+	numRV=numRV+r[i]*v[i];
+	}
+
+denRV=sqrt(denR*denV);                             //calculo coeficientes de Pearson
+
+RV=numRV/denRV;                                     
+
+showStatus("");
+
+}
+
+// SIGNIFICANCIA ESTADÍSTICA
+{
+
+if(generadasP==true)
+{
+
+showStatus("Statistical significance...");
+
+rRV=newArray(numGeneradas);
+
+random("seed", round(random*unosMascara*10));
+
+
+for(s=0; s<numGeneradas; s++)                 //rulo para generar tantas imágenes aleatorias para cada fluoróforo como se cargue en el diálogo de entrada
+	{
+ 
+	showStatus("Statistical significance: "+s);                                                                                  
+	
+	u=newArray(unosMascara+1);                                                                //desordeno aleatoriamente el vector rojo
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	rd=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			rd[i]=r[e];
+			u[e]=false;
+			i++;
+			}
+		}
+
+rNumRV=0;
+for(i=0; i<unosMascara; i++)                                     //calculo todas las series                
+	rNumRV=rNumRV+rd[i]*v[i];
+	                                                         
+rRV[s]=rNumRV/denRV;
+
+}
+showStatus("Statistical significance: "+s); 
+wait(1000);
+
+
+sumRV=0;
+for(i=0; i<numGeneradas; i++)         //sumo
+	sumRV=sumRV+rRV[i];
+	
+promRV=sumRV/numGeneradas; 
+
+sum2RV=0;
+for(i=0; i<numGeneradas; i++)                                  //desviación estandar                  
+	sum2RV=sum2RV+(rRV[i]-promRV)*(rRV[i]-promRV);
+
+devestRV=sqrt(sum2RV/numGeneradas); 
+	
+xmRV=zCola*devestRV+promRV;
+xRV=abs(zCola)*devestRV+promRV;
+
+if(RV<xmRV)
+	SSrv="SE";
+	else
+	{
+	if(RV>xRV)
+		SSrv="SC";
+		else
+		SSrv="NS";
+	}
+
+}
+}
+
+
+
+//RESULTADOS
+{
+
+if(generadasP==false)
+{
+SSrv="  ******";
+promRV="  ******";
+}
+
+titulo1 = "Results";                                            //genero cuadro que muestra resultados
+titulo2 = "["+titulo1+"]";
+  f = titulo2;
+ if (isOpen(titulo1))
+    print(f, "\\Clear");
+ else
+run("Table...", "name="+titulo1+" width=250 height=600");
+print(f, "\\Headings:for\tOverlap\tRandom\t  Significance");
+print(f, " Red and green"+"\t  "+RV+"\t  "+promRV+"\t  "+SSrv);
+print(f, "");
+
+setBatchMode("exit and display"); 
+
+run("Merge Channels...", "c1=[rojoAndMascara] c2=[verdeAndMascara] create");    //Genero imagen de triple colocalización
+rename("Colocalization");
+updateDisplay();
+
+
+}  //cierra resultados
+}  //cierra macro
+
+
+//FIN
+

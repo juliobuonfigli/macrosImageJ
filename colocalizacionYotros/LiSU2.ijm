@@ -1,0 +1,436 @@
+//  LiSU (Linear Spectral Unmixing) 
+
+
+macro "Triple LiSU [w]" 
+{	
+
+requires("1.29p");              
+
+id1=getImageID();          
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+ 
+  Dialog.create("LiSU");
+Dialog.addChoice("Entry:", newArray("Controls", "Coefficients"));
+ Dialog.show();
+   	entry=Dialog.getChoice();
+
+if(entry=="Controls")
+   	{
+ Dialog.create("LiSU");                                                          
+ 
+  Dialog.addMessage("Load the channels of the triple labeled sample");
+  Dialog.addChoice("Channel 1:", figura);
+  Dialog.addChoice("Channel 2:", figura);
+  Dialog.addChoice("Channel 3:", figura);
+  Dialog.addMessage("Load the controls"); 
+  Dialog.addChoice("Control 1:", figura);         
+  Dialog.addChoice("Control 2:", figura);          
+  Dialog.addChoice("Control 3:", figura);    
+  Dialog.addMessage("Load the bled controls");
+  Dialog.addChoice("Channel 2 on 1:", figura);
+  Dialog.addChoice("Channel 3 on 1:", figura);
+  Dialog.addChoice("Channel 1 on 2:", figura);
+  Dialog.addChoice("Channel 3 on 2:", figura);
+  Dialog.addChoice("Channel 1 on 3:", figura);
+  Dialog.addChoice("Channel 2 on 3:", figura);
+  Dialog.addCheckbox("Create a coefficients image: ", true); 
+  Dialog.addCheckbox("Show coefficients: ", true); 
+  
+         Dialog.show();
+   	canal1=Dialog.getChoice();
+   	canal2=Dialog.getChoice();
+   	canal3=Dialog.getChoice();
+   	control1=Dialog.getChoice();
+   	control2=Dialog.getChoice();
+   	control3=Dialog.getChoice();
+	DosEnUno=Dialog.getChoice();
+   	TresEnUno=Dialog.getChoice();
+   	UnoEnDos=Dialog.getChoice();
+   	TresEnDos=Dialog.getChoice();
+   	UnoEnTres=Dialog.getChoice();
+   	DosEnTres=Dialog.getChoice();
+   	cicb=Dialog.getCheckbox();
+   	sc=Dialog.getCheckbox();
+
+selectWindow(canal1);
+w = getWidth;                         
+h = getHeight;
+
+function Prom(ventana)           //Funcion promedio de intensidades 
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		suma=suma+a[i];
+		i++;
+		}
+	}
+prom=suma/(w*h);
+return prom;
+}
+
+selectWindow(canal1);
+run("Select None");
+run("8-bit");
+selectWindow(canal2);
+run("Select None");
+run("8-bit");
+selectWindow(canal3);
+run("Select None");
+run("8-bit");
+selectWindow(control1);
+run("Select None");
+run("8-bit");
+selectWindow(control2);
+run("Select None");
+run("8-bit");
+selectWindow(control3);
+run("Select None");
+run("8-bit");
+selectWindow(DosEnUno);
+run("Select None");
+run("8-bit");
+selectWindow(TresEnUno);
+run("Select None");
+run("8-bit");
+selectWindow(UnoEnDos);
+run("Select None");
+run("8-bit");
+selectWindow(TresEnDos);
+run("Select None");
+run("8-bit");
+selectWindow(UnoEnTres);
+run("Select None");
+run("8-bit");
+selectWindow(DosEnTres);
+run("Select None");
+run("8-bit");
+
+function Prom(ventana)           //Funcion promedio de intensidades 
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		suma=suma+a[i];
+		i++;
+		}
+	}
+prom=suma/(w*h);
+return prom;
+}
+
+c1=Prom(control1); 
+c2=Prom(control2);
+c3=Prom(control3);
+DosUno=Prom(DosEnUno);
+TresUno=Prom(TresEnUno);
+UnoDos=Prom(UnoEnDos); 
+TresDos=Prom(TresEnDos);
+UnoTres=Prom(UnoEnTres); 
+DosTres=Prom(DosEnTres);
+
+NDosUno=DosUno/c2;
+NTresUno=TresUno/c3;
+NUnoDos=UnoDos/c1;
+NTresDos=TresDos/c3;
+NUnoTres=UnoTres/c1;
+NDosTres=DosTres/c2;
+
+if(cicb==true)
+{
+newImage("CoefficientImage", "32-bit black", 6, 1, 1);
+selectWindow("CoefficientImage");
+setPixel(1,1,NDosUno);
+setPixel(2,1,NTresUno);
+setPixel(3,1,NUnoDos);
+setPixel(4,1,NTresDos);
+setPixel(5,1,NUnoTres);
+setPixel(6,1,NDosTres);
+}}
+
+if(entry=="coefficients")
+{
+Dialog.create("LiSU");                                                          
+   
+    Dialog.addChoice("Channel 1:", figura);
+    Dialog.addChoice("Channel 2:", figura);
+    Dialog.addChoice("Channel 3:", figura);
+    Dialog.addChoice("Coefficients image:", figura);
+    Dialog.addCheckbox("Show coefficients: ", true); 
+  
+         Dialog.show();
+   	canal1=Dialog.getChoice();
+   	canal2=Dialog.getChoice();
+   	canal3=Dialog.getChoice();
+   	ci=Dialog.getChoice();
+   	sc=Dialog.getCheckbox();	
+
+selectWindow("ci");
+NDosUno=getPixel(1,1);
+NTresUno=getPixel(2,1);
+NUnoDos=getPixel(3,1);
+NTresDos=getPixel(4,1);
+NUnoTres=getPixel(5,1);
+NDosTres=getPixel(6,1);
+
+selectWindow(canal1);
+run("Select None");
+run("8-bit");
+selectWindow(canal2);
+run("Select None");
+run("8-bit");
+selectWindow(canal3);
+run("Select None");
+run("8-bit");
+
+}
+
+selectWindow(canal2);
+run("Duplicate...", "title=fs2");
+run("Multiply...", "value=NDosUno");
+selectWindow(canal3);
+run("Duplicate...", "title=fs3");
+run("Multiply...", "value=NTresUno");
+imageCalculator("Add create", "fs2", "fs3");
+rename("residuo");
+selectWindow(canal1);
+run("Duplicate...", "title=fs1");
+imageCalculator("Subtract", "fs1","residuo");
+rename("CleanChannel1");
+if(isOpen("fs2")){selectWindow("fs2"); close();}
+if(isOpen("fs1")){selectWindow("fs1"); close();}
+if(isOpen("fs3")){selectWindow("fs3"); close();}
+if(isOpen("residuo")){selectWindow("residuo"); close();}
+
+selectWindow(canal1);
+run("Duplicate...", "title=fs1");
+run("Multiply...", "value=NUnoDos");
+selectWindow(canal3);
+run("Duplicate...", "title=fs3");
+run("Multiply...", "value=NTresDos");
+imageCalculator("Add", "fs1", "fs3");
+rename("residuo");
+selectWindow(canal2);
+run("Duplicate...", "title=fs2");
+imageCalculator("Subtract", "fs2","residuo");
+rename("CleanChannel2");
+if(isOpen("fs2")){selectWindow("fs2"); close();}
+if(isOpen("fs1")){selectWindow("fs1"); close();}
+if(isOpen("fs3")){selectWindow("fs3"); close();}
+if(isOpen("residuo")){selectWindow("residuo"); close();}
+
+selectWindow(canal1);
+run("Duplicate...", "title=fs1");
+run("Multiply...", "value=NUnoTres");
+selectWindow(canal2);
+run("Duplicate...", "title=fs2");
+run("Multiply...", "value=NDosTres");
+imageCalculator("Add", "fs1", "fs2");
+rename("residuo");
+selectWindow(canal3);
+run("Duplicate...", "title=fs3");
+imageCalculator("Subtract", "fs3","residuo");
+rename("CleanChannel3");
+if(isOpen("fs2")){selectWindow("fs2"); close();}
+if(isOpen("fs1")){selectWindow("fs1"); close();}
+if(isOpen("fs3")){selectWindow("fs3"); close();}
+if(isOpen("residuo")){selectWindow("residuo"); close();}
+
+if(sc==true)
+{
+print("Channel 2 on 1: "+NDosUno+"\n");
+print("Channel 3 on 1: "+NTresUno+"\n");
+print("Channel 1 on 2: "+NUnoDos+"\n");
+print("Channel 3 on 2: "+NTresDos+"\n");
+print("Channel 1 on 3: "+NUnoTres+"\n");
+print("Channel 2 on 3: "+NDosTres+"\n");
+}}
+
+
+
+
+
+
+
+macro "Doble LiSU [E]" 
+{	
+
+requires("1.29p");              
+
+id1=getImageID();          
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+ 
+  Dialog.create("LiSU");
+Dialog.addChoice("Entry:", newArray("Controls", "Coefficients"));
+ Dialog.show();
+   	entry=Dialog.getChoice();
+
+if(entry=="Controls")
+   	{
+ Dialog.create("LiSU");                                                          
+ 
+  Dialog.addMessage("Load the channels of the triple labeled sample");
+  Dialog.addChoice("Channel 1:", figura);
+  Dialog.addChoice("Channel 2:", figura);
+  Dialog.addMessage("Load the controls"); 
+  Dialog.addChoice("Control 1:", figura);         
+  Dialog.addChoice("Control 2:", figura);          
+  Dialog.addMessage("Load the bled controls");
+  Dialog.addChoice("Channel 1 on 2:", figura);
+  Dialog.addChoice("Channel 2 on 1:", figura);
+  Dialog.addCheckbox("Create a coefficients image: ", true); 
+  Dialog.addCheckbox("Show coefficients: ", true); 
+  
+         Dialog.show();
+   	canal1=Dialog.getChoice();
+   	canal2=Dialog.getChoice();
+   	control1=Dialog.getChoice();
+   	control2=Dialog.getChoice();
+   	UnoEnDos=Dialog.getChoice();
+   	DosEnUno=Dialog.getChoice();
+   	cicb=Dialog.getCheckbox();
+   	sc=Dialog.getCheckbox();
+
+selectWindow(canal1);
+w = getWidth;                         
+h = getHeight;
+
+function Prom(ventana)           //Funcion promedio de intensidades 
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		suma=suma+a[i];
+		i++;
+		}
+	}
+prom=suma/(w*h);
+return prom;
+}
+
+selectWindow(canal1);
+run("Select None");
+run("8-bit");
+selectWindow(canal2);
+run("Select None");
+run("8-bit");
+selectWindow(control1);
+run("Select None");
+run("8-bit");
+selectWindow(control2);
+run("Select None");
+run("8-bit");
+selectWindow(DosEnUno);
+run("Select None");
+run("8-bit");
+selectWindow(UnoEnDos);
+run("Select None");
+run("8-bit");
+
+c1=Prom(control1); 
+c2=Prom(control2);
+DosUno=Prom(DosEnUno);
+UnoDos=Prom(UnoEnDos); 
+
+NDosUno=DosUno/c2;
+NUnoDos=UnoDos/c1;
+
+if(cicb==true)
+{
+newImage("CoefficientImage", "32-bit black", 2, 1, 1);
+selectWindow("CoefficientImage");
+setPixel(1,1,NDosUno);
+setPixel(2,1,NUnoDos);
+
+}}
+
+if(entry=="coefficients")
+{
+Dialog.create("LiSU");                                                          
+   
+    Dialog.addChoice("Channel 1:", figura);
+    Dialog.addChoice("Channel 2:", figura);
+    Dialog.addChoice("Coefficients image:", figura);
+    Dialog.addCheckbox("Show coefficients: ", true); 
+  
+         Dialog.show();
+   	canal1=Dialog.getChoice();
+   	canal2=Dialog.getChoice();
+      	ci=Dialog.getChoice();
+   	sc=Dialog.getCheckbox();	
+
+selectWindow("ci");
+NDosUno=getPixel(1,1);
+NUnoDos=getPixel(2,1);
+
+selectWindow(canal1);
+run("Select None");
+run("8-bit");
+selectWindow(canal2);
+run("Select None");
+run("8-bit");
+}
+
+selectWindow(canal2);
+run("Duplicate...", "title=fs2");
+run("Multiply...", "value=NDosUno");
+selectWindow(canal1);
+run("Duplicate...", "title=fs1");
+imageCalculator("Subtract", "fs1","fs2");
+rename("CleanChannel1");
+if(isOpen("fs2")){selectWindow("fs2"); close();}
+if(isOpen("fs1")){selectWindow("fs1"); close();}
+
+selectWindow(canal1);
+run("Duplicate...", "title=fs1");
+run("Multiply...", "value=NUnoDos");
+selectWindow(canal2);
+run("Duplicate...", "title=fs2");
+imageCalculator("Subtract", "fs2","fs1");
+rename("CleanChannel2");
+if(isOpen("fs2")){selectWindow("fs2"); close();}
+if(isOpen("fs1")){selectWindow("fs1"); close();}
+
+if(sc==true)
+{
+print("Channel 2 on 1: "+NDosUno+"\n");
+print("Channel 1 on 2: "+NUnoDos+"\n");
+}}

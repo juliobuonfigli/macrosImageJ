@@ -1,0 +1,85 @@
+//Compactador de objetos
+
+/* variables a controlar:
+-tope de iteraciones, relacionado al tamaño de la imagen
+-tope de iteraciones no aceptadas para salir (o segun coeficiente de ripley)
+-radio de compactación
+-Incrementos de intensidad
+-Probabilidad de aceptación de radio
+-resize
+-interpolación de resize
+-Método de promediado de imágenes (kalman, normal, etc.)
+*/ 
+ 
+
+iter=1600000;
+rad=0.2;
+tope=5000;
+w = getWidth;              
+h = getHeight; 
+ww=1/w;
+size=sqrt(w*w+h*h);
+radsize=rad*size;
+
+function VECTORIZAR(imagenAvectorizar, w, h)     //1: funcion para vectorizar imagenes                    
+{
+selectWindow(imagenAvectorizar);
+vector=newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		vector[i] = getPixel(x,y);
+		i++;
+		}
+	}
+return vector;
+}
+
+newImage("Res", "8-bit black", w, h, 30);        // imagen final: merge de estas tres
+for(j=1; j<31; j++)
+{
+selectWindow("green");
+setSlice(j);
+
+a=newArray(w*h);
+a=VECTORIZAR("green", w, h) ;
+
+for(i=0; i<iter; i++)
+	{
+	cont=0;
+	do {
+	ii=round(random*(w*h-1));  
+	fi=round(random*(w*h-1));  	
+	Xi=ii%w;
+	Yi=floor(ii*ww);
+	Xf=fi%w;
+	Yf=floor(fi*ww);
+	dis=sqrt((Xf-Xi)*(Xf-Xi)+(Yf-Yi)*(Yf-Yi));
+	disMin=radsize*random;
+	//cont++;
+	
+	} while(a[fi]>254 || a[ii]<1 || a[ii]>a[fi] || dis>disMin) 
+	
+	a[fi]=a[fi]+1;
+	a[ii]=a[ii]-1;
+	//if(cont>tope)
+	//	cond=true;	
+
+	showStatus(i);
+	}                       
+         
+
+selectWindow("Res");
+setSlice(j);
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, a[i]);
+		i++;
+		}
+	} 
+}

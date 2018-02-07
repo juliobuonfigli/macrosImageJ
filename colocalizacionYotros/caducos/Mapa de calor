@@ -1,0 +1,86 @@
+macro "Mapa de calor [m]" 
+{
+
+id1=getImageID();          
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+  
+  Dialog.create("Mapa de calor");                                                       
+  Dialog.addChoice("Rojo:", figura);         
+  Dialog.addChoice("Verde:", figura);          
+  Dialog.addChoice("Color:", newArray("Yellow Hot", "Magenta Hot", "Orange Hot", "Red Hot", "Red-Cyan"));    
+  
+       Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	color=Dialog.getChoice();
+   	
+selectWindow(rojo);
+run("8-bit");
+run("Select None");
+selectWindow(verde);
+run("8-bit");
+run("Select None");
+
+w = getWidth;               
+h = getHeight;
+
+
+
+selectWindow(rojo);	                    
+  r = newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		r[i] = getPixel(x,y);
+		i++;
+		}
+	}
+	
+
+selectWindow(verde);	
+  v = newArray(h*w);
+  i=0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		v[i] = getPixel(x,y);
+		i++;
+		}
+	}
+numRV=newArray(w*h);
+
+for(i=0; i<w*h; i++)                                              
+	numRV[i]=2*(r[i]*v[i])/(r[i]+v[i]);
+	
+                           
+
+newImage("Mapa", "8-bit black", w, h, 1);
+
+selectWindow("Mapa");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, numRV[i]);
+		i++;
+		}
+	}
+run(color);
+
+updateDisplay();
+
+}

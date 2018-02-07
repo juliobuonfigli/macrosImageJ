@@ -1,0 +1,409 @@
+/*Triple colocalización y significancia estadística
+Julio Buonfigli
+Prototipo 2  */
+
+//Triple colocalización
+
+id1=getImageID();        //Obtengo el ID de la primer imagen
+
+if(isOpen(id1-1))         //reviso el orden en el que quedó el ID de cada imagen dependiendo de cual haya quedado seleccionada 
+d=1;   
+else
+d=0;
+if(isOpen(id1-2))
+e=1;
+else
+e=0;
+if(isOpen(id1-3))
+f=1;
+else
+f=0;
+
+if(f == 1)
+{
+id2=id1-1;
+id3=id1-2;
+id4=id1-3;
+}
+else
+{
+	if(e == 1)
+	{
+	id2=id1-1;
+	id3=id1-2;
+	id4=id1+1;
+	}
+	else
+	{
+		if(d == 1)
+		{
+		id2=id1-1;
+		id3=id1+1;
+		id4=id1+2;
+                        }
+		else
+		{
+		id2=id1+1;
+		id3=id1+2;
+		id4=id1+3;
+		}
+	}
+}
+
+selectImage(id1);               //le cambio el título a todas las imágenes abiertas
+imagen1 = getTitle();
+selectImage(id2);
+imagen2 = getTitle();
+selectImage(id3);
+imagen3 = getTitle();
+selectImage(id4);
+imagen4 = getTitle();
+
+imageCalculator("AND create", imagen1, imagen2);    //opero imagen 1 y 2 y le cambio el titulo a la imagen generada
+id5=getImageID();
+selectImage(id5);
+imagen5 = getTitle();
+
+imageCalculator("AND create", imagen3, imagen4);   //opero imagen 3 y 4 y le cambio el titulo a la imagen generada 
+id6=getImageID();
+selectImage(id6);
+imagen6 = getTitle();
+
+imageCalculator("AND create", imagen5, imagen6);   //opero imagen 5 y 7 y le cambio el titulo a la imagen generada 
+id7=getImageID();                                                         //Aca genero la imagen de colocalizacion
+selectImage(id7);
+imagen7 = getTitle();
+
+selectImage(id6);           //cierro las imágenes que no voy a utilizar
+close();
+selectImage(id5);
+close();
+
+imageCalculator("AND create", imagen1, "Mask");     //Cuento la cantidad de pixeles blancos en la imagen uno dentro de la seleccion
+id8=getImageID();
+selectImage(id8);
+imagen8 = getTitle();   
+
+   w = getWidth;
+   h = getHeight;
+   a = newArray(w*h);
+   i = 0;
+   unos1 = 0;    
+	
+  for (y=0; y<h; y++){
+      for (x=0; x<w; x++){
+          a[i++] = getPixel(x,y);
+		}}
+
+for(i=0; i<w*h; i++)
+{
+if(a[i]==255){
+		unos1++;
+
+		}}
+
+
+imageCalculator("AND create", imagen2, "Mask");   //Cuento la cantidad de pixeles blancos en la imagen dos dentro de la seleccion
+id9=getImageID();
+selectImage(id9);
+imagen9 = getTitle();   
+
+   w = getWidth;
+   h = getHeight;
+   a = newArray(w*h);
+   i = 0;
+   unos2 = 0;    
+	
+  for (y=0; y<h; y++){
+      for (x=0; x<w; x++){
+          a[i++] = getPixel(x,y);
+		}}
+
+for(i=0; i<w*h; i++)
+{
+if(a[i]==255){
+		unos2++;
+		}}
+
+
+
+imageCalculator("AND create", imagen3, "Mask");    //Cuento la cantidad de pixeles blancos en la imagen tres dentro de la seleccion
+id10=getImageID();
+selectImage(id10);
+imagen10 = getTitle();   
+
+   w = getWidth;
+   h = getHeight;
+   a = newArray(w*h);
+   i = 0;
+   unos3 = 0;    
+	
+  for (y=0; y<h; y++){
+      for (x=0; x<w; x++){
+          a[i++] = getPixel(x,y);
+		}}
+
+for(i=0; i<w*h; i++)
+{
+if(a[i]==255){
+		unos3++;
+		}}
+
+
+
+imageCalculator("AND create", imagen4, "Mask");     //Cuento la cantidad de pixeles blancos en la imagen cuatro dentro de la seleccion
+id11=getImageID();
+selectImage(id11);
+imagen11 = getTitle();   
+
+   w = getWidth;
+   h = getHeight;
+   a = newArray(w*h);
+   i = 0;
+   unos4 = 0;    
+	
+  for (y=0; y<h; y++){
+      for (x=0; x<w; x++){
+          a[i++] = getPixel(x,y);
+		}}
+
+for(i=0; i<w*h; i++)
+{
+if(a[i]==255){
+		unos4++;
+		}}
+
+
+
+imageCalculator("AND create", "Mask", "Mask");       //Cuento la cantidad de pixeles blancos de la seleccion (o máscara)
+id12=getImageID();
+selectImage(id12);
+imagen12 = getTitle();   
+
+   w = getWidth;
+   h = getHeight;
+   a = newArray(w*h);
+   i = 0;
+   unos5 = 0;    
+	
+  for (y=0; y<h; y++){
+      for (x=0; x<w; x++){
+          a[i++] = getPixel(x,y);
+		}}
+
+for(i=0; i<w*h; i++)
+{
+if(a[i]==255){
+		unos5++;
+		}}
+
+
+
+selectImage(id7);                                   //Cuento la cantidad de pixeles que colocalizan
+w = getWidth;
+   h = getHeight;
+   a = newArray(w*h);
+   i = 0;
+   unos7 = 0;    
+	
+  for (y=0; y<h; y++){
+      for (x=0; x<w; x++){
+          a[i++] = getPixel(x,y);
+		}}
+
+for(i=0; i<w*h; i++)
+{
+if(a[i]==255){
+		unos7++;
+		}}
+
+
+if(unos1<unos2)                                                               //Veo que variable tiene la menor cantidad de pixeles blancos
+	{
+	if(unos1<unos3)
+		{
+		if(unos1<unos4)
+			elmenor=unos1;
+			else
+			elmenor=unos4;
+		}
+		else
+		{
+		if(unos3<unos4)
+			elmenor=unos3;
+			else
+			elmenor=unos4;
+		}
+	}
+	else
+	{
+	if(unos2<unos3)
+		{
+		if(unos2<unos4)
+			elmenor=unos2;
+			else
+			elmenor=unos4;
+		}
+		else
+		{
+		if(unos3<unos4)
+			elmenor=unos3;
+			else
+			elmenor=unos4;
+		}
+
+	}
+
+
+if(unos1>unos2)                                            //Veo que variable tiene la mayor cantidad de pixeles blancos (seguro que es la máscara, acá hay un error)
+	{
+	if(unos1>unos3)
+		{
+		if(unos1>unos4)
+			elmayor=unos1;
+			else
+			elmayor=unos4;
+		}
+		else
+		{
+		if(unos3>unos4)
+			elmayor=unos3;
+			else
+			elmayor=unos4;
+		}
+	}
+	else
+	{
+	if(unos2>unos3)
+		{
+		if(unos2>unos4)
+			elmayor=unos2;
+			else
+			elmayor=unos4;
+		}
+		else
+		{
+		if(unos3>unos4)
+			elmayor=unos3;
+			else
+			elmayor=unos4;
+		}
+
+	}	
+
+
+if(unos4 == unos5)                             // Identifico la máscara y hago un OR con el resto de las imágenes para obtener la superficie cubierta total
+	{
+	imageCalculator("OR create", imagen8, imagen9);
+	id13 = getImageID();		
+	selectImage(id13);
+	imagen13 = getTitle();
+	imageCalculator("OR create", imagen13, imagen10);
+	id14 = getImageID();
+	selectImage(id14);
+	imagen14 = getTitle();
+	}
+	else
+	{
+	if(unos3 == unos5)
+		{
+		imageCalculator("OR create", imagen8, imagen9);
+		id13 = getImageID();		
+		selectImage(id13);
+		imagen13 = getTitle();
+		imageCalculator("OR create", imagen13, imagen11);
+		id14 = getImageID();
+		selectImage(id14);
+		imagen14 = getTitle();
+		}
+		else
+		{
+		if(unos2 == unos5)
+			{
+			imageCalculator("OR create", imagen8, imagen10);
+			id13 = getImageID();		
+			selectImage(id13);
+			imagen13 = getTitle();
+			imageCalculator("OR create", imagen13, imagen11);
+			id14 = getImageID();
+			selectImage(id14);
+			imagen14 = getTitle();
+			}
+			else
+			{
+			imageCalculator("OR create", imagen9, imagen10);
+			id13 = getImageID();		
+			selectImage(id13);
+			imagen13 = getTitle();
+			imageCalculator("OR create", imagen13, imagen11);
+			id14 = getImageID();
+			selectImage(id14);
+			imagen14 = getTitle();
+			}
+		}
+	}
+
+
+
+selectImage(id14);         // Cuento la cantidad de pixeles en el OR hecho anteriormente
+w = getWidth;
+   h = getHeight;
+   a = newArray(w*h);
+   i = 0;
+   unos8 = 0;    
+	
+  for (y=0; y<h; y++){
+      for (x=0; x<w; x++){
+          a[i++] = getPixel(x,y);
+		}}
+
+for(i=0; i<w*h; i++)
+{
+if(a[i]==255){
+		unos8++;
+		}}
+
+
+selectImage(id14);       //cierro las imágenes de proceeso
+close();
+selectImage(id13);
+close();
+selectImage(id12);
+close();
+selectImage(id11);
+close();
+selectImage(id10);
+close();
+selectImage(id9);
+close();
+selectImage(id8);
+close();
+
+
+
+colo4 = (unos7/unos8)*100;                                     //operaciones para calcular colocalización
+colo3 = (unos7/elmayor)*100;
+colo2 = (unos7/elmenor)*100; 
+colocalizacion = (unos7/(unos1+unos2+unos3+unos4-unos5))*100;
+print("sobre el total de pixeles del color menos abundante " + colo2 + "%");
+print("sobre la superficie cubierta total " + colo4 + "%"); 
+print("sobre el total de pixeles " + colocalizacion + "%"); 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

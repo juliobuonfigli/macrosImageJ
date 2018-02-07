@@ -1,0 +1,10 @@
+run("16-bit");
+w = getWidth;              
+h = getHeight;
+	for (y=0; y<h; y++)
+		{
+		for (x=0; x<w; x++)
+			{
+			setPixel(x,y, 256*getPixel(x, y));
+			}
+		} 

@@ -1,0 +1,44 @@
+import ij.*;
+import ij.plugin.*;
+import ij.plugin.filter.*;
+import ij.process.*;
+import ij.gui.*;
+import ij.measure.*;
+public class Manders3_ implements PlugIn {
+
+public void run(String arg) {
+float num1=0; float num2=0; float den1=0; float den2=0; float M1; float M2;
+int[] wList = WindowManager.getIDList();
+ImagePlus imp = WindowManager.getImage(wList[0]);
+ImagePlus imp2 = WindowManager.getImage(wList[1]);
+ImageProcessor pimp = imp.getProcessor();
+ImageProcessor pimp2 = imp2.getProcessor();
+int[] pixels = new int[40000];
+int[] pixels2 = new int[40000];
+int f=0;
+for(int r=0; r<200; r++)
+	{
+	for(int s=0; s<200; s++)
+		{
+		pixels[f]=pimp.getPixel(r, s);	
+		pixels2[f]=pimp2.getPixel(r, s);
+		f++;
+		}
+	}
+for(int e=0; e<40000; e++)
+	{
+	if(pixels[e]*pixels2[e]!=0)
+		{
+		num1=num1+pixels[e];
+		num2=num2+pixels2[e];
+		}
+	den1=den1+pixels[e];
+	den2=den2+pixels2[e];
+	}
+
+M1=num1/den1;
+M2=num2/den2;
+
+IJ.write("M1 es igual a: "+M1+" y M2 es igual a: "+M2);
+
+}}

@@ -1,0 +1,38 @@
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+
+
+
+selectWindow("Result of 03.tif (green)");       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	suma=suma+a[i];
+	}
+
+
+selectWindow("VerdeAleatorioManders");       
+   a = newArray(w*h);
+   i = 0;
+   sumar=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	sumar=sumar+a[i];
+	}
+
+
+print(suma);
+print(sumar);

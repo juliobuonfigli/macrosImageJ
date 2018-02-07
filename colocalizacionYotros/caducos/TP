@@ -1,0 +1,975 @@
+
+/*
+TP
+Julio Buonfigli
+*/
+
+
+macro "Triple Pearson [t]" 
+{	
+
+
+//SENTENCIAS INTRODUCTORIAS
+{
+
+
+requires("1.29p");              //muestra un mensaje si la versión de imagej usada no es compatible
+
+id1=getImageID();          //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+ Dialog.create("TCSS");    //genero ventana de inicio                                                      
+  Dialog.addChoice("Red:", figura);         
+  Dialog.addChoice("Green:", figura);          
+  Dialog.addChoice("Blue:", figura);    
+  Dialog.addChoice("Primary mask:", figura);  
+  Dialog.addCheckbox("Statistical significance", true); 
+  Dialog.addNumber("Number of generated images:", 30); 
+  Dialog.addChoice("Significance level:", newArray(0.01, 0.05)); 
+  Dialog.addCheckbox("Mask threshold", false);
+  
+       Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	azul=Dialog.getChoice();
+   	mascara=Dialog.getChoice();
+   	generadasP=Dialog.getCheckbox();
+	numGeneradas=Dialog.getNumber();
+	nivel=Dialog.getChoice();
+	intOR=Dialog.getCheckbox();
+   	
+if(numGeneradas>500)
+	exit("The number of generated images must be between 5 and 500");   
+
+setBatchMode(true);
+
+selectWindow(mascara);
+run("Select None");
+
+selectWindow(rojo);
+run("8-bit");
+selectWindow(verde);
+run("8-bit");
+selectWindow(azul);
+run("8-bit");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+if(nivel==0.05)                                        //correlaciono z con sus valores de significancia
+	zCola=-1.64486;
+	else
+	zCola=-2.32635;
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==255)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+function sumarPixInt(ventana)                     //Declaro una función que suma intensidades de todos los pixeles
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		suma=suma+a[i];
+		i++;
+		}
+	}
+return suma;
+}
+	
+imageCalculator("AND create", azul, mascara);                       //opero imagenes con la máscara
+rename("azulAndMascara");
+imageCalculator("AND create", verde, mascara);  
+rename("verdeAndMascara");
+imageCalculator("AND create", rojo, mascara);   
+rename("rojoAndMascara");
+
+
+if(intOR==true)
+{
+ Dialog.addMessage("Mask Threshold");  //genero máscara circumscripta                             
+ Dialog.addNumber("Red:", 0); 
+  Dialog.addNumber("Green:", 0); 
+  Dialog.addNumber("Blue:", 0); 
+
+Dialog.show();
+	MMUR=Dialog.getNumber();
+	MMUV=Dialog.getNumber();
+	MMUA=Dialog.getNumber();
+
+	selectWindow("rojoAndMascara");           
+	setThreshold(MMUR, 255);
+	run("Convert to Mask");
+	unosMascaraRoja=contarUnos("rojoAndMascara");               
+	selectWindow("verdeAndMascara");      
+	setThreshold(MMUV, 255);
+	run("Convert to Mask");
+	unosMascaraVerde=contarUnos("verdeAndMascara");
+	selectWindow("azulAndMascara");      
+	setThreshold(MMUA, 255);
+	run("Convert to Mask");
+	unosMascaraAzul=contarUnos("azulAndMascara");
+	
+	selectWindow(mascara);
+        Mascara=getTitle();
+	imageCalculator("OR create", "rojoAndMascara", "verdeAndMascara"); 
+        rename("RorV");
+        imageCalculator("OR create", "azulAndMascara", "RorV"); 
+	setThreshold(1, 255);
+	run("Convert to Mask");
+	rename("CircumscribedMask");
+	mascara=getTitle();
+	selectWindow("rojoAndMascara");           
+	close();
+	selectWindow("verdeAndMascara"); 	
+	close();
+	selectWindow("azulAndMascara"); 	
+	close();
+	selectWindow("RorV"); 	
+	close();
+	imageCalculator("AND create", verde, mascara);     //opero imágenes con la máscara
+	rename("verdeAndMascara");
+	imageCalculator("AND create", rojo, mascara);   
+	rename("rojoAndMascara");
+	imageCalculator("AND create", azul, mascara);   
+	rename("azulAndMascara");
+	}
+
+
+
+function contarCeros(ventana)                     //Declaro una función que cuenta ceros
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==0)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+selectWindow(mascara);                                      //vectorizo la mascara	   
+  masc = newArray(w*h);
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		masc[i] = getPixel(x,y);
+		i++;
+		}
+	}
+
+unosMascara=contarUnos(mascara);                        //cuento unos y ceros en la mascara
+cerosMascara=contarCeros(mascara);
+
+if(unosMascara+cerosMascara!=w*h)
+	exit("Make the mask binary before running the application");
+
+}
+
+//CALCULO DE COEFICIENTE DE PEARSON
+{
+
+selectWindow("rojoAndMascara");	           //vectorizo cada canal
+  r = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Pearson coefficients...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			r[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+selectWindow("verdeAndMascara");	
+  v = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Pearson coefficients...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			v[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+selectWindow("azulAndMascara");	
+  az = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Pearson coefficients...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			az[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+sumRojo=sumarPixInt("rojoAndMascara");                   
+sumVerde=sumarPixInt("verdeAndMascara");
+sumAzul=sumarPixInt("azulAndMascara");
+pr=sumRojo/unosMascara;                                    //calculo promedios de intensidad para cada imagen 
+pv=sumVerde/unosMascara;
+pa=sumAzul/unosMascara;
+
+   numVA=0;                        //inicializo variables de coeficiente de pearson
+   numRA=0; 
+   nunRV=0;
+   denR=0;
+   denV=0;
+   denA=0;
+
+for(i=0; i<unosMascara; i++)                                                                                //calculo todas las series                
+	{
+	showStatus("Calculating Pearson coefficients...");
+	denR=denR+(r[i]-pr)*(r[i]-pr);                                                                 //Pearson                                          
+	denV=denV+(v[i]-pv)*(v[i]-pv);
+	denA=denA+(az[i]-pa)*(az[i]-pa);
+	numVA=numVA+(v[i]-pv)*(az[i]-pa);
+	numRA=numRA+(r[i]-pr)*(az[i]-pa);
+	numRV=numRV+(r[i]-pr)*(v[i]-pv);
+	}
+
+denRV=sqrt(denR*denV);                             //calculo coeficientes de Pearson
+denRA=sqrt(denR*denA);
+denVA=sqrt(denA*denV);
+
+RV=numRV/denRV;                                     
+RA=numRA/denRA;
+VA=numVA/denVA;
+
+RR=abs(RV-RA);                            // código de seleccion del canal que se randomiza   
+VV=abs(RV-VA);
+AA=abs(VA-RA);
+
+cuarto=newArray(unosMascara);
+
+if(RR>VV && RR>AA)
+	{
+	sumCuarto=pa/2+pv/2;
+	pCuarto=sumCuarto/unosMascara;
+	for(i=0; i<unosMascara; i++)
+		{
+		cuarto[i]=az[i]/2+v[i]/2;
+		numTRIPLE=numTRIPLE+(cuarto[i]-pCuarto)*(r[i]-pr);
+		denCuarto=denCuarto+(cuarto[i]-pCuarto)*(cuarto[i]-pCuarto);
+		}
+	denTRIPLE=sgrt(denCuarto*denR);
+	decision=1;
+	}
+	else
+	{
+	if(VV>RR && VV>AA)
+		{
+		sumCuarto=pa/2+pr/2;
+		pCuarto=sumCuarto/unosMascara;
+		for(i=0; i<unosMascara; i++)
+			{
+			cuarto[i]=az[i]/2+r[i]/2;
+			numtTRIPLE=numTRIPLE+(cuarto[i]-pCuarto)*(v[i]-pv);
+			denCuarto=denCuarto+(cuarto[i]-pCuarto)*(cuarto[i]-pCuarto);
+			}
+		denTRIPLE=sgrt(denCuarto*denV);
+		decision=2;
+		}
+		else
+		{
+		sumCuarto=pv/2+pr/2;
+		pCuarto=sumCuarto/unosMascara;
+		for(i=0; i<unosMascara; i++)
+			{
+			cuarto[i]=v[i]/2+r[i]/2;
+			numTRIPLE=numTRIPLE+(cuarto[i]-pCuarto)*(az[i]-pa);
+			denCuarto=denCuarto+(cuarto[i]-pCuarto)*(cuarto[i]-pCuarto);
+			}
+		denTRIPLE=sqrt(denCuarto*denA);
+		decision=3;
+		}
+
+TRIPLE=numTRIPLE/denTRIPLE;
+
+}
+
+
+// SIGNIFICANCIA ESTADÍSTICA 
+{
+if(generadasP==true)
+{
+
+rRV=newArray(numGeneradas);                           //Defino arreglos para cada indice de colocalización
+rRA=newArray(numGeneradas);
+rVA=newArray(numGeneradas);
+triple=newArray(numGeneradas);
+
+for(s=0; s<numGeneradas; s++)                        //rulo para generar tantas imágenes aleatorias para cada fluoróforo como se cargue en el diálogo de entrada
+{
+showStatus("Manders statistical significance: "+s); 
+
+random("seed", round(random*w*h*10));
+	
+	u=newArray(unosMascara+1);                                                                //desordeno aleatoriamente cada vector
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	rd=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			rd[i]=r[e];
+			u[e]=false;
+			i++;
+			}
+		}
+	
+                                                                
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	vd=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			vd[i]=v[e];
+			u[e]=false;
+			i++;
+			}
+		}
+
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	ad=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			ad[i]=az[e];
+			u[e]=false;
+			i++;
+			}
+		}
+
+rNumVA=0;
+rNumRA=0;
+rNumRV=0;
+
+	for(i=0; i<unosMascara; i++)                           //calculo random dobles                
+	{
+	rNumVA=rNumVA+(vd[i]-pv)*(ad[i]-pa);
+	rNumRA=rNumRA+(rd[i]-pr)*(ad[i]-pa);
+	rNumRV=rNumRV+(rd[i]-pr)*(vd[i]-pv);
+	}
+
+rRV[s]=rNumRV/denRV;
+rRA[s]=rNumRA/denRA;
+rVA[s]=rNumVA/denVA;
+
+tNumTriple=0;
+denCuarto=0;
+
+
+if(decision==1)
+	{
+	for(i=0; i<unosMascara; i++)    
+		rNumTriple=rNumTriple+(rd[i]-pr)*(cuarto[i]-pCuarto);	
+	triple[s]=rNumTriple/sqrt(denCuarto*denR);
+	}
+	else
+	{
+	if(decision==2)
+		{
+		for(i=0; i<unosMascara; i++)    
+			rNumTriple=rNumTriple+(vd[i]-pr)*(cuarto[i]-pCuarto);
+		triple[s]=rNumTriple/sqrt(denCuarto*denV);
+		}
+		else
+		{
+		for(i=0; i<unosMascara; i++)    
+			rNumTriple=rNumTriple+(ad[i]-pr)*(cuarto[i]-pCuarto);
+		triple[s]=rNumTriple/sqrt(denCuarto*denA);
+		}
+	}
+
+showStatus("Manders statistical significance: "+s); 
+wait(1000);
+
+sumRV=0;                          //inicializo variables de suma para promedios
+sumRA=0;
+sumVA=0;
+sumTriple=0;
+sum2RV=0;                          
+sum2RA=0;
+sum2VA=0;
+sum2Triple=0;
+
+
+for(i=0; i<numGeneradas; i++)         //media
+	{	
+	sumRV=sumRV+rRV[i];
+	sumRA=sumRA+rRA[i];
+	sumVA=sumVA+rVA[i];
+	sumTriple=sumTriple+triple[i];
+	}
+
+promRV=sumRV/numGeneradas;                                 
+promRA=sumRA/numGeneradas; 
+promVA=sumVA/numGeneradas; 
+promTriple=sumTriple/numGeneradas; 
+  
+for(i=0; i<numGeneradas; i++)                                  //desviación estandar                  
+	{	
+	sum2RV=sum2RV+(rRV[i]-promRV)*(rRV[i]-promRV);
+	sum2RA=sum2RA+(rRA[i]-promRA)*(rRA[i]-promRA);
+	sum2VA=sum2VA+(rVA[i]-promVA)*(rVA[i]-promVA);
+	sum2Triple=sum2Triple+(triple[i]-promTriple)*(triple[i]-promTriple);
+	}
+
+devestRV=sqrt(sum2RV/numGeneradas);                                    
+devestRA=sqrt(sum2RA/numGeneradas); 
+devestVA=sqrt(sum2VA/numGeneradas); 
+devestTriple=sqrt(sum2Triple/numGeneradas); 
+
+xmRV=zCola*devestRV+promRV;                                   
+xmRA=zCola*devestRA+promRA;
+xmVA=zCola*devestVA+promVA;
+xmTriple=zCola*devestTriple+promTriple;
+
+xRV=abs(zCola)*devestRV+promRV;                                   
+xRA=abs(zCola)*devestRA+promRA;
+xVA=abs(zCola)*devestVA+promVA;
+xTriple=abs(zCola)*devestTriple+promTriple;
+
+
+if(RV<xmRV)
+	SSrv="SE";
+	else
+	{
+	if(RV>xRV)
+		SSrv="SC";
+		else
+		SSrv="NS";
+	}
+
+if(RA<xmRA)
+	SSra="SE";
+	else
+	{	
+	if(RA>xRA)
+		SSra="SC";
+		else
+		SSra="NS";
+	}
+
+if(VA<xmVA)
+	SSva="SE";
+	else
+	{
+	if(VA>xVA)
+		SSva="SC";
+		else
+		SSva="NS";
+	}
+
+if(TRIPLE<xmTriple)
+	SStriple="SE";
+	else
+	{
+	if(TRIPLE>xTriple)
+		SStriple="SC";
+		else
+		SStriple="NS";
+	}
+
+
+}
+}
+
+
+
+//RESULTADOS
+{
+
+
+if(generadasP==false)
+{
+ 
+SSrv=" ******";
+SSra=" ******";
+SSva=" ******";
+SStriple=" ******";
+promRV=" ******";                            
+promRA=" ******";
+promVA=" ******";
+promTriple="  ******";
+}
+
+titulo1 = "Results";                                            //genero cuadro que muestra resultados
+titulo2 = "["+titulo1+"]";
+  f = titulo2;
+ if (isOpen(titulo1))
+    print(f, "\\Clear");
+ else
+run("Table...", "name="+titulo1+" width=250 height=600");
+print(f, "\\Headings:for\tPearson\trandom\t  Significance");
+print(f, "Double colocalization");
+print(f, " Red and green"+"\t  "+RV+"\t  "+promRV+"\t  "+SSrv);
+print(f, " Red and blue"+"\t  "+RA+"\t  "+promRA+"\t  "+SSra);
+print(f, " Blue and green"+"\t  "+VA+"\t  "+promVA+"\t  "+SSva);
+print(f, "Triple colocalization");
+print(f, " Triple"+"\t  "+TRIPLE+"\t  "+promTriple+"\t  "+SStriple);
+print(f, "");
+
+setBatchMode("exit and display"); 
+
+// Resultados gráficos
+
+
+run("Merge Channels...", "c1=[rojoAndMascara] c2=[verdeAndMascara] c3=[azulAndMascara] create");    //Genero imagen de triple colocalización
+rename("Colocalization");
+updateDisplay();
+
+}}
+
+//fin TRIPLE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+macro "Double Pearson [d]" 
+{
+
+// SENTENCIAS INTRODUCTORIAS
+{
+
+requires("1.29p");                      //muestra un mensaje si la versión de imagej usada no es compatible
+
+id1=getImageID();                        //identificación de IDs
+tamano=0;
+figura=newArray(nImages);
+for(i=id1-10000; i<id1+10000; i++)
+	{
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+
+ Dialog.create("TCSS");    //genero ventana de inicio                                                      
+  Dialog.addChoice("Red:", figura);         
+  Dialog.addChoice("Green:", figura);          
+  Dialog.addChoice("Primary mask:", figura);  
+  Dialog.addCheckbox("Statistical significance", false); 
+  Dialog.addNumber("Number of generated images:", 30); 
+  Dialog.addChoice("Significance level:", newArray(0.01, 0.05)); 
+  Dialog.addCheckbox("Mask threshold", false);
+  
+       Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	mascara=Dialog.getChoice();
+   	generadasP=Dialog.getCheckbox();
+	numGeneradas=Dialog.getNumber();
+	nivel=Dialog.getChoice();
+	intOR=Dialog.getCheckbox();
+   	
+if(numGeneradas>1000)
+	exit("The number of generated images must be between 5 and 1000");   
+
+setBatchMode(true);
+	
+selectWindow(mascara);
+run("Select None");
+
+selectWindow(rojo);
+run("8-bit");
+selectWindow(verde);
+run("8-bit");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+if(nivel==0.05)                                    //correlaciono z con sus valores de significancia
+	zCola=-1.64486;
+	else
+	zCola=-2.32635;
+
+
+function sumarPixInt(ventana)                     //Declaro una función que suma intensidades de todos los pixeles
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   suma=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		suma=suma+a[i];
+		i++;
+		}
+	}
+return suma;
+}
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==255)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+unosMascara=contarUnos(mascara);
+
+
+
+imageCalculator("AND create", verde, mascara);     //opero imágenes con la máscara
+rename("verdeAndMascara");
+imageCalculator("AND create", rojo, mascara);   
+rename("rojoAndMascara");
+
+
+if(intOR==true)
+{
+ Dialog.addMessage("Mask Threshold");                               
+ Dialog.addNumber("Red:", 0); 
+  Dialog.addNumber("Green:", 0); 
+
+Dialog.show();
+	MMUR=Dialog.getNumber();
+	MMUV=Dialog.getNumber();
+
+
+	selectWindow("rojoAndMascara");           
+	setThreshold(MMUR, 255);
+	run("Convert to Mask");
+	unosMascaraRoja=contarUnos("rojoAndMascara");               
+	selectWindow("verdeAndMascara");      
+	setThreshold(MMUV, 255);
+	run("Convert to Mask");
+	unosMascaraVerde=contarUnos("verdeAndMascara");
+	selectWindow(mascara);
+        Mascara=getTitle();
+	imageCalculator("OR create", "rojoAndMascara", "verdeAndMascara"); 
+        setThreshold(1, 255);
+	run("Convert to Mask");
+	rename("CircumscribedMask");
+	mascara=getTitle();
+	selectWindow("rojoAndMascara");           
+	close();
+	selectWindow("verdeAndMascara"); 	
+	close();
+	imageCalculator("AND create", verde, mascara);     //opero imágenes con la máscara
+	rename("verdeAndMascara");
+	imageCalculator("AND create", rojo, mascara);   
+	rename("rojoAndMascara");
+	}
+
+
+function contarCeros(ventana)                     //Declaro una función que cuenta ceros
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		a[i] = getPixel(x,y);
+		if(a[i]==0)
+			sumador++;
+		i++;
+		}
+	}
+return sumador;
+}
+
+selectWindow(mascara);	           //vectorizo la máscara
+  masc = newArray(w*h);
+  i = 0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		masc[i] = getPixel(x,y);
+		i++;
+		}
+	}
+
+unosMascara=contarUnos(mascara);                        //cuento unos y ceros en la mascara
+cerosMascara=contarCeros(mascara);
+
+if(unosMascara+cerosMascara!=w*h)                                     
+	exit("Make the mask binary before running the application");
+
+} 
+
+
+// CALCULO COEFICIENTE DE PEARSON
+{
+
+
+selectWindow("rojoAndMascara");	                     //vectorizo cada canal
+  r = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Pearson coefficient...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			r[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+	
+
+selectWindow("verdeAndMascara");	
+  v = newArray(unosMascara);
+  i = 0;
+  mas=0;
+for (y=0; y<h; y++)
+	{
+	showStatus("Calculating Pearson coefficient...");
+	for (x=0; x<w; x++)
+		{
+		if(masc[mas]==255)
+			{
+			v[i] = getPixel(x,y);
+			i++;
+			}
+		mas++;
+		}
+	}
+
+sumRojo=sumarPixInt("rojoAndMascara");                     //sumo intensidades en cada imagen
+sumVerde=sumarPixInt("verdeAndMascara");
+pr=sumRojo/unosMascara;                                    //calculo promedios de intensidad para cada imagen 
+pv=sumVerde/unosMascara;
+
+   numRV=0;
+   denR=0;
+   denV=0;
+
+for(i=0; i<unosMascara; i++)                                     //calculo todas las series                
+	{
+	showStatus("Calculating Pearson coefficient...");
+	denR=denR+(r[i]-pr)*(r[i]-pr);                                                                 //Pearson                                          
+	denV=denV+(v[i]-pv)*(v[i]-pv);
+	numRV=numRV+(r[i]-pr)*(v[i]-pv);
+	}
+
+denRV=sqrt(denR*denV);                             //calculo coeficientes de Pearson
+
+RV=numRV/denRV;                                     
+
+showStatus("");
+
+}
+
+// SIGNIFICANCIA ESTADÍSTICA
+{
+
+if(generadasP==true)
+{
+
+showStatus("Statistical significance...");
+
+rRV=newArray(numGeneradas);
+
+random("seed", round(random*unosMascara*10));
+
+
+for(s=0; s<numGeneradas; s++)                 //rulo para generar tantas imágenes aleatorias para cada fluoróforo como se cargue en el diálogo de entrada
+	{
+ 
+	showStatus("Statistical significance: "+s);                                                                                  
+	
+	u=newArray(unosMascara+1);                                                                //desordeno aleatoriamente el vector rojo
+	for(i=0; i<unosMascara; i++)
+		u[i]=true;
+
+	rd=newArray(unosMascara);
+	i=0;	
+	while(i<unosMascara)
+		{
+		e=round(random*unosMascara);
+		if(u[e]==true)
+			{
+			rd[i]=r[e];
+			u[e]=false;
+			i++;
+			}
+		}
+
+rNumRV=0;
+for(i=0; i<unosMascara; i++)                                     //calculo todas las series                
+	rNumRV=rNumRV+(rd[i]-pr)*(v[i]-pv);
+	                                                         
+rRV[s]=rNumRV/denRV;
+
+showStatus("Manders statistical significance: "+s); 
+wait(1000);
+}
+
+sumRV=0;
+for(i=0; i<numGeneradas; i++)         //sumo
+	sumRV=sumRV+rRV[i];
+	
+promRV=sumRV/numGeneradas; 
+
+sum2RV=0;
+for(i=0; i<numGeneradas; i++)                                  //desviación estandar                  
+	sum2RV=sum2RV+(rRV[i]-promRV)*(rRV[i]-promRV);
+
+devestRV=sqrt(sum2RV/numGeneradas); 
+	
+xmRV=zCola*devestRV+promRV;
+xRV=abs(zCola)*devestRV+promRV;
+
+if(RV<xmRV)
+	SSrv="SE";
+	else
+	{
+	if(RV>xRV)
+		SSrv="SC";
+		else
+		SSrv="NS";
+	}
+
+}
+}
+
+
+
+//RESULTADOS
+{
+
+if(generadasP==false)
+{
+SSrv="  ******";
+promRV="  ******";
+}
+
+titulo1 = "Results";                                            //genero cuadro que muestra resultados
+titulo2 = "["+titulo1+"]";
+  f = titulo2;
+ if (isOpen(titulo1))
+    print(f, "\\Clear");
+ else
+run("Table...", "name="+titulo1+" width=250 height=600");
+print(f, "\\Headings:for\tPearson\tRandom\t  Significance");
+print(f, " Red and green"+"\t  "+RV+"\t  "+promRV+"\t  "+SSrv);
+print(f, "");
+
+setBatchMode("exit and display"); 
+
+run("Merge Channels...", "c1=[rojoAndMascara] c2=[verdeAndMascara] create");    //Genero imagen de triple colocalización
+rename("Colocalization");
+updateDisplay();
+
+
+}  //cierra resultados
+}  //cierra macro
+
+//FIN
+
+

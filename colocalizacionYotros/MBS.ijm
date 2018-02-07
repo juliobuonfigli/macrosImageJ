@@ -1,0 +1,295 @@
+/*Montecarlo Bootstrap SR
+ * Julio Buonfigli
+
+ */
+
+ macro "MBSR [m]" 
+{
+
+id=getImageID(); 
+selectImage(id);
+rename("stackInicial");
+run("8-bit");
+w = getWidth;               
+h = getHeight;
+ww=1/w;
+
+
+Dialog.create("MBSR");                                                       
+ 
+  Dialog.addNumber("Numero de cortes de entrada (desde) ", 1); 
+  Dialog.addNumber("hasta: ", 10); 
+  Dialog.addNumber("Bootstrap: ", 3); 
+  Dialog.addNumber("Iteraciones (x1000): ", 0.5);
+  Dialog.addNumber("Iteraciones negativas de salida (x1000): ", 0.2);
+  Dialog.addChoice("Metodo de compactacion: ", newArray("gradual", "libre", "neighbor", "radio")); 
+  Dialog.addNumber("radio: ", 20);
+  Dialog.addNumber("incrementos de intensidad: ", 1);
+  Dialog.show();
+  inicio=Dialog.getNumber();
+  fin=Dialog.getNumber();
+  boot=Dialog.getNumber(); 
+  iter=Dialog.getNumber();
+  negIter=Dialog.getNumber();
+  compactacion=Dialog.getChoice();
+  radio=Dialog.getNumber();
+  incrementos=Dialog.getNumber();
+
+iter=iter*1000;
+negIter=negIter*1000;
+size=sqrt(w*w+h*h);
+radsize=radio*size;
+cortes=fin-inicio+1;
+
+function VECTORIZAR(imagenAvectorizar, w, h)     //1: funcion para vectorizar imagenes                    
+{
+selectWindow(imagenAvectorizar);
+vector=newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		vector[i] = getPixel(x,y);
+		i++;
+		}
+	}
+return vector;
+}
+
+function NEIGHBOURPIXEL(ia, w, h)       //selecciona un pixel vecino al azar
+{
+do    {	
+	ran=random;
+	if(ran>0 && ran<0.125)
+		ib=ia-w-1;
+	if(ran>0.125 && ran<0.250)
+		ib=ia-w;
+	if(ran>0.250 && ran<0.375)
+		ib=ia-w+1;
+	if(ran>0.375 && ran<0.500)
+		ib=ia-1;
+	if(ran>0.500 && ran<0.625)
+		ib=ia+1;
+	if(ran>0.625 && ran<0.750)
+		ib=ia+w-1;
+	if(ran>0.750 && ran<0.875)
+		ib=ia+w;
+	if(ran>0.875 && ran<1.05)
+		ib=ia+w+1;
+	}  while(ib<0 || ib>w*h-1)
+return ib;
+}
+
+
+function GRADUAL(a)
+{
+i=0;
+while(i<iter)
+	{
+	r=0;
+	do {
+	ii=round(random*(w*h-1));  
+	fi=round(random*(w*h-1));  	
+	Xi=ii%w;
+	Yi=floor(ii*ww);
+	Xf=fi%w;
+	Yf=floor(fi*ww);
+	dis=1/sqrt((Xf-Xi)*(Xf-Xi)+(Yf-Yi)*(Yf-Yi));
+	r++;
+	if(a[fi]<255 && a[ii]>0 && a[ii]<a[fi])
+		cond1=true;
+		else
+		cond1=false;
+	} while(cond1==false && r<negIter) 
+	if(r<negIter)
+	{
+	a[fi]=a[fi]+dis;
+	a[ii]=a[ii]-dis;
+	i++;
+	}
+	else
+	{i=iter;}
+	showStatus("Iteracion: "+i+" Boot: "+j+" Corte: "+k);
+	}                       
+return a;
+}
+
+function NEIGHBOR(a)
+{
+i=0;
+while(i<iter)
+	{
+	r=0;
+	do {
+	ii=round(random*(w*h-1));  
+	fi=NEIGHBOURPIXEL(ii, w, h);
+	r++;
+	if(a[fi]<255 && a[ii]>0 && a[ii]<a[fi])
+		cond1=true;
+		else
+		cond1=false;
+	} while(cond1==false && r<negIter) 
+	if(r<negIter)
+	{
+	a[fi]=a[fi]+1;
+	a[ii]=a[ii]-1;
+	i++;
+	}
+	else
+	{i=iter;}
+	showStatus("Iteracion: "+i+" Boot: "+j+" Corte: "+k);
+	}               
+return a;
+}
+
+function LIBRE(a)
+{
+i=0;
+while(i<iter)
+	{
+	r=0;
+	do {
+	ii=round(random*(w*h-1));  
+	fi=round(random*(w*h-1));  
+	r++;
+	if(a[fi]<255 && a[ii]>0 && a[ii]<a[fi])
+		cond1=true;
+		else
+		cond1=false;
+	} while(cond1==false && r<negIter) 
+	if(r<negIter)
+	{
+	a[fi]=a[fi]+1;
+	a[ii]=a[ii]-1;
+	i++;
+	}
+	else
+	{i=iter;}
+	showStatus("Iteracion: "+i+" Boot: "+j+" Corte: "+k);
+	}               
+return a;
+}
+
+function RADIO(a)
+{
+i=0;
+while(i<iter)
+	{
+	r=0;
+	do {
+	ii=round(random*(w*h-1));  
+	fi=round(random*(w*h-1));  	
+	Xi=ii%w;
+	Yi=floor(ii*ww);
+	Xf=fi%w;
+	Yf=floor(fi*ww);
+	dis=sqrt((Xf-Xi)*(Xf-Xi)+(Yf-Yi)*(Yf-Yi));
+	disMin=radsize*random;
+	r++;
+	if(a[fi]<255 && a[ii]>0 && a[ii]<a[fi] && dis<disMin)
+		cond1=true;
+		else
+		cond1=false;
+	} while(cond1==false && r<negIter)  
+	if(r<negIter)
+	{
+	a[fi]=a[fi]+1;
+	a[ii]=a[ii]-1;
+	i++;
+	}
+	else
+	{i=iter;}
+	showStatus("Iteracion: "+i+" Boot: "+j+" Corte: "+k);
+	}       
+return a;
+}        
+
+
+function KALMAN(stackApromediar, w, h, s)     //1: funcion para vectorizar imagenes                    
+{
+vector=newArray(w*h);
+k=0;  
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		u=0;
+		for(i=1; i<s+1; i++)
+			{
+			setSlice(i);
+			u=u+getPixel(x, y);
+			i++;
+			}
+		vector[k] = u/s;
+		k++;
+		}
+	}
+return vector;
+}
+
+newImage("stackFinal", "8-bit black", w, h, cortes);
+
+for(k=1; k<cortes+1; k++)
+{
+selectWindow("stackInicial");
+setSlice(k);
+a=newArray(w*h);
+
+newImage("stackParcial", "8-bit black", w, h, boot);
+for(j=1; j<boot+1; j++)
+{ 
+a=VECTORIZAR("stackInicial", w, h);	
+b=newArray(w*h);	
+if(compactacion=="gradual")
+	b=GRADUAL(a);
+if(compactacion=="neighbor")
+	b=NEIGHBOR(a);
+if(compactacion=="libre")
+	b=LIBRE(a);
+if(compactacion=="radio")
+    b=RADIO(a);   
+selectWindow("stackParcial");
+setSlice(j);	
+n=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x, y, b[n]);
+		n++;
+		}
+	} 
+}
+c=newArray(w*h);
+c=KALMAN("stackParcial", w, h, boot);
+if(k/cortes!=1)
+{selectWindow("stackParcial");
+close();}
+selectWindow("stackFinal");
+setSlice(k);
+n=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x, y, c[n]);
+		n++;
+		}
+	} 
+}
+
+d=newArray(w*h);
+d=KALMAN("stackFinal", w, h, cortes);
+newImage("MBSR", "8-bit black", w, h, 1);
+n=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x, y, d[n]);
+		n++;
+		}
+	} 
+
+}

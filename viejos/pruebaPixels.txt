@@ -1,0 +1,145 @@
+/*
+
+selectWindow("rojop2.tif")       
+   a = newArray(100);
+   i = 0;
+   unosRojos=0;
+   cerosRojos=0;
+   
+for (y=0; y<10; y++)
+	{
+	for (x=0; x<10; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<100; i++)
+	{
+	if(a[i]==255)
+		unosRojos++;
+	if(a[i]==0)
+		cerosRojos++;
+	}
+
+selectWindow("verdep2.tif")       
+   a = newArray(100);
+   i = 0;
+   unosVerdes=0;
+   cerosVerdes=0;
+   
+for (y=0; y<10; y++)
+	{
+	for (x=0; x<10; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<100; i++)
+	{
+	if(a[i]==255)
+		unosVerdes++;
+	if(a[i]==0)
+		cerosVerdes++;
+	}
+*/
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+selectWindow("azulAndMascara")       
+   a = newArray(w*h);
+   i = 0;
+   unosAzules=0;
+   cerosAzules=0;
+   
+for (y=0; y<w; y++)
+	{
+	for (x=0; x<h; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		unosAzules++;
+	if(a[i]==0)
+		cerosAzules++;
+	}
+
+
+
+
+selectWindow("rojoAndMascara")       
+   a = newArray(w*h);
+   i = 0;
+   unosRojos=0;
+   cerosRojos=0;
+   
+for (y=0; y<w; y++)
+	{
+	for (x=0; x<h; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		unosRojos++;
+	if(a[i]==0)
+		cerosRojos++;
+	}
+
+
+selectWindow("verdeAndMascara")       
+   a = newArray(w*h);
+   i = 0;
+   unosVerdes=0;
+   cerosVerdes=0;
+   
+for (y=0; y<w; y++)
+	{
+	for (x=0; x<h; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		unosVerdes++;
+	if(a[i]==0)
+		cerosVerdes++;
+	}
+
+print("unos rojos: "+unosRojos);
+print("ceros rojos: "+cerosRojos);
+print("unos verdes: "+unosVerdes);
+print("ceros verdes: "+cerosVerdes);
+//print(unosAzules+cerosAzules);
+print("unos azules: "+unosAzules);
+print("ceros azules: "+cerosAzules);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

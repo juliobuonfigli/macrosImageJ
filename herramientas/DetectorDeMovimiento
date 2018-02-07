@@ -1,0 +1,85 @@
+
+rename("entrada");
+w=getWidth;
+h=getHeight;
+frames=nSlices;
+setBatchMode(true);
+newImage("salida", "8-bit black", w, h, frames);
+p1=newArray(w*h);
+p2=newArray(w*h);
+
+for(i=1; i<frames; i++)
+	{
+	selectWindow("entrada");
+	j=0;
+	setSlice(i);
+	for(y=0; y<h; y++)
+   	 {
+	 for(x=0; x<w; x++)
+	 	{
+	 	p1[j]=getPixel(x, y);
+	 	j++;
+	 	}	
+	  }
+	 setSlice(i+1); j=0;
+	 for(y=0; y<h; y++)
+   	 	{
+	 	 for(x=0; x<w; x++)
+			{	 	
+	 		p2[j]=getPixel(x, y);
+	 		j++;
+			}	
+	  	}
+	selectWindow("salida");
+	setSlice(i+1);
+	j=0;
+	for(y=0; y<h; y++)
+   	 {
+	 for(x=0; x<w; x++)
+	 	{
+	 	setPixel(x, y, round(p2[j]/p1[j]));
+   	    j++;
+   	    }
+	}
+p1=newArray(w*h);
+
+for(i=1; i<frames; i++)
+	{
+	selectWindow("salida");
+	j=0;
+	setSlice(i);
+	for(y=0; y<h; y++)
+   	 {
+	 for(x=0; x<w; x++)
+	 	{
+	 	p1[j]=getPixel(x, y);
+	 	j++;
+	 	}	
+	  }
+	selectWindow("entrada");
+	setSlice(i);
+	j=0;
+	for(y=0; y<h; y++)
+   	 {
+	 for(x=0; x<w; x++)
+	 	{
+	 	p2=getPixel(x, y);
+	 	setPixel(x, y, p1[j]*p2);
+   	    j++;
+   	    }
+	}
+	selectWindow("entrada");
+	setSlice(i+1);
+	j=0;
+	for(y=0; y<h; y++)
+   	 {
+	 for(x=0; x<w; x++)
+	 	{
+	 	p2=getPixel(x, y);
+	 	setPixel(x, y, p1[j]*p2/6+1);
+   	    j++;
+   	    }
+	}
+	}
+setBatchMode("exit and display");
+	

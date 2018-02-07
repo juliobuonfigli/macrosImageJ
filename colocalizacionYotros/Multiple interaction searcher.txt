@@ -1,0 +1,1060 @@
+
+/*
+CIPE (Colocalización de intersección y probabilidad de error)
+Julio Buonfigli
+Prototipo Hipergeométrico 3
+"Multiple interaction searcher"
+*/
+
+macro "TICEP" {
+
+
+//DOBLE O TRIPLE Y CARGA DE IMAGENES
+
+Dialog.create("TICEP");    //genero ventana de inicio
+  Dialog.addMessage("Colocalización de intersección y probabilidad de error");                                                                
+  Dialog.addChoice("Número de canales:", newArray("Dos", "Tres"));    
+  Dialog.show();
+   	canals=Dialog.getChoice();
+
+if(isOpen("rojoAndMascara"))
+	{
+	selectWindow("rojoAndMascara");
+	close();
+	}
+if(isOpen("verdeAndMascara"))
+	{
+	selectWindow("verdeAndMascara");
+	close();
+	}
+if(isOpen("azulAndMascara"))
+	{
+	selectWindow("azulAndMascara");
+	close();
+	}
+
+requires("1.29p");              //muestra un mensaje si la versión de imagej usada no es compatible
+
+id1=getImageID();          //identificación de IDs
+tamano=0;
+figura=newArray(nImages*2);
+for(i=id1-800; i<id1+800; i++)
+	{
+	if(isOpen(i))
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+
+
+
+
+//TRIPLE Y DOBLES
+
+if(canals=="Tres")
+{
+  Dialog.create("SETC");    //genero ventana de inicio
+                                                                    
+  Dialog.addChoice("Rojo:", figura);         
+  Dialog.addChoice("Verde:", figura);          
+  Dialog.addChoice("Azul:", figura);    
+  Dialog.addChoice("Máscara:", figura);  
+  Dialog.addCheckbox("Circunscribir máscara", false);
+  Dialog.addNumber("Vecindad de máscara circunscripta (pixels):", 1); 
+       
+      Dialog.show();
+   	rojo=Dialog.getChoice();
+   	verde=Dialog.getChoice();
+   	azul=Dialog.getChoice();
+   	mascara=Dialog.getChoice();
+   	intOR=Dialog.getCheckbox();
+   	vicinity=Dialog.getNumber();
+
+
+//SENTENCIAS USADAS EN VARIOS BLOQUES
+
+   
+selectWindow(mascara);
+run("Select None");
+
+selectWindow(rojo);
+run("8-bit");
+selectWindow(verde);
+run("8-bit");
+selectWindow(azul);
+run("8-bit");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+imageCalculator("AND create", azul, mascara);                       //opero imagenes con la máscara
+rename("azulAndMascara");
+imageCalculator("AND create", verde, mascara);  
+rename("verdeAndMascara");
+imageCalculator("AND create", rojo, mascara);   
+rename("rojoAndMascara");
+
+setBatchMode(true);
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		sumador++;
+	}
+return sumador;
+}
+
+function contarCeros(ventana)                     //Declaro una función que cuenta ceros
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==0)
+		sumador++;
+	}
+return sumador;
+}
+
+unosMascara=contarUnos(mascara);                        //cuento unos y ceros en la mascara
+cerosMascara=contarCeros(mascara);
+
+if(unosMascara+cerosMascara!=w*h)
+	exit("Binarizar la máscara antes de ejecutar la aplicación");
+
+
+
+
+
+
+//BINARIZACIÓN
+
+setBatchMode(false);
+
+
+  Dialog.create("Binarización");                                                                                                                                                 //cuadro de diálogo de selección de tipo de binarización                                         
+  Dialog.addChoice("Seleccione el tipo de binarización", newArray("por defecto", "según intensidad promedio", "manual")); 
+        Dialog.show();
+	bin=Dialog.getChoice();
+
+if(bin=="por defecto")
+{
+selectWindow("rojoAndMascara");
+run("Make Binary");
+selectWindow("verdeAndMascara");                                                             
+run("Make Binary");
+selectWindow("azulAndMascara");                                           
+run("Make Binary");
+}
+ 
+  	
+if(bin=="según intensidad promedio")
+{
+
+ Dialog.create("Factor de Multiplicación");                                                                                                                                                                                        
+ Dialog.addChoice("Seleccione el factor de multiplicación", newArray(0.125, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4)); 
+ Dialog.addMessage("El factor multiplica la intensidad promedio de cada canal para fijar el umbral\na partir del cual cada pixel será llevado a su máximo o mínimo valor.\nMientras mayor sea el factor menor será la cantidad de pixeles blancos en la imagen.");           
+       Dialog.show();
+	factorP=Dialog.getChoice();
+
+if(pearson==false)
+{
+sumRojo=sumarPixInt("rojoAndMascara");                     //sumo intensidades en cada imagen
+sumVerde=sumarPixInt("verdeAndMascara");
+sumAzul=sumarPixInt("azulAndMascara");
+}
+
+pr=sumRojo/unosMascara;                                    //calculo promedios de intensidad para cada imagen 
+pv=sumVerde/unosMascara;
+pa=sumAzul/unosMascara;                   
+
+
+selectWindow("rojoAndMascara");            //binariza canal rojo segun intensidad promedio   
+i = 0;
+ for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{	
+		showStatus("Binarizando imágenes...");
+		a = getPixel(x,y);
+		if(a>pr*factorP)
+			setPixel(x, y, 255);
+			else
+			setPixel(x, y, 0);
+		}
+
+	}
+updateDisplay();
+
+
+selectWindow("verdeAndMascara");      //binariza canal verde según intensidad promedio
+i = 0;
+ for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{	
+		showStatus("Binarizando imágenes...");
+		a = getPixel(x,y);
+		if(a>pv*factorP)
+			setPixel(x, y, 255);
+			else
+			setPixel(x, y, 0);
+		}
+
+	}
+updateDisplay();
+
+
+selectWindow("azulAndMascara");    //binariza canal azul según intensidad promedio    
+i = 0;
+ for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{	
+		showStatus("Binarizando imágenes...");
+		a = getPixel(x,y);
+		if(a>pa*factorP)
+			setPixel(x, y, 255);
+			else
+			setPixel(x, y, 0);
+		}
+
+	}
+updateDisplay();
+
+}
+
+
+if(bin=="manual")          
+                           //binarización manual
+{  
+selectWindow("rojoAndMascara");
+run("Threshold...");                                                                    
+waitForUser("Binarización manual", "Pulse OK luego de binarizar rojoAndMascara");
+updateDisplay();
+selectWindow("verdeAndMascara");                                                             
+waitForUser("Binarización manual", "Pulse OK luego de binarizar verdeAndMascara");
+updateDisplay();
+selectWindow("azulAndMascara");                                           
+waitForUser("Binarización manual", "Pulse OK luego de binarizar azulAndMascara");
+updateDisplay();
+selectWindow("Threshold");
+run("Close");
+}
+
+
+
+
+
+
+
+
+// COLOCALIZACIÓN DE INTERSECCIÓN    
+
+imageCalculator("OR create", "rojoAndMascara", "verdeAndMascara");    //Calculo la superficie cubierta total dentro de la máscara
+rename("rojoOrVerde");
+imageCalculator("OR create", "rojoOrVerde", "azulAndMascara");                 
+rename("OR");
+
+if(intOR==true)
+{   
+selectWindow("OR");                            
+run("Duplicate...", "title=GOR"); 
+run("Mean...", "radius=vicinity");
+//run("Gaussian Blur...", "sigma=1");
+run("Threshold...");
+setThreshold(1, 255);
+run("Convert to Mask");
+unosGOR=contarUnos("GOR");
+selectWindow("Threshold");
+run("Close");
+unosMascara=unosGOR;
+}
+
+setBatchMode(true);
+
+showStatus("Calculando porcentage de colocalización de intersección...");
+
+cerosRojos=contarCeros("rojoAndMascara");                     //cuento ceros en cada canal
+cerosVerdes=contarCeros("verdeAndMascara");
+cerosAzules=contarCeros("azulAndMascara");
+
+imageCalculator("AND create", "rojoAndMascara", "verdeAndMascara");     //opero para obtener doble colocalización
+rename("rojoAndVerde");
+imageCalculator("AND create", "azulAndMascara", "rojoAndMascara");  
+rename("rojoAndAzul");
+imageCalculator("AND create", "verdeAndMascara", "azulAndMascara");  
+rename("verdeAndAzul");
+
+imageCalculator("AND create", "rojoAndVerde", "azulAndMascara");     //obtengo triple colocalización
+rename("TripleColocalizacion");
+
+unosRvam=contarUnos("TripleColocalizacion");             // cuento pixeles de triple colo
+
+unosRojos=contarUnos("rojoAndMascara");                     //cuento unos en cada canal
+unosVerdes=contarUnos("verdeAndMascara");
+unosAzules=contarUnos("azulAndMascara");
+
+unosRV=contarUnos("rojoAndVerde");                       //cuento unos de doble colo
+unosRA=contarUnos("rojoAndAzul");
+unosVA=contarUnos("verdeAndAzul");
+
+unosRvamOr=contarUnos("OR");                           //cuento unos en el triple OR
+
+rv=(unosRV/unosRojos)*100;                            //calculo coeficientes de colocalización
+vr=(unosRV/unosVerdes)*100;
+ra=(unosRA/unosRojos)*100;
+ar=(unosRA/unosAzules)*100;
+va=(unosVA/unosVerdes)*100;
+av=(unosVA/unosAzules)*100;
+rvasc=(unosRvam/unosRvamOr)*100;
+rvaenr=(unosRvam/unosRojos)*100;
+rvaenv=(unosRvam/unosVerdes)*100;
+rvaena=(unosRvam/unosAzules)*100;
+
+selectWindow("TripleColocalizacion");         //cierro imágenes para que no interfieran con futuras corridas
+close();
+
+selectWindow("rojoOrVerde");
+close();
+selectWindow("OR");
+close();
+
+
+
+
+
+
+
+//  PROBABILIDAD DE ERROR
+
+
+showStatus("Calculando probabilidad de error...");
+
+rvvr=rv+vr;                                            //variables útiles en condicionales de triple colocalización            
+arra=ra+ar;
+vaav=va+av;
+
+if(rvvr==vaav && rvvr==arra)
+	unosSuper=unosRV;	
+		else
+		{
+		if(rvvr>=vaav && rvvr>=arra)
+			unosSuper=unosRV;		
+		if(vaav>=rvvr && vaav>=arra)
+			unosSuper=unosVA;
+		if(arra>=vaav &&  arra>=rvvr)
+			unosSuper=unosRA;
+		}
+
+
+if(unosMascara>100000)        
+	{                                                   
+	N=round(unosMascara/10000);
+	rojosH=round(unosRojos/10000);
+	verdesH=round(unosVerdes/10000);
+	azulesH=round(unosAzules/10000);
+	superpuestoH=round(unosSuper/10000);
+	xrv=round(unosRV/10000);
+	xra=round(unosRA/10000);
+	xva=round(unosVA/10000);
+	xrva=round(unosRvam/10000);
+	}
+	else
+	{
+	if(unosMascara>10000)        
+		{                                                   
+		N=round(unosMascara/1000;
+		rojosH=round(unosRojos/1000);
+		verdesH=round(unosVerdes/1000);
+		azulesH=round(unosAzules/1000);
+		superpuestoH=round(unosSuper/1000);
+		xrv=round(unosRV/1000);
+		xra=round(unosRA/1000);
+		xva=round(unosVA/1000);
+		xrva=round(unosRvam/1000);
+		}
+		else
+		{
+		if(unosMascara>1000)        
+			{                                                   
+			N=round(unosMascara/100);
+			rojosH=round(unosRojos/100);
+			verdesH=round(unosVerdes/100);
+			azulesH=round(unosAzules/100);
+			superpuestoH=round(unosSuper/100);
+			xrv=round(unosRV/100);
+			xra=round(unosRA/100);
+			xva=round(unosVA/100);
+			xrva=round(unosRvam/100);
+			}
+			else
+			{
+			if(unosMascara>170)        
+				{                                                   
+				N=round(unosMascara/10);
+				rojosH=round(unosRojos/10);
+				verdesH=round(unosVerdes/10);
+				azulesH=round(unosAzules/10);
+				superpuestoH=round(unosSuper/10);
+				xrv=round(unosRV/10);
+				xra=round(unosRA/10);
+				xva=round(unosVA/10);
+				xrva=round(unosRvam/10);
+				}
+				else
+				{                                                   
+				N=unosMascara;
+				rojosH=unosRojos;
+				verdesH=unosVerdes;
+				azulesH=unosAzules;
+				superpuestoH=unosSuper;
+				xrv=unosRV;
+				xra=unosRA;
+				xva=unosVA;
+				xrva=unosRvam;
+				}
+			}
+		}
+	}
+
+pe=newArray(8);
+
+for(gh=0;gh<8;gh++)
+{
+if(gh==0)
+{
+k=rojosH;
+n=verdesH;
+x=xrv;
+}
+if(gh==1)
+{
+k=rojosH;
+n=azulesH;
+x=xra;
+}
+if(gh==2)
+{
+k=verdesH;
+n=azulesH;
+x=xva;
+}
+if(gh==3)
+	{
+	k=superpuestoH;
+	x=xrva;
+	if(unosSuper==unosRV)
+		n=azulesH;		
+	if(unosSuper==unosRA)
+		n=verdesH;
+	if(unosSuper==unosVA)
+		n=rojosH;
+	}
+
+if(gh==4)
+{
+k=N-rojosH;
+n=verdesH;
+x=verdesH-xrv;
+}
+if(gh==5)
+{
+k=N-azulesH;
+n=rojosH;
+x=rojosH-xra;
+}
+if(gh==6)
+{
+k=N-verdesH;
+n=azulesH;
+x=azulesH-xva;
+}
+if(gh==7)
+	{
+	k=N-superpuestoH;
+	if(unosSuper==unosRV)
+		{
+		n=azulesH;
+		x=azulesH-xrva;
+		}		
+	if(unosSuper==unosRA)
+		{
+		n=verdesH;
+		x=verdesH-xrva;
+		}
+	if(unosSuper==unosVA)
+		{
+		n=rojosH;
+		x=rojosH-xrva;
+		}
+	}
+
+
+Nmenosk=N-k;
+Nmenosn=N-n;
+
+kFac=1;
+for(i=1;i<=k;i++)
+kFac=kFac*i;
+
+nFac=1;
+for(i=1;i<=n;i++)
+nFac=nFac*i;
+
+NFac=1;
+for(i=1;i<=N;i++)
+NFac=NFac*i;
+
+NmenoskFac=1;
+for(i=1;i<=Nmenosk;i++)
+NmenoskFac=NmenoskFac*i;
+
+NmenosnFac=1;
+for(i=1;i<=Nmenosn;i++)
+NmenosnFac=NmenosnFac*i;
+
+X=x;
+
+if(n<k)
+elMenor=n;
+else
+elMenor=k;
+
+for(h=x;h<=elMenor;h++)
+{
+kmenosx=k-X;
+nmenosx=n-X;
+denominador=Nmenosk-nmenosx;
+
+xFac=1;
+for(i=1;i<=X;i++)
+xFac=xFac*i;
+
+kmenosxFac=1;
+for(i=1;i<=kmenosx;i++)
+kmenosxFac=kmenosxFac*i;
+
+nmenosxFac=1;
+for(i=1;i<=nmenosx;i++)
+nmenosxFac=nmenosxFac*i;
+
+denominadorFac=1;
+for(i=1;i<=denominador;i++)
+denominadorFac=denominadorFac*i;
+
+pa=((kFac/(xFac*kmenosxFac))*(NmenoskFac/(nmenosxFac*denominadorFac)))/(NFac/(nFac*NmenosnFac));
+
+pe[gh]=pe[gh]+pa;
+
+X=X+1;
+
+}
+}
+
+/*
+print(N);
+print(n);
+print(x);
+print(k);
+*/
+showStatus("");
+
+
+
+
+//RESULTADOS
+
+
+selectWindow("rojoAndVerde");               //cierro imágenes para que no interfieran con futuras corridas de la aplicación
+close();
+selectWindow("rojoAndAzul");
+close();
+selectWindow("verdeAndAzul");
+close();
+
+
+titulo1 = "Resultados";                                            //genero cuadro que muestra resultados
+titulo2 = "["+titulo1+"]";
+  f = titulo2;
+ if (isOpen(titulo1))
+    print(f, "\\Clear");
+ else
+run("Table...", "name="+titulo1+" width=250 height=600");
+print(f, "\\Headings:para\t% intersección\t valor c\t valor e");
+print(f, "Doble colocalización");
+print(f, " Rojo en verde"+"\t  "+rv+"\t  "+pe[0]+"\t  "+pe[4]);
+print(f, " Verde en rojo"+"\t  "+vr+"\t  ******\t  ******");
+print(f, " Rojo en azul"+"\t  "+ra+"\t  "+pe[1]+"\t  "+pe[5]);
+print(f, " Azul en rojo"+"\t  "+ar+"\t  ******\t  ******");
+print(f, " Verde en azul"+"\t  "+va+"\t  "+pe[2]+"\t  "+pe[6]);
+print(f, " Azul en verde"+"\t  "+av+"\t  ******\t  ******");
+print(f, "Triple colocalización");
+print(f, " General"+"\t  "+rvasc+"\t  "+pe[3]+"\t  "+pe[7]);
+print(f, " Según rojo"+"\t  "+rvaenr+"\t  ******\t  ******");
+print(f, " Según verde"+"\t  "+rvaenv+"\t  ******\t  ******");
+print(f, " Según azul"+"\t  "+rvaena+"\t  ******\t  ******");
+print(f, "");
+
+setBatchMode(false);
+
+// Resultados gráficos
+          
+
+run("Merge Channels...", "c1=[rojoAndMascara] c2=[verdeAndMascara] c3=[azulAndMascara] create keep");    //Genero imagen de triple colocalización
+rename("Colocalización");
+updateDisplay();
+
+
+selectWindow("rojoAndMascara");
+close();
+selectWindow("verdeAndMascara");
+close();
+selectWindow("azulAndMascara");
+close();
+
+if(intOR==true)
+{
+selectWindow("GOR");
+close();
+}
+
+
+}
+
+//fin TRIPLE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if(canals=="Dos")
+{
+  
+Dialog.create("SETC");    //genero ventana de inicio
+                                                                
+  Dialog.addChoice("Rojo:", figura);         
+  Dialog.addChoice("Verde:", figura);          
+  Dialog.addChoice("Máscara:", figura);  
+  Dialog.addCheckbox("Circunscribir máscara", false);
+  Dialog.addNumber("Vecindad de máscara circunscripta (pixels):", 1);  
+     	Dialog.show();
+       rojo=Dialog.getChoice();
+       verde=Dialog.getChoice();
+       mascara=Dialog.getChoice();
+       intOR=Dialog.getCheckbox();
+       vicinity=Dialog.getNumber();
+
+selectWindow(mascara);
+run("Select None");
+
+selectWindow(rojo);
+run("8-bit");
+selectWindow(verde);
+run("8-bit");
+
+w = getWidth;                                  //cargo tamaño de imagen
+h = getHeight;
+
+imageCalculator("AND create", verde, mascara);     //opero imágenes con la máscara
+rename("verdeAndMascara");
+imageCalculator("AND create", rojo, mascara);   
+rename("rojoAndMascara");
+
+setBatchMode(true);
+
+function contarUnos(ventana)                     //Declaro una función que cuenta unos
+{
+selectWindow(ventana);       
+   a = newArray(w*h);
+   i = 0;
+   sumador=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		a[i++] = getPixel(x,y);
+	}
+for(i=0; i<w*h; i++)
+	{
+	if(a[i]==255)
+		sumador++;
+	}
+return sumador;
+}
+
+
+unosMascara=contarUnos(mascara);                        //cuento unos y ceros en la mascara
+
+//BINARIZACIÓN
+
+setBatchMode(false);
+
+  
+  Dialog.create("Binarización");                                                                                                                                                 //cuadro de diálogo de selección de tipo de binarización                                         
+  Dialog.addChoice("Seleccione el tipo de binarización", newArray("por defecto", "según intensidad promedio", "manual")); 
+        Dialog.show();
+	bin=Dialog.getChoice();
+
+if(bin=="por defecto")
+{
+selectWindow("rojoAndMascara");
+run("Make Binary");
+selectWindow("verdeAndMascara");                                                             
+run("Make Binary");
+}
+
+   	
+if(bin=="según intensidad promedio")
+{
+
+ Dialog.create("Factor de Multiplicación");                                                                                                                                                                                        
+ Dialog.addChoice("Seleccione el factor de multiplicación", newArray(0.125, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4)); 
+ Dialog.addMessage("El factor multiplica la intensidad promedio de cada canal para fijar el umbral\na partir del cual cada pixel será llevado a su máximo o mínimo valor.\nMientras mayor sea el factor menor será la cantidad de pixeles blancos en la imagen.");           
+       Dialog.show();
+	factorP=Dialog.getChoice();
+
+if(pearson==false)
+{
+sumRojo=sumarPixInt("rojoAndMascara");                     //sumo intensidades en cada imagen
+sumVerde=sumarPixInt("verdeAndMascara");
+}
+
+pr=sumRojo/unosMascara;                                    //calculo promedios de intensidad para cada imagen 
+pv=sumVerde/unosMascara;
+
+
+selectWindow("rojoAndMascara");            //binariza canal rojo segun intensidad promedio   
+i = 0;
+ for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{	
+		showStatus("Binarizando imágenes...");
+		a = getPixel(x,y);
+		if(a>pr*factorP)
+			setPixel(x, y, 255);
+			else
+			setPixel(x, y, 0);
+		}
+
+	}
+updateDisplay();
+
+
+selectWindow("verdeAndMascara");      //binariza canal verde según intensidad promedio
+i = 0;
+ for (y=0; y<h; y++)
+	{
+      	for (x=0; x<w; x++)
+          		{	
+		showStatus("Binarizando imágenes...");
+		a = getPixel(x,y);
+		if(a>pv*factorP)
+			setPixel(x, y, 255);
+			else
+			setPixel(x, y, 0);
+		}
+
+	}
+updateDisplay();
+}
+
+
+if(bin=="manual")                                     //binarización manual
+{  
+selectWindow("rojoAndMascara");
+run("Threshold...");                                                                    
+waitForUser("Binarización manual", "Pulse OK luego de binarizar rojoAndMascara");
+updateDisplay();
+selectWindow("verdeAndMascara");                                                             
+waitForUser("Binarización manual", "Pulse OK luego de binarizar verdeAndMascara");
+updateDisplay();
+selectWindow("Threshold");
+run("Close");
+
+ }
+
+
+
+
+
+imageCalculator("OR create", "rojoAndMascara", "verdeAndMascara");    //Calculo la superficie cubierta total dentro de la máscara
+rename("OR");
+
+if(intOR==true)
+{   
+selectWindow("OR");                            
+run("Duplicate...", "title=GOR"); 
+run("Mean...", "radius=vicinity");
+//run("Gaussian Blur...", "sigma=1");
+run("Threshold...");
+setThreshold(1, 255);
+run("Convert to Mask");
+unosGOR=contarUnos("GOR");
+selectWindow("Threshold");
+run("Close");
+unoMascara=unosGOR;
+}
+
+
+// COLOCALIZACIÓN DE INTERSECCIÓN        
+
+imageCalculator("AND create", "rojoAndMascara", "verdeAndMascara");     //opero para obtener doble colocalización
+rename("rojoAndVerde");
+
+unosRojos=contarUnos("rojoAndMascara");                     //cuento unos en cada canal
+unosVerdes=contarUnos("verdeAndMascara");
+
+unosRV=contarUnos("rojoAndVerde");                       //cuento unos de doble colo
+
+rv=(unosRV/unosRojos)*100;                            //calculo coeficientes de colocalización
+vr=(unosRV/unosVerdes)*100;
+supTot=(unosRV/(unosRojos+unosVerdes-unosRV))*100;
+
+
+//PROBABILIDAD DE ERROR
+
+if(unosMascara>100000)        
+	{                                                   
+	N=round(unosMascara/10000);
+	rojosH=round(unosRojos/10000);
+	verdesH=round(unosVerdes/10000);
+	xrv=round(unosRV/10000);
+	}
+	else
+	{
+	if(unosMascara>10000)        
+		{                                                   
+		N=round(unosMascara/1000;
+		rojosH=round(unosRojos/1000);
+		verdesH=round(unosVerdes/1000);
+		xrv=round(unosRV/1000);
+		}
+		else
+		{
+		if(unosMascara>1000)        
+			{                                                   
+			N=round(unosMascara/100);
+			rojosH=round(unosRojos/100);
+			verdesH=round(unosVerdes/100);
+			xrv=round(unosRV/100);
+			}
+			else
+			{
+			if(unosMascara>170)        
+				{                                                   
+				N=round(unosMascara/10);
+				rojosH=round(unosRojos/10);
+				verdesH=round(unosVerdes/10);
+				xrv=round(unosRV/10);
+				}
+				else
+				{                                                   
+				N=unosMascara;
+				rojosH=unosRojos;
+				verdesH=unosVerdes;
+				xrv=unosRV;
+				}
+			}
+		}
+	}
+pe=newArray(3);
+
+for(gh=0;gh<2;gh++)
+{
+if(gh==0)
+{
+k=rojosH;
+n=verdesH;
+x=xrv;
+}
+if(gh==1)
+{
+k=N-rojosH;
+n=verdesH;
+x=verdesH-xrv;
+}
+
+Nmenosk=N-k;
+Nmenosn=N-n;
+
+kFac=1;
+for(i=1;i<=k;i++)
+kFac=kFac*i;
+
+nFac=1;
+for(i=1;i<=n;i++)
+nFac=nFac*i;
+
+NFac=1;
+for(i=1;i<=N;i++)
+NFac=NFac*i;
+
+NmenoskFac=1;
+for(i=1;i<=Nmenosk;i++)
+NmenoskFac=NmenoskFac*i;
+
+NmenosnFac=1;
+for(i=1;i<=Nmenosn;i++)
+NmenosnFac=NmenosnFac*i;
+
+X=x;
+
+if(n<k)
+elMenor=n;
+else
+elMenor=k;
+
+for(h=x;h<=elMenor;h++)
+{
+kmenosx=k-X;
+nmenosx=n-X;
+denominador=Nmenosk-nmenosx;
+
+xFac=1;
+for(i=1;i<=X;i++)
+xFac=xFac*i;
+
+kmenosxFac=1;
+for(i=1;i<=kmenosx;i++)
+kmenosxFac=kmenosxFac*i;
+
+nmenosxFac=1;
+for(i=1;i<=nmenosx;i++)
+nmenosxFac=nmenosxFac*i;
+
+denominadorFac=1;
+for(i=1;i<=denominador;i++)
+denominadorFac=denominadorFac*i;
+
+pa=((kFac/(xFac*kmenosxFac))*(NmenoskFac/(nmenosxFac*denominadorFac)))/(NFac/(nFac*NmenosnFac));
+
+pe[gh]=pe[gh]+pa;
+
+X=X+1;
+
+}
+}
+
+
+//RESULTADOS
+
+
+selectWindow("rojoAndVerde");               //cierro imágenes para que no interfieran con futuras corridas de la aplicación
+close();
+
+titulo1 = "Resultados";                                            //genero cuadro que muestra resultados
+titulo2 = "["+titulo1+"]";
+  f = titulo2;
+ if (isOpen(titulo1))
+    print(f, "\\Clear");
+ else
+run("Table...", "name="+titulo1+" width=250 height=600");
+print(f, "\\Headings:para\t% intersección\t Valor p \t Valor e");
+print(f, " Rojo en verde"+"\t  "+rv+"\t  "+pe[0]+"\t  "+pe[1]);
+print(f, " Verde en rojo"+"\t  "+vr+"\t   ******\t   ******");
+print(f, " General"+"\t  "+supTot+"\t   ******\t   ******");
+print(f, "");
+
+/*
+print(n);
+print(k);
+print(N);
+print(x);
+
+print(nFac);
+print(kFac);
+print(NFac);
+print(xFac);
+*/
+
+setBatchMode(false);
+
+// Resultados gráficos
+          
+run("Merge Channels...", "c1=[rojoAndMascara] c2=[verdeAndMascara] create keep");    //Genero imagen de triple colocalización
+rename("Colocalización");
+updateDisplay();
+
+selectWindow("rojoAndMascara");
+close();
+selectWindow("verdeAndMascara");
+close();
+selectWindow("OR");
+close();
+
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

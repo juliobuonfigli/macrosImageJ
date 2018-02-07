@@ -1,0 +1,16 @@
+macro "Tracking set [r]" 
+{
+run("8-bit");
+
+run("Unsharp Mask...", "radius=4 mask=0.90 stack");
+
+setAutoThreshold("Default dark");
+setAutoThreshold("Minimum dark");
+setOption("BlackBackground", false);
+run("Convert to Mask", "method=Minimum background=Dark");
+
+//run("Watershed", "stack");
+
+run("MTrack2 ", "minimum=12 maximum=50 maximum_=10 minimum_=15 display");
+
+}

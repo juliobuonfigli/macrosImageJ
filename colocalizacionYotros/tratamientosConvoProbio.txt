@@ -1,0 +1,35 @@
+
+
+rip=42.29;
+//vip=31.28;
+//bip=30.72;
+w=35;
+h=35;
+ai=30.72;
+//selectWindow(imagen);
+  ip=0; 
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+ 
+		ip = ip+getPixel(x,y);
+	}
+ip=ip/(w*h);
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		e=getPixel(x, y);
+		setPixel(x, y, e*ai/ip);
+		}
+	}
+/*max=169;
+min=2;
+for(y=0; y<h; y++)
+   	 {
+	 for(x=0; x<w; x++)
+	 	{
+	 	p=getPixel(x, y);
+	 	setPixel(x, y, round(((p-min)*255)/(max-min)));
+	 	}	
+	  }*/

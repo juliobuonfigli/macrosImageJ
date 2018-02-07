@@ -1,0 +1,77 @@
+
+iter=3500000
+w = getWidth;              
+h = getHeight; 
+
+
+function RADIO(ia, ib, w, h)                  //calcula la distancia entre las dos pixels escogidos al azar
+{
+	i=0;
+            for(y=0; y<h; y++)                               
+		{
+		for(x=0; x<w; x++)
+			{
+			if(i==ia)
+				{
+				x1=x;
+				y1=y;
+				}
+			if(i==ib)
+				{
+				x2=x;
+				y2=y;
+				}
+			i++;					
+			}
+		}
+return	(x2-x1)*(x2-x1)+(y2-y1)*(y2-y1);
+}
+
+
+function VECTORIZAR(imagenAvectorizar, w, h)     //1: funcion para vectorizar imagenes                    
+{
+selectWindow(imagenAvectorizar);
+vector=newArray(w*h);
+  i = 0;
+  for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		vector[i] = getPixel(x,y);
+		i++;
+		}
+	}
+return vector;
+}
+a=newArray(w*h);
+a=VECTORIZAR("green", w, h) ;
+size=w*w+h*h;
+
+for(i=0; i<iter; i++)
+	{
+	do {
+	ii=round(random*(w*h-1));  
+	fi=round(random*(w*h-1));  	
+	dis=RADIO(ii, fi, w, h); 
+	rand=random;
+	disMin=rand*size;
+	} while(a[fi]>254 || a[ii]<1 || a[ii]>a[fi] || ii==fi || dis>disMin) 
+	
+	a[fi]=a[fi]+3;
+	a[ii]=a[ii]-3;
+	
+	showStatus(i);
+	}                       
+
+         
+newImage("Res", "8-bit black", w, h, 1);        // imagen final: merge de estas tres
+selectWindow("Res");
+i=0;
+for (y=0; y<h; y++)
+	{
+	for (x=0; x<w; x++)
+		{
+		setPixel(x,y, a[i]);
+		i++;
+		}
+	} 

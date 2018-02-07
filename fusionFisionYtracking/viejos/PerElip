@@ -1,0 +1,25 @@
+
+run("ROI Manager...");
+selectWindow("ROI Manager");
+run("Close");
+selectWindow(img);
+roiManager("Add");
+run("Select None");
+run("Duplicate...", "duplicate");
+rename("Final");
+run("8-bit");
+w=getWidth();                    
+h=getHeight();
+frames=nSlices();
+roiManager("Select", 0);
+run("Set Measurements...", "centroid bounding redirect=None decimal=0");
+run("Measure");
+cx=getResult("X", 0);
+cy=getResult("Y", 0);
+ow=getResult("Width", 0);
+oh=getResult("Height", 0);
+run("Clear Results"); 
+run("Select None");
+
+
+perimetro=pi*(3*((ow+oh)/2)-sqrt((3*oh/2+ow/2)*(3*ow/2+oh/2)));

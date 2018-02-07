@@ -1,0 +1,28 @@
+frames=nSlices;
+w=getWidth;
+h=getHeight;
+run("Divide...", "value=3 stack");
+run("Unsharp Mask...", "radius=4 mask=0.99 stack");
+run("Mean...", "radius=4 stack");
+
+
+run("Subtract...", "value=40 stack");
+/*for(i=1; i<frames+1; i++)
+	{
+	setSlice(i);
+	for(y=0; y<h; y++) 
+		{
+		for(x=0; x<w; x++) 
+			{
+			p=getPixel(x, y);
+			if(p>60)
+				setPixel(x, y, 255);
+			}
+		}
+	}*/
+
+
+for(i=1; i<frames+1; i++)
+	{
+	setSlice(i);
+run("Enhance Contrast...", "saturated=0.3 normalize");}
