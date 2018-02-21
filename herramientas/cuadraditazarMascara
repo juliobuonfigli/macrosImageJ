@@ -1,0 +1,22 @@
+a=0;
+
+//for(j=0; j<1000; j++) {
+//i=round(random*100)+1;
+i=106;
+w=sqrt(i);
+s=w-floor(w);
+if(s<0.25 || s>0.75)
+	{
+	w=round(w);
+	h=w;
+	}
+else
+	{
+	w=floor(w);
+	h=w+1;		
+	}
+
+//a=a+abs(i-w*h)/i;
+//}
+//print(a/1000);
+print(abs(i-w*h)/i);
