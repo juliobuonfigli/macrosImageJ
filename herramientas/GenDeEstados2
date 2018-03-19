@@ -1,0 +1,208 @@
+// MMM
+
+macro "Relationship Generator [g]" 
+{
+
+w=6;
+h=6;
+
+function NEWFIGURE(vector)
+	{
+	newImage("image", "8-bit black", w, h, 1);       
+	selectWindow("image");
+	i=0;
+	for (y=0; y<w; y++)
+		{
+		for (x=0; x<h; x++)
+			{
+			setPixel(x,y, vector[i]);
+			i++;
+			}
+		} 
+	return "image";
+	}
+
+function FAC(x)
+	{
+	if(x==0) x=1; else {
+	for(i=x-1; i>0; i--)
+		x=x*i; }
+	return x;
+	}
+
+function BinCoef(n, k)
+	{
+	res=FAC(n)/(FAC(k)*FAC(n-k))
+	return res;	
+	}
+
+function HG(d, n, N, x)
+	{
+	res=BinCoef(d, x)*BinCoef(N-d, n-x)/BinCoef(N, n);
+	return res;
+	}
+
+function DOBLE(c1, c2)
+	{
+	n=0;
+	for(i=0; i<w*h; i++)
+		{
+		if(c1[i]==true && c2[i]==true)
+			n++;
+		}
+	return n;
+	}
+
+function TRIPLE(c1, c2, c3)
+	{
+	n=0;
+	for(i=0; i<w*h; i++)
+		{
+		if(c1[i]==true && c2[i]==true && c3[i]==true)
+			n++;
+		}
+	return n;
+	}
+
+function LOAD(vec, n)
+	{
+	s=0;
+	for(i=0; i<w*h; i++)
+		vec[i]=false;
+	do  {
+		vec[round(random()*(w*h-1))]=true;	
+		s++;
+		}
+	while(s<n)
+	return vec;	
+	}
+
+sS=newArray("SC-SC-SC", "NS-NS-NS", "SE-SE-SE", "SC-NS-SE", "SC-SC-NS", "SC-SC-SE", "SC-SE-SE", "SC-NS-NS", "SE-SE-NS", "SE-NS-NS", "Any");
+Ss=newArray("SC", "NS", "SE", "Any");
+Dialog.create("Load relationships");                    //ventana de carga de relaciones                                                      
+  Dialog.addChoice("Doubles: ", sS);  
+  Dialog.addChoice("Triples: ", sS);         
+  Dialog.addChoice("General ", Ss);  
+  Dialog.addChoice("Signifecance level: ", newArray("0.01", "0.05"));
+  Dialog.addNumber("Iteration's limit (x1000): ", 10);   
+  Dialog.addNumber("Random seed: ", 1); 
+  
+Dialog.show();
+   	dobles=Dialog.getChoice();
+  	triples=Dialog.getChoice();
+	general=Dialog.getChoice();
+  	sl==Dialog.getChoice();
+  	iLimit=Dialog.getNumber()*1000;
+	seed==Dialog.getNumber();
+
+if(sl=="0.01") SL=0.01; else SL=0.05;
+
+r=newArray(w*h);
+g=newArray(w*h);
+b=newArray(w*h);
+
+random("seed", seed);
+
+if(doubles=="SC-SC-SC") cond1=6;
+if(doubles=="NS-NS-NS") cond1=0;
+if(doubles=="SE-SE-SE") cond1=-9;
+if(doubles=="SC-NS-SE") cond1=-1;
+if(doubles=="SC-SC-NS") cond1=4;
+if(doubles=="SC-SC-SE") cond1=1;
+if(doubles=="SC-SE-SE") cond1=-4;
+if(doubles=="SC-NS-NS") cond1=2;
+if(doubles=="SE-SE-NS") cond1=6;
+if(doubles=="SE-NS-NS") cond1=-3;
+if(doubles=="Any") cond1=10;
+
+
+if(triples=="SC-SC-SC") cond2=6;
+if(triples=="NS-NS-NS") cond2=0;
+if(triples=="SE-SE-SE") cond2=-9;
+if(triples=="SC-NS-SE") cond2=-1;
+if(triples=="SC-SC-NS") cond2=4;
+if(triples=="SC-SC-SE") cond2=1;
+if(triples=="SC-SE-SE") cond2=-4;
+if(triples=="SC-NS-NS") cond2=2;
+if(triples=="SE-SE-NS") cond2=6;
+if(triples=="SE-NS-NS") cond2=-3;
+if(triples=="Any") cond2=10;
+
+if(general=="SC") cond3=2;
+if(general=="NS") cond3=0;
+if(general=="SE") cond3=-3;
+if(general=="Any") cond3=10;
+
+SS=newArray(7);
+ss=newArray(7);
+total=0;  
+condition=0;     
+
+	do {	
+	
+	nr=round(random()*23)+1;
+	ng=round(random()*23)+1;
+	nb=round(random()*23)+1;
+
+	r=LOAD(r, nr);
+	g=LOAD(g, ng);
+	b=LOAD(b, nb);
+	
+	rg=DOBLE(r, g);
+	rb=DOBLE(r, b);
+	gb=DOBLE(g, b);
+	rgb=TRIPLE(r, g, b);
+	
+	SS[0]=HG(ng, nr, w*h, rg);
+	SS[1]=HG(nb, nr, w*h, rb);
+	SS[2]=HG(ng, nb, w*h, gb);
+
+	SS[3]=HG(gb, nr, w*h, rgb);
+	SS[4]=HG(rb, ng, w*h, rgb);
+	SS[5]=HG(rg, nb, w*h, rgb);
+
+	SS[6]=HG(round(Srg*nb), nb, w*h, rgb);
+
+	for(i=0; i<7; i++)
+		{
+		if(SS[i]<1-SL && SS[i]>SL)
+			ss[i]=0;
+		else
+			{
+			if(SS[i]<SL)
+				ss[i]=2;
+			else
+				ss[i]=-3;	 	
+			}
+		}
+
+	COND1=ss[0]+ss[1]+ss[2];
+	COND2=ss[3]+ss[4]+ss[5];
+	
+	showStatus("Iterations: "+total);
+                    
+ 	total++;
+	co1=0; co2=0; co3=0;
+	if(cond1==COND1 || cond1==10)
+		co1=1;
+	if(cond2==COND2 || cond2==10)
+		co2=1;
+	if(cond3==ss[6] || cond3==10)
+		co3=1;
+	condition=co1+co2+co3;
+	}
+	while(condition=3 && total<iLimit)
+ 	
+	
+print("Iterations: "+total);
+
+red=NEWFIGURE(r);
+rename("Red");
+green=NEWFIGURE(g);
+rename("Green");
+blue=NEWFIGURE(b);
+rename("Blue");
+
+run("Merge Channels...", "c1=Red c2=Green c3=Blue create");
+
+}    //FIN

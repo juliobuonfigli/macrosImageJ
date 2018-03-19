@@ -51,6 +51,7 @@ run("Duplicate...", "img2");
 rename("img2");
 selectWindow("img2");
 
+if(radioTemplado>0)
 run("Mean...", "radius=radioTemplado");
 w=getWidth();
 h=getHeight();

@@ -1,0 +1,10 @@
+run("8-bit");
+run("Slice Remover", "first=12 last=61 increment=1");
+setSlice(1);
+run("Duplicate...", " ");
+setAutoThreshold("Otsu");
+//run("Threshold...");
+//setThreshold(0, 33);
+setOption("BlackBackground", false);
+run("Convert to Mask");
+run("Convert to Mask");
