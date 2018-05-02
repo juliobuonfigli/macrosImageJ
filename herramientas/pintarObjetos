@@ -1,0 +1,21 @@
+//pintar
+
+setForegroundColor(255, 255, 0);
+rename("img");
+selectWindow("img");
+run("Duplicate...", " ");
+run("Split Channels");
+
+for(i=0; i<10; i++)
+	{
+	do 
+		{
+		x=round(random*(w-1));
+		y=round(random*(h-1));
+		pix=getPixel(x, y);
+		}
+	while(pix==0)
+	selectWindow("img");
+	floodFill(x, y);
+	}
+	

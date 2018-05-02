@@ -1,0 +1,21 @@
+//generador de objetos sin superposición
+
+w=getWidth;
+h=getHeight;
+
+run("Set Measurements...", "mean redirect=None decimal=2");
+
+for(i=0; i<300; i++)
+	{
+	cont=0;
+	do
+		{
+		Roi.move(round(random*w), round(random*h));
+		run("Measure"); 
+		mean=getResult("Mean", 0);
+		run("Clear Results");
+		cont++;
+		} 
+	while(mean>0 && cont<300)
+	run("Fill", "slice");
+	}

@@ -1,3 +1,7 @@
+ macro "CC" 
+{
+
+/*
 id1=getImageID();          //identificaci�n de IDs
 tamano=0;
 figura=newArray(nImages);
@@ -9,7 +13,7 @@ for(i=id1-10000; i<id1+10000; i++)
 		figura[tamano]=getTitle();
 		tamano++;
 		}		
-	}
+	}*/
 
 function VECTORIZAR(imagenAvectorizar, an, al)                     
 {
@@ -27,15 +31,18 @@ vector=newArray(an*al);
 return vector;
 }
 
-
+/*
 Dialog.create("Stack de van stenseel");                                                       
  
   Dialog.addChoice("Imagen: ", figura);
-  
+  Dialog.addCheckbox("En Y", false);  
    Dialog.show();
    	img=Dialog.getChoice();
+    enY=Dialog.getCheckbox();
+*/
+enY=false;
 
-selectWindow(img);
+selectWindow("1-18000.tif");
 rename("img");
 w=getWidth();
 h=getHeight();
@@ -59,7 +66,10 @@ for(z=1; z<w+1; z++)
 				else
 				X=abs(x-k);
 			vp=floor(cont/w)*w+cont%w;
-	        setPixel(X, y, temp[vp]); 
+	        if(enY==true)
+	        	setPixel(y, X, temp[vp]); 
+			else
+				setPixel(X, y, temp[vp]); 
 			cont++;
 			//print(X);
 			}
@@ -69,7 +79,7 @@ for(z=1; z<w+1; z++)
 	k++;
 	}
 
-
+}
 
 
 

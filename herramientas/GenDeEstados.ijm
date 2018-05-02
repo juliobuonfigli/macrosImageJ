@@ -3,9 +3,9 @@
 macro "Relationship Generator [g]" 
 {
 
-w=4;
-h=4;
-max=8;
+w=11;
+h=11;
+max=70;
 
 function NEWFIGURE(vector)
 	{
@@ -74,7 +74,7 @@ function TRIPLE(c1, c2, c3)
 	return n;
 	}
 
-function LOAD(vec, n)
+/*function LOAD(vec, n)
 	{
 	s=0;
 	for(i=0; i<w*h; i++)
@@ -85,8 +85,23 @@ function LOAD(vec, n)
 		}
 	while(s<n)
 	return vec;	
-	}
+	}*/
 
+function LOAD(vec, n)
+	{
+	for(i=0; i<w*h; i++)
+		vec[i]=false;
+	for(j=0; j<n; j++)
+		{
+		do  {
+			pos=round(random()*(w*h-1));	
+			}
+			while(vec[pos]==true);
+		vec[pos]=true;
+		}
+	return vec;	
+	}
+	
 function NumLet(let)
 	{
 	if(let=="SC")
@@ -103,11 +118,11 @@ function NumLet(let)
 	
 function NumNum(s, e, sl)
 	{
-	if(s<sl)
+	if(s<sl && s>=0)
 		{res=2;}
 	else
 		{
-		if(e<sl)
+		if(e<sl && e>=0)
 			res=-3;
 		else
 			res=0;
@@ -234,8 +249,8 @@ do
 	eSS[4]=aHG(w*h-rb, ng, w*h, ng-rgb);
 	eSS[5]=aHG(w*h-rg, nb, w*h, nb-rgb);
 
-	dd=floor(SS[0]*rg);
-	if(dd<rgb) dd=rgb;
+	dd=round(nr*ng/(w*h));
+	//if(dd<rgb) dd=rgb;
 	
 	SS[6]=aHG(dd, nb, w*h, rgb);
 	eSS[6]=aHG(w*h-dd, nb, w*h, nb-rgb);
@@ -289,6 +304,8 @@ print(f, " Significancias"+"\t  "+sS[0]+"\t  "+"  "+"\t  "+sS[1]+"\t  "+"  "+"\t
 print(f, " SC p"+"\t  "+SS[0]+"\t  "+"  "+"\t  "+SS[1]+"\t  "+"  "+"\t  "+SS[2]+"\t  "+"  "+"\t  "+SS[3]+"\t  "+SS[4]+"\t  "+SS[5]+"\t  "+SS[6]+"\t  "+" ");
 print(f, " SE p"+"\t  "+eSS[0]+"\t  "+"  "+"\t  "+eSS[1]+"\t  "+"  "+"\t  "+eSS[2]+"\t  "+"  "+"\t  "+eSS[3]+"\t  "+eSS[4]+"\t  "+eSS[5]+"\t  "+eSS[6]+"\t  "+" ");
 
-//print("SS[0]: "+SS[0]+"  rg: "+rg+"  nb: "+nb+" w*h: "+w*h+"  rgb: "+rgb);
+print("SS[0]: "+SS[0]+"  rg: "+rg+"  nb: "+nb+" w*h: "+w*h+"  rgb: "+rgb);
+print(rg+"   "+rb+"    "+gb);
+print(nr+"   "+ng+"    "+nb);
 }//fin
 

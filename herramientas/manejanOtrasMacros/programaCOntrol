@@ -1,0 +1,11 @@
+
+for(i=0; i<30; i++)
+{
+X=round(random*400);
+Y=round(random*400);	
+selectWindow("C1-12-400.tif");
+Roi.move(X, Y);
+selectWindow("C2-12-400.tif");
+Roi.move(X, Y);
+runMacro("ScramVSvs");
+}

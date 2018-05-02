@@ -32,8 +32,8 @@ return vector;
 Dialog.create("Excluidas");                                                       
  
   Dialog.addChoice("Imagen: ", figura);  
-  Dialog.addNumber("Numero de objetos: ", 10); 
-  Dialog.addNumber("Radio de objetos: ", 5); 
+  Dialog.addNumber("Numero de objetos: ", 150); 
+  Dialog.addNumber("Radio de objetos: ", 3); 
   Dialog.addNumber("Valor de Pixel: ", 255);
   Dialog.addCheckbox("Agrandar Objetos", true); 
   Dialog.addNumber("Radio: ", 3); 
