@@ -1,0 +1,181 @@
+
+function elMayor(vec, l)
+	{
+	m=0;
+	for(i=0; i<l; i++) {
+		if(vec[i]>m)
+			m=vec[i];  }
+	return m;
+	}
+
+function elMenor(vec, l)
+	{
+	m=255*255;
+	for(i=0; i<l; i++) {
+		if(vec[i]<m)
+			m=vec[i];  }
+	return m;
+	}
+
+function normalizacion(vec, l) 
+	{
+	max=elMayor(vec, l);
+	min=elMenor(vec, l);
+	for(i=0; i<l; i++)
+		vec[i]=round(((vec[i]-min)*255)/(max-min))+1;
+	}
+
+function renderize(vec, img)
+	{
+	selectWindow(img);
+	w=getWidth; h=getHeight; 
+	i=0;
+	for(y=0; y<h; y++)
+		{
+		for(x=0; x<w; x++) 
+			{
+			setPixel(x, y, vec[i]); 
+			i++; 
+			}
+		}
+	}
+
+function convo(array, an, al, fu, r, f) 
+	{
+	if(fu=="Lineal") e=1;
+	if(fu=="Cuadratica") e=2;
+	if(fu=="Cubica") e=3;
+	if(fu=="Geometrica") e=4;
+	if(fu=="Aritmetica") e=5;
+	
+	function PSF(r, e, f)
+		{
+	 	w=2*r-1;
+	 	h=2*r-1;
+	 	vec=newArray(w*h);
+	 	function func(r, d, e, f) 
+	 		{
+	 		if(e==1) v=1/(d+1);
+	 		if(e==2) v=1/(d*d+1);
+	 		if(e==3) v=1/(d*d*d+1);
+	 		if(e==4) v=1/pow(2, d);
+	 		if(e==5) v=1-f*(d+1)/r;
+	 		return v;
+	 		}
+	 
+		 cx=floor(w/2); 	 cy=floor(h/2);
+		 v=0; 	 cont=0;
+		 for(y=0; y<h; y++)
+		 	{
+		    for(x=0; x<w; x++)
+		    	{
+		        d=sqrt(pow(cx-x, 2)+pow(cy-y, 2));
+				if(d>=r) 
+		        	v=0;
+		    	else 
+		        	v=func(r, d, e, f);       
+		       	vec[cont]=v;
+		       	cont++;
+			    }
+			}
+		return vec;
+		}
+	          
+	alP=2*r-1; 	anP=2*r-1;
+	AN=an+anP; 	AL=al+alP;
+	H=newArray(anP*alP); 	G=newArray(an*al); 	R=newArray(AN*AL);
+	i=0; j=0;
+	for(y=0; y<AL; y++) 
+		{
+		for(x=0; x<AN; x++) 
+			{
+			if(x<anP/2 || x>an+anP/2 || y<alP/2 || y>al+alP/2) 
+				{R[i]=0; i++; }
+				else 
+				{R[i]=array[j]; i++; j++; } 
+			}
+		}
+	
+	H=PSF(r, e, f);
+	N=0; 	M=0; 	j=0;
+	for(k=0; k<al*an; k++)
+		{
+		showStatus("Dispersing...");
+		suma=0;
+		i=0;
+		for(n=N; n<N+alP; n++)
+			{
+			for(m=M; m<M+anP; m++)
+				{
+				pos=AN*n+m;
+				suma=suma+H[i]*R[pos];
+				i++;
+				}
+			}
+		M++;
+		if(M>an-1)
+			{M=0; N++;}
+		G[j]=suma;
+		j++;
+		}
+	return G;
+	}
+
+function VECTORIZAR(imagenAvectorizar, an, al)                     
+	{
+	selectWindow(imagenAvectorizar);
+	vector=newArray(an*al);
+	  i = 0;
+	  for (y=0; y<al; y++)
+		{
+		for (x=0; x<an; x++)
+			{
+			vector[i] = getPixel(x,y);
+			i++; 
+			}
+		}
+	return vector;
+	}
+
+id1=getImageID();          
+tamano=0;
+
+figura=newArray(nImages);
+for(i=id1-1000; i<id1+1000; i++)
+	{
+	showStatus("Loading images...");
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+
+           
+ Dialog.create("CENTROS DE MASA");                                                                        
+  Dialog.addChoice("Imagen: ", figura);  
+   Dialog.addChoice("Funcion de Dispersion: ", newArray("Lineal", "Cuadratica", "Cubica", "Geometrica", "Aritmetica"));  
+  Dialog.addNumber("Radio de Dipersion: ", 6);
+
+Dialog.show();
+   img=Dialog.getChoice();
+   fun=Dialog.getChoice();
+   rad=Dialog.getNumber();
+    
+selectWindow(img);
+w=getWidth;
+h=getHeight;
+run("Duplicate...", "title=IMG");
+run("8-bit");
+v=newArray(w*h); V=newArray(w*h); 
+v=VECTORIZAR("IMG", w, h);
+V=convo(v, w, h, fun, rad, 1);
+normalizacion(V, w*h);
+selectWindow("IMG");
+close();
+newImage("Astros", "8-bit black", w, h, 1);	
+renderize(V, "Astros");
+
+
+

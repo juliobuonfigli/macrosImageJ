@@ -1,0 +1,210 @@
+
+function promedio(vec, n)
+	{
+	p=0;
+	for(i=0; i<n; i++)
+		p=p+vec[i];
+	return p/n; 	
+	}
+
+function INSTANTMASK(md, s);
+	{
+	m=newArray(w*h);
+	for(i=0; i<w*h; i++)
+		{
+		if(md[i]>=s)
+			m[i]=true;
+		else
+			m[i]=false;	
+		}
+	return m;
+	}
+	
+function CONTEO(mask)
+	{
+	n=0;
+	for(i=0; i<w*h; i++) {
+		if(mask[i]==true)
+			n++ }
+	return n;
+	}
+	
+function vectorizar(r, mask, n);
+	{
+	vec=newArray(n);
+	c=0;
+	for(i=0; i<w*h; i++)
+		{
+		if(mask[i]==true)
+			{
+			vec[c]=r[i];	
+			c++;		
+			}
+		}
+	return vec;
+	}
+	
+function PEARSON(r1, v1, n)
+	{
+	denv=0; denr=0; num=0;
+	pr=promedio(r1, n);
+	pv=promedio(v1, n);
+	for(i=0; i<n; i++)
+		{
+		num=num+(r1[i]-pr)*(v1[i]-pv);
+		denr=denr+(r1[i]-pr)*(r1[i]-pr);	
+		denv=denv+(v1[i]-pv)*(v1[i]-pv);	
+		}
+	return num/sqrt(denr*denv);
+	}
+
+function VECTORIZAR(imagenAvectorizar, an, al)                     
+	{
+	selectWindow(imagenAvectorizar);
+	vector=newArray(an*al);
+	  i = 0;
+	  for (y=0; y<al; y++)
+		{
+		for (x=0; x<an; x++)
+			{
+			vector[i] = getPixel(x,y);
+			i++; 
+			}
+		}
+	return vector;
+	}
+
+function ELMAYOR(r, v)
+	{
+	newImage("MD", "8-bit black", w, h, 1);	
+	i=0;
+	for (y=0; y<h; y++)
+		{
+		for (x=0; x<w; x++)
+			{
+			if(r[i]>v[i])
+				setPixel(x, y, r[i]);
+			else
+				setPixel(x, y, v[i]);
+			i++; 
+			}
+		}
+	}
+
+function PROMEDIO(r, v)
+	{
+	newImage("MD", "8-bit black", w, h, 1);	
+	i=0;
+	for (y=0; y<h; y++)
+		{
+		for (x=0; x<w; x++)
+			{
+			setPixel(x, y, round((v[i]+r[i])/2));
+			i++; 
+			}
+		}
+	}
+
+id1=getImageID();          
+tamano=0;
+
+figura=newArray(nImages);
+for(i=id1-1000; i<id1+1000; i++)
+	{
+	showStatus("Loading images...");
+	if(isOpen(i) && tamano<nImages)
+		{
+		selectImage(i);
+		figura[tamano]=getTitle();
+		tamano++;
+		}		
+	}
+               
+ Dialog.create("COLOCALIZACION");                  //ventana de carga de relaciones                                                      
+  Dialog.addChoice("Rojo: ", figura);  
+  Dialog.addChoice("Verde: ", figura); 
+  Dialog.addChoice("ROI dinamico: ", newArray("Promedio", "El mayor", "Suma", "Rojo", "Verde")); 
+    
+Dialog.show();
+   	red=Dialog.getChoice();
+   	green=Dialog.getChoice();
+   	metodo=Dialog.getChoice();
+
+selectWindow(red);
+rename("Red");
+run("Duplicate...", "title=RED");
+w=getWidth;
+h=getHeight;
+
+selectWindow(green);
+rename("Green");
+run("Duplicate...", "title=GREEN");
+
+selectWindow(red);
+run("8-bit");
+r=newArray(w*h);
+r=VECTORIZAR(red, w, h);
+selectWindow(green);
+run("8-bit");
+v=newArray(w*h);
+v=VECTORIZAR(green, w, h);
+
+if(metodo=="Suma")
+	{
+	imageCalculator("Add create 32-bit", "GREEN","RED");
+	selectWindow("Result of GREEN");
+	rename("MD");
+	run("8-bit");
+	}
+
+if(metodo=="Rojo")
+	{
+	selectWindow("RED");
+	rename("MD");
+	run("8-bit");
+	selectWindow("GREEN");
+	close();
+	}
+
+if(metodo=="Verde")
+	{
+	selectWindow("GREEN");
+	rename("MD");
+	run("8-bit");
+	selectWindow("RED");
+	close();
+	}
+
+if(metodo=="El mayor")
+	ELMAYOR(r, v);
+
+if(metodo=="Promedio")
+	PROMEDIO(r, v);
+		
+colo=newArray(255);
+mask=newArray(w*h);
+
+md=VECTORIZAR("MD", w, h);
+
+for(i=0; i<255; i++)
+	{
+	mask=INSTANTMASK(md, i);
+	n=CONTEO(mask);
+	r1=newArray(n);
+	v1=newArray(n);
+	r1=vectorizar(r, mask);
+	v1=vectorizar(r, mask);
+	colo[i]=PEARSON(r1, v1, n);	
+	}
+
+a=newArray(256);
+	for(f=0; f<256; f++)     
+		a[f]=f;
+
+Plot.create("Plot", "Umbral", "correlacion"); 
+	Plot.setLimits(0, 255, -1, 1);
+	Plot.setColor("black", "black");           
+    Plot.setLineWidth(1);
+    Plot.add("line", a, colo);
+
+	

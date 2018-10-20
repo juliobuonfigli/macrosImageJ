@@ -1,0 +1,30 @@
+
+w=getWidth;
+h=getHeight;
+temp=newArray(w);
+prec=newArray(w);
+
+for(x=0; x<w; x++)
+	{
+	for(y=0; y<h; y++)
+		{
+		if(getPixel(x, y)!=0)
+			prec[x]=1-y/h;
+		}
+	}
+
+for(i=0; i<w; i++)
+	temp[i]=i+1;
+
+titulo1 = "Results";                                            
+titulo2 = "["+titulo1+"]";
+  f = titulo2;
+ if (isOpen(titulo1))
+    print(f, "\\Clear");
+ else
+run("Table...", "name="+titulo1+" width=30 height=600");
+print(f, "\\Headings:tiempo\t precio");
+for(i=0; i<w; i++) 
+	print(f, temp[i]+"\t  "+prec[i]);
+
+print(f, "");

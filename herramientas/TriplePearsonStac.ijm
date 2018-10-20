@@ -1,0 +1,207 @@
+//Triple Pearson stack mascara cuadrada
+
+function raizCubica(w)                     
+	{
+    x=w; y=1;  e=0.00001;       
+  	while(x-y>e)
+  		{
+    	x=(2*x+y)/3;
+    	y=w/(x*x);
+ 		}
+	return x;
+	}
+
+function elMayor(vec, l)
+	{
+	m=0;
+	for(i=0; i<l; i++) {
+		if(vec[i]>m)
+			m=vec[i];  }
+	return m;
+	}
+
+function elMenor(vec, l)
+	{
+	m=255*255;
+	for(i=0; i<l; i++) {
+		if(vec[i]<m)
+			m=vec[i];  }
+	return m;
+	}
+
+function normalizacion(vec, l) 
+	{
+	max=elMayor(vec, l);
+	min=elMenor(vec, l);
+	for(i=0; i<l; i++)
+		vec[i]=round(((vec[i]-min)*254)/(max-min))+1;
+	}
+
+function promedio(vec, n)
+	{
+	p=0;
+	for(i=0; i<n; i++)
+		p=p+vec[i];
+	return p/n; 	
+	}
+	
+function PEARSON(r1, v1, n)
+	{
+	denv=0; denr=0; num=0;
+	pr=promedio(r1, n);
+	pv=promedio(v1, n);
+	for(i=0; i<n; i++)
+		{
+		num=num+(r1[i]-pr)*(v1[i]-pv);
+		denr=denr+(r1[i]-pr)*(r1[i]-pr);	
+		denv=denv+(v1[i]-pv)*(v1[i]-pv);	
+		}
+	return num/sqrt(denr*denv);
+	}
+
+function TP(r1, v1, a1, n)
+	{
+	denv=0; denr=0; dena=0; num=0;
+	pr=promedio(r1, n);
+	pv=promedio(v1, n);
+	pa=promedio(a1, n);
+	for(i=0; i<n; i++)
+		{
+		if((r1[i]-pr)>0 && (v1[i]-pv)>0 && (a1[i]-pa)>0)
+			num=num+abs(r1[i]-pr)*abs(v1[i]-pv)*abs(a1[i]-pa);
+		else
+			{
+			if((r1[i]-pr)<0 && (v1[i]-pv)<0 && (a1[i]-pa)<0)
+				num=num+abs(r1[i]-pr)*abs(v1[i]-pv)*abs(a1[i]-pa);
+			else
+				num=num-abs(r1[i]-pr)*abs(v1[i]-pv)*abs(a1[i]-pa);
+			}
+		denr=denr+abs(r1[i]-pr)*abs(r1[i]-pr)*abs(r1[i]-pr);	
+		denv=denv+abs(v1[i]-pv)*abs(v1[i]-pv)*abs(v1[i]-pv);	
+		dena=dena+abs(a1[i]-pa)*abs(a1[i]-pa)*abs(a1[i]-pa);	
+		}
+	return num/raizCubica(denr*denv*dena);
+	}
+
+function VECTORIZAR(imagenAvectorizar, an, al)                     
+	{
+	selectWindow(imagenAvectorizar);
+	vector=newArray(an*al);
+	  i = 0;
+	  for (y=0; y<al; y++)
+		{
+		for (x=0; x<an; x++)
+			{
+			vector[i] = getPixel(x,y);
+			i++; 
+			}
+		}
+	return vector;
+	}
+
+function ELMAYOR(r, v, l)
+	{
+	vec=newArray(l);
+	for (i=0; i<l; i++)
+		{
+		if(r[i]>v[i])
+			vec[i]=r[i];
+		else
+			vec[i]=v[i];
+		}
+	return vec;
+	}
+
+function TripleMAYOR(r, v, a, l)
+	{
+	vec=newArray(l);
+	for (i=0; i<l; i++)
+		{
+		if(r[i]>=v[i] && r[i]>=a[i])
+			vec[i]=r[i];
+		else
+			{
+			if(v[i]>=r[i] && v[i]>=a[i])
+				vec[i]=v[i];
+			else
+				vec[i]=a[i];
+			}
+		}
+	return vec;
+	}
+
+function inter(r, v, l)
+	{
+	vec=newArray(l);
+	pr=promedio(r, l);
+	pv=promedio(v, l);
+	for (i=0; i<l; i++)
+		vec[i]=round((r[i]-pr)*(v[i]-pv));
+	normalizacion(vec, l);
+	return vec;
+	}
+
+Norm=true;
+Norm=false;
+setBatchMode(true);
+
+selectWindow("sRED.tif");
+run("8-bit");
+selectWindow("sGREEN.tif");
+run("8-bit");
+selectWindow("sBLUE.tif");
+run("8-bit");
+
+coloRV=newArray(11);
+coloRA=newArray(11);	
+coloVA=newArray(11);	
+coloR=newArray(11);	
+coloV=newArray(11);
+coloA=newArray(11);
+coloRVA=newArray(11);
+
+for(jj=1; jj<12; jj++)
+{
+
+selectWindow("sRED.tif");
+setSlice(jj);
+w=getWidth;
+h=getHeight;
+r=newArray(w*h); 
+r=VECTORIZAR("sRED.tif", w, h);
+selectWindow("sGREEN.tif");
+setSlice(jj);
+v=newArray(w*h); 
+v=VECTORIZAR("sGREEN.tif", w, h);
+selectWindow("sBLUE.tif");
+setSlice(jj);
+a=newArray(w*h); 
+a=VECTORIZAR("sBLUE.tif", w, h); 
+	
+if(Norm==true) 
+	{
+	normalizacion(r, w*h); 
+	normalizacion(v, w*h);
+	normalizacion(a, w*h); 
+	}  
+
+	rv=newArray(w*h);
+	ra=newArray(w*h);
+	va=newArray(w*h);
+	rv=inter(r, v, w*h);
+	ra=inter(r, a, w*h);
+	va=inter(v, a, w*h);
+	coloRV[jj-1]=PEARSON(r, v, w*h);	
+	coloRA[jj-1]=PEARSON(r, a, w*h);	
+	coloVA[jj-1]=PEARSON(v, a, w*h);	
+	coloR[jj-1]=PEARSON(r, va, w*h);	
+	coloV[jj-1]=PEARSON(v, ra, w*h);
+	coloA[jj-1]=PEARSON(a, rv, w*h);
+	coloRVA[jj-1]=TP(r, v, a, w*h);
+
+}
+    print("  RV:             RA:             VA:             R:             V:             A:             RVA:");
+for(i=0; i<11; i++)
+	print(coloRV[i]+"       "+coloRA[i]+"       "+coloVA[i]+"       "+coloR[i]+"       "+coloV[i]+"       "+coloA[i]+"       "+coloRVA[i]);
+
+setBatchMode("Exit and display");

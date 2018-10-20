@@ -2,13 +2,13 @@
 Dialog.create("Vesiculas");                                                       
  
   Dialog.addChoice("Movimiento: ", newArray("Browniano", "Confinado", "Direccionado_aleatorio", "Direccion_unica", "Superdifusivo"));  
-  Dialog.addNumber("Numero de objetos: ", 120000); 
+  Dialog.addNumber("Numero de objetos: ", 15); 
   Dialog.addCheckbox("Paso constante", true); 
   Dialog.addNumber("Paso: ", 5); 
   Dialog.addNumber("Probabilidad de movimiento: ", 0.2); 
   Dialog.addNumber("Cortes: ", 1); 
-  Dialog.addNumber("Alto: ", 500); 
-  Dialog.addNumber("Ancho: ", 500); 
+  Dialog.addNumber("Alto: ", 30); 
+  Dialog.addNumber("Ancho: ", 30); 
   Dialog.addNumber("Valor de Pixel: ", 255);
   Dialog.addCheckbox("Agrandar Objetos", false); 
   Dialog.addNumber("Radio: ", 4); 
